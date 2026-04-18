@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "247194165705",
+    "project_id": "shopinglinemasterung",
+    "storage_bucket": "shopinglinemasterung.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:247194165705:android:02538dce67961449c38818",
+        "android_client_info": {
+          "package_name": "com.masterung.shoponlinemasterung"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCpcq3m_3IrkKlhTqe2sswroAmZ7ACtnBc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
