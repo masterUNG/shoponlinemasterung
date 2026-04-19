@@ -12,7 +12,20 @@
           "package_name": "com.masterung.shoponlinemasterung"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "247194165705-8isijta8kag8elg0hflvoiujapkbp54p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.masterung.shoponlinemasterung",
+            "certificate_hash": "827c66b0c94cda1c72928149ba6f618599c2652d"
+          }
+        },
+        {
+          "client_id": "247194165705-2rdt0j6gkrsrpl3jr2huraknltu1gjk4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCpcq3m_3IrkKlhTqe2sswroAmZ7ACtnBc"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "247194165705-2rdt0j6gkrsrpl3jr2huraknltu1gjk4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "247194165705-upgoip3reo3v8lbnj564fngasdsuqcr9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.masterung.shoponlinemasterung"
+              }
+            }
+          ]
         }
       }
     }

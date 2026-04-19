@@ -19,6 +19,7 @@ class LoginView extends GetView<LoginController> {
               constraints: const BoxConstraints(maxWidth: 420),
               child: Card(
                 elevation: 4,
+                clipBehavior: Clip.antiAlias,
                 child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(
@@ -32,7 +33,7 @@ class LoginView extends GetView<LoginController> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Welcome Back',
+                        'Login with Google',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineMedium?.copyWith(
                           fontWeight: FontWeight.bold,
@@ -40,48 +41,38 @@ class LoginView extends GetView<LoginController> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Sign in to continue to your shopping dashboard',
+                        'Use your Google Account to sign in with Firebase and continue to the shopping dashboard.',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 32),
-                      TextField(
-                        controller: controller.emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          prefixIcon: Icon(Icons.email_outlined),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Obx(
-                        () => TextField(
-                          controller: controller.passwordController,
-                          obscureText: controller.isPasswordHidden.value,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              onPressed: controller.togglePasswordVisibility,
-                              icon: Icon(
-                                controller.isPasswordHidden.value
-                                    ? Icons.visibility_off_outlined
-                                    : Icons.visibility_outlined,
-                              ),
-                            ),
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primaryContainer.withValues(
+                            alpha: 0.45,
                           ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          'Email and password are disabled for now. Tap the button below to sign in using Google only.',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyMedium,
                         ),
                       ),
                       const SizedBox(height: 24),
                       Obx(
-                        () => FilledButton(
+                        () => OutlinedButton(
                           onPressed: controller.isLoading.value
                               ? null
-                              : controller.login,
-                          style: FilledButton.styleFrom(
+                              : controller.loginWithGoogle,
+                          style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
+                            side: BorderSide(
+                              color: theme.colorScheme.outlineVariant,
+                            ),
                           ),
                           child: controller.isLoading.value
                               ? const SizedBox(
@@ -89,16 +80,25 @@ class LoginView extends GetView<LoginController> {
                                   height: 22,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2.4,
-                                    color: Colors.white,
                                   ),
                                 )
-                              : const Text('Login'),
+                              : const Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    _GoogleBadge(),
+                                    SizedBox(width: 12),
+                                    Text('Continue with Google'),
+                                  ],
+                                ),
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text('Forgot password?'),
+                      const SizedBox(height: 16),
+                      Text(
+                        'After login success, the app will open main_home automatically.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
@@ -106,6 +106,33 @@ class LoginView extends GetView<LoginController> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoogleBadge extends StatelessWidget {
+  const _GoogleBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      width: 28,
+      height: 28,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        shape: BoxShape.circle,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Text(
+        'G',
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: Colors.red.shade700,
         ),
       ),
     );
