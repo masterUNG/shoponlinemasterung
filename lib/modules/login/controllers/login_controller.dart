@@ -1,15 +1,21 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../model/app_user_model.dart';
 
 class LoginController extends GetxController {
   static const _serverClientId =
       '247194165705-2rdt0j6gkrsrpl3jr2huraknltu1gjk4.apps.googleusercontent.com';
 
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
 
   final isLoading = false.obs;
@@ -57,9 +63,20 @@ class LoginController extends GetxController {
 
       final UserCredential userCredential = await _firebaseAuth
           .signInWithCredential(credential);
+      final User? user = userCredential.user;
+
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'missing-firebase-user',
+          message: 'Firebase did not return the signed-in user.',
+        );
+      }
+
+      await _createUserDocumentIfMissing(user);
+
       final String displayName =
-          userCredential.user?.displayName ??
-          userCredential.user?.email ??
+          user.displayName ??
+          user.email ??
           'Google User';
 
       Get.offAllNamed(Routes.mainHome);
@@ -94,6 +111,42 @@ class LoginController extends GetxController {
       );
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> _createUserDocumentIfMissing(User user) async {
+    final QuerySnapshot<Map<String, dynamic>> existingUsers = await _firestore
+        .collection('users')
+        .where('uid', isEqualTo: user.uid)
+        .limit(1)
+        .get();
+
+    if (existingUsers.docs.isNotEmpty) {
+      return;
+    }
+
+    final AppUserModel appUser = AppUserModel(
+      displayName: user.displayName ?? user.email ?? 'Google User',
+      base64Avatar: await _getBase64Avatar(user.photoURL),
+      uid: user.uid,
+    );
+
+    await _firestore.collection('users').doc(user.uid).set(appUser.toMap());
+  }
+
+  Future<String> _getBase64Avatar(String? photoUrl) async {
+    if (photoUrl == null || photoUrl.isEmpty) {
+      return '';
+    }
+
+    try {
+      final NetworkAssetBundle bundle = NetworkAssetBundle(Uri.parse(photoUrl));
+      final ByteData byteData = await bundle.load(photoUrl);
+      final Uint8List bytes = byteData.buffer.asUint8List();
+
+      return base64Encode(bytes);
+    } catch (_) {
+      return '';
     }
   }
 }
