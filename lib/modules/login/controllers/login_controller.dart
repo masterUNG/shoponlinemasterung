@@ -75,37 +75,35 @@ class LoginController extends GetxController {
       await _createUserDocumentIfMissing(user);
 
       final String displayName =
-          user.displayName ??
-          user.email ??
-          'Google User';
+          user.displayName ?? user.email ?? 'Google User';
 
       Get.offAllNamed(Routes.mainHome);
       Get.snackbar(
-        'Login Success',
-        'Welcome, $displayName',
+        'เข้าสู่ระบบสำเร็จ',
+        'ยินดีต้อนรับ, $displayName',
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
       );
     } on GoogleSignInException catch (error) {
       if (error.code != GoogleSignInExceptionCode.canceled) {
         Get.snackbar(
-          'Google Sign-In Failed',
-          error.description ?? 'Unable to sign in with Google right now.',
+          'เข้าสู่ระบบด้วย Google ไม่สำเร็จ',
+          error.description ?? 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้ในขณะนี้',
           snackPosition: SnackPosition.BOTTOM,
           margin: const EdgeInsets.all(16),
         );
       }
     } on FirebaseAuthException catch (error) {
       Get.snackbar(
-        'Firebase Login Failed',
-        error.message ?? 'Unable to connect your Google account.',
+        'เชื่อมต่อระบบเข้าสู่ระบบไม่สำเร็จ',
+        error.message ?? 'ไม่สามารถเชื่อมต่อบัญชี Google ของคุณได้',
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
       );
     } catch (_) {
       Get.snackbar(
-        'Login Failed',
-        'Something went wrong. Please try again.',
+        'เข้าสู่ระบบไม่สำเร็จ',
+        'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
       );
