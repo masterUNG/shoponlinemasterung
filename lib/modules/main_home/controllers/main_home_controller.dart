@@ -7,8 +7,13 @@ import '../../../app/routes/app_routes.dart';
 class MainHomeController extends GetxController {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final RxInt indexBody = 0.obs;
 
   User? get currentUser => _firebaseAuth.currentUser;
+
+  void changeIndexBody(int index) {
+    indexBody.value = index;
+  }
 
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
