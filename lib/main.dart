@@ -1,9 +1,11 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shoponlinemasterung/firebase_options.dart';
 
 import 'app/routes/app_pages.dart';
+import 'app/routes/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,6 +20,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String initialRoute = kIsWeb ? Routes.loginAdminWeb : Routes.login;
     final ColorScheme colorScheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF3246A8),
       brightness: Brightness.light,
@@ -26,7 +29,7 @@ class MyApp extends StatelessWidget {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Shop Online',
-      initialRoute: AppPages.initial,
+      initialRoute: initialRoute,
       getPages: AppPages.routes,
       theme: ThemeData(
         colorScheme: colorScheme,
