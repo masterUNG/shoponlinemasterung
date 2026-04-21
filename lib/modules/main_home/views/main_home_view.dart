@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../cart/views/cart_view.dart';
+import '../../mall/views/mall_view.dart';
+import '../../order/views/order_view.dart';
+import '../../profile/views/profile_view.dart';
 import '../controllers/main_home_controller.dart';
 
 class MainHomeView extends GetView<MainHomeController> {
@@ -8,115 +12,49 @@ class MainHomeView extends GetView<MainHomeController> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final user = controller.currentUser;
-    final displayName = user?.displayName ?? 'Google User';
-    final email = user?.email ?? 'No email found';
+    final bodyList = [
+      const MallView(),
+      const CartView(),
+      const OrderView(),
+      const ProfileView(),
+    ];
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Main Home'),
-        actions: [
-          IconButton(
-            onPressed: controller.signOut,
-            tooltip: 'Sign out',
-            icon: const Icon(Icons.logout_rounded),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      CircleAvatar(
-                        radius: 34,
-                        backgroundColor: theme.colorScheme.primaryContainer,
-                        backgroundImage: user?.photoURL != null
-                            ? NetworkImage(user!.photoURL!)
-                            : null,
-                        child: user?.photoURL == null
-                            ? Text(
-                                displayName.characters.first.toUpperCase(),
-                                style: theme.textTheme.headlineMedium?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              )
-                            : null,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Welcome to main_home',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Google login is working and you are now inside the main module.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      _InfoTile(label: 'Display name', value: displayName),
-                      const SizedBox(height: 12),
-                      _InfoTile(label: 'Email', value: email),
-                    ],
-                  ),
-                ),
-              ),
+    return Obx(
+      () => Scaffold(
+        appBar: AppBar(
+          title: const Text('Main Home'),
+          actions: [
+            IconButton(
+              onPressed: controller.signOut,
+              tooltip: 'Sign out',
+              icon: const Icon(Icons.logout_rounded),
             ),
-          ),
+          ],
         ),
-      ),
-    );
-  }
-}
-
-class _InfoTile extends StatelessWidget {
-  const _InfoTile({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
+        body: bodyList[controller.indexBody.value],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: controller.indexBody.value,
+          onTap: controller.changeIndexBody,
+          type: BottomNavigationBarType.fixed,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.storefront_rounded),
+              label: 'Mall',
             ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_cart_rounded),
+              label: 'Cart',
             ),
-          ),
-        ],
+            BottomNavigationBarItem(
+              icon: Icon(Icons.receipt_long_rounded),
+              label: 'Order',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person_rounded),
+              label: 'Profile',
+            ),
+          ],
+        ),
       ),
     );
   }
