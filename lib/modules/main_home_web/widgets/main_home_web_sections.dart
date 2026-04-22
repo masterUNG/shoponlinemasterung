@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../controllers/main_home_web_controller.dart';
 import '../models/admin_order_model.dart';
@@ -119,13 +122,14 @@ class _ProductsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const _SectionIntroCard(
+        _SectionIntroCard(
           title: 'จัดการสินค้า',
           subtitle:
               'หน้านี้เหมาะสำหรับต่อฟอร์มเพิ่มสินค้า แก้ไขข้อมูล เปลี่ยนราคา และจัดหมวดหมู่ในขั้นถัดไป',
           actionLabel: 'เพิ่มสินค้าใหม่',
           icon: Icons.inventory_2_rounded,
           accent: Color(0xFFEAF1FF),
+          onActionPressed: () => _showAddProductDialog(context),
         ),
         const SizedBox(height: 20),
         AdminProductsPanel(
@@ -666,6 +670,7 @@ class _SectionIntroCard extends StatelessWidget {
     required this.actionLabel,
     required this.icon,
     required this.accent,
+    this.onActionPressed,
   });
 
   final String title;
@@ -673,6 +678,7 @@ class _SectionIntroCard extends StatelessWidget {
   final String actionLabel;
   final IconData icon;
   final Color accent;
+  final VoidCallback? onActionPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -731,7 +737,10 @@ class _SectionIntroCard extends StatelessWidget {
               children: [
                 Row(children: content.take(3).toList()),
                 const SizedBox(height: 16),
-                FilledButton(onPressed: () {}, child: Text(actionLabel)),
+                FilledButton(
+                  onPressed: onActionPressed ?? () {},
+                  child: Text(actionLabel),
+                ),
               ],
             );
           }
@@ -740,7 +749,10 @@ class _SectionIntroCard extends StatelessWidget {
             children: [
               ...content,
               const SizedBox(width: 12),
-              FilledButton(onPressed: () {}, child: Text(actionLabel)),
+              FilledButton(
+                onPressed: onActionPressed ?? () {},
+                child: Text(actionLabel),
+              ),
             ],
           );
         },
@@ -1564,6 +1576,406 @@ String _orderStatusLabel(AdminOrderStatus status) {
       return 'สำเร็จ';
     case AdminOrderStatus.cancelled:
       return 'ยกเลิก';
+  }
+}
+
+Future<void> _showAddProductDialog(BuildContext context) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) => const _AddProductDialog(),
+  );
+}
+
+class _AddProductDialog extends StatefulWidget {
+  const _AddProductDialog();
+
+  @override
+  State<_AddProductDialog> createState() => _AddProductDialogState();
+}
+
+class _AddProductDialogState extends State<_AddProductDialog> {
+  final ImagePicker _imagePicker = ImagePicker();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _priceController = TextEditingController();
+  final TextEditingController _unitController = TextEditingController();
+  final TextEditingController _stockController = TextEditingController();
+
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
+  bool _isPickingImage = false;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
+    _unitController.dispose();
+    _stockController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    setState(() => _isPickingImage = true);
+
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 480,
+        maxHeight: 480,
+        imageQuality: 90,
+      );
+
+      if (pickedFile == null) {
+        return;
+      }
+
+      final Uint8List bytes = await pickedFile.readAsBytes();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _selectedImageBytes = bytes;
+        _selectedImageName = pickedFile.name;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingImage = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 760),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF1FF),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Icon(
+                      Icons.add_business_rounded,
+                      color: Color(0xFF163A72),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'เพิ่มสินค้าใหม่',
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            color: const Color(0xFF163A72),
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'เตรียม UI สำหรับเลือกรูปภาพและกรอกข้อมูลสินค้า ก่อนเชื่อมต่อ Firebase จริง',
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: const Color(0xFF6B7A95),
+                            height: 1.45,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final bool stacked = constraints.maxWidth < 640;
+
+                  final imageSection = _buildImageSection(theme);
+                  final formSection = _buildFormSection(theme);
+
+                  if (stacked) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        imageSection,
+                        const SizedBox(height: 20),
+                        formSection,
+                      ],
+                    );
+                  }
+
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(flex: 4, child: imageSection),
+                      const SizedBox(width: 20),
+                      Expanded(flex: 5, child: formSection),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('ยกเลิก'),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton.icon(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.save_outlined),
+                    label: const Text('บันทึกสินค้า'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageSection(ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFDDE6F2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'รูปสินค้า',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: const Color(0xFF163A72),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'เลือกจาก Gallery ด้วย image_picker ขนาดสูงสุด 480 x 480',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF6B7A95),
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 16),
+          AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: const Color(0xFFD7E3F2)),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(23),
+                child: _selectedImageBytes == null
+                    ? _buildImagePlaceholder(theme)
+                    : Image.memory(_selectedImageBytes!, fit: BoxFit.cover),
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _isPickingImage ? null : _pickImage,
+              icon: _isPickingImage
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.photo_library_outlined),
+              label: Text(
+                _selectedImageBytes == null
+                    ? 'เลือกรูปจาก Gallery'
+                    : 'เลือกรูปใหม่',
+              ),
+            ),
+          ),
+          if (_selectedImageName != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _selectedImageName!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF4A5C7A),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder(ThemeData theme) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: const Color(0xFFEAF1FF),
+                borderRadius: BorderRadius.circular(22),
+              ),
+              child: const Icon(
+                Icons.image_outlined,
+                color: Color(0xFF163A72),
+                size: 36,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'ยังไม่ได้เลือกรูปสินค้า',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: const Color(0xFF163A72),
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'เมื่อเชื่อม backend แล้ว ส่วนนี้จะพร้อมต่ออัปโหลดไป Firebase Storage',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF6B7A95),
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFormSection(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildTextField(
+          controller: _nameController,
+          label: 'ชื่อสินค้า',
+          hintText: 'เช่น เสื้อยืดคอกลม',
+          prefixIcon: Icons.inventory_2_outlined,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: _descriptionController,
+          label: 'รายละเอียดสินค้า',
+          hintText: 'อธิบายจุดเด่นของสินค้า วัสดุ หรือขนาด',
+          prefixIcon: Icons.notes_rounded,
+          maxLines: 4,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: _priceController,
+                label: 'ราคา',
+                hintText: '0.00',
+                prefixIcon: Icons.sell_outlined,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                controller: _unitController,
+                label: 'หน่วย',
+                hintText: 'ชิ้น / กล่อง / แพ็ก',
+                prefixIcon: Icons.straighten_outlined,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: _stockController,
+          label: 'จำนวนสต๊อก',
+          hintText: '0',
+          prefixIcon: Icons.warehouse_outlined,
+          keyboardType: TextInputType.number,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData prefixIcon,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        prefixIcon: Icon(prefixIcon),
+        alignLabelWithHint: maxLines > 1,
+        filled: true,
+        fillColor: const Color(0xFFF8FAFD),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFF3C69C8), width: 1.3),
+        ),
+      ),
+    );
   }
 }
 
