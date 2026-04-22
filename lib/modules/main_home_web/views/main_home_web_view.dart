@@ -106,164 +106,174 @@ class _SideBar extends GetView<MainHomeWebController> {
 
     return Container(
       color: const Color(0xFF123B7A),
-      padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(18),
-                ),
-                child: const Icon(
-                  Icons.storefront_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight - 52),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      'Shop Admin',
-                      style: theme.textTheme.titleLarge?.copyWith(
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Icon(
+                        Icons.storefront_rounded,
                         color: Colors.white,
-                        fontWeight: FontWeight.w800,
+                        size: 28,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      'Small store back office',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.74),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Shop Admin',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Small store back office',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.74),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 28),
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  controller.displayName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  controller.currentUser?.email ?? 'admin@shoponline.com',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: Colors.white.withValues(alpha: 0.72),
-                    height: 1.4,
-                  ),
-                ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 28),
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
+                  padding: const EdgeInsets.all(18),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFFB648),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    'พร้อมจัดการสินค้าและออเดอร์',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: const Color(0xFF3F2A00),
-                      fontWeight: FontWeight.w700,
+                    color: Colors.white.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.08),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 26),
-          Obx(
-            () => Column(
-              children: MainHomeWebSection.values
-                  .expand(
-                    (section) => <Widget>[
-                      _MenuTile(
-                        icon: _sectionIcon(section),
-                        title: section.title,
-                        subtitle: section.subtitle,
-                        selected: controller.selectedSection.value == section,
-                        onTap: () => controller.changeSection(section),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        controller.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                      if (section != MainHomeWebSection.values.last)
-                        const SizedBox(height: 10),
+                      const SizedBox(height: 8),
+                      Text(
+                        controller.currentUser?.email ?? 'admin@shoponline.com',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.72),
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFB648),
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          'พร้อมจัดการสินค้าและออเดอร์',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: const Color(0xFF3F2A00),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                     ],
-                  )
-                  .toList(),
-            ),
-          ),
-          const Spacer(),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'ระบบวันนี้',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: const Color(0xFF153A77),
-                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 10),
-                Text(
-                  'มี ${controller.openOrders.length} ออเดอร์ที่ต้องติดตาม และ ${controller.lowStockCount} สินค้าที่ควรเติมสต๊อก',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF5A6689),
-                    height: 1.5,
+                const SizedBox(height: 26),
+                Obx(
+                  () => Column(
+                    children: MainHomeWebSection.values
+                        .expand(
+                          (section) => <Widget>[
+                            _MenuTile(
+                              icon: _sectionIcon(section),
+                              title: section.title,
+                              subtitle: section.subtitle,
+                              selected:
+                                  controller.selectedSection.value == section,
+                              onTap: () => controller.changeSection(section),
+                            ),
+                            if (section != MainHomeWebSection.values.last)
+                              const SizedBox(height: 10),
+                          ],
+                        )
+                        .toList(),
                   ),
                 ),
-                const SizedBox(height: 16),
-                SizedBox(
+                const SizedBox(height: 24),
+                Container(
                   width: double.infinity,
-                  child: FilledButton.icon(
-                    onPressed: controller.signOut,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: const Color(0xFF123B7A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                    ),
-                    icon: const Icon(Icons.logout_rounded),
-                    label: const Text('Sign out'),
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'ระบบวันนี้',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: const Color(0xFF153A77),
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'มี ${controller.openOrders.length} ออเดอร์ที่ต้องติดตาม และ ${controller.lowStockCount} สินค้าที่ควรเติมสต๊อก',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF5A6689),
+                          height: 1.5,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton.icon(
+                          onPressed: controller.signOut,
+                          style: FilledButton.styleFrom(
+                            backgroundColor: const Color(0xFF123B7A),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          icon: const Icon(Icons.logout_rounded),
+                          label: const Text('Sign out'),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

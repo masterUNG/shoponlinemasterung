@@ -419,7 +419,11 @@ class _StatsSection extends StatelessWidget {
           mainAxisSpacing: 16,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: columns == 1 ? 2.7 : 1.95,
+          childAspectRatio: columns == 1
+              ? 2.7
+              : columns == 2
+              ? 1.8
+              : 1.55,
           children: [
             AdminStatCard(
               title: 'ยอดขายวันนี้',
@@ -480,42 +484,64 @@ class AdminProductsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return AdminPanelShell(
-      title: title,
-      subtitle: subtitle,
-      trailing: FilledButton.icon(
-        onPressed: () {},
-        style: FilledButton.styleFrom(
-          backgroundColor: const Color(0xFF163A72),
-          foregroundColor: Colors.white,
-        ),
-        icon: const Icon(Icons.tune_rounded),
-        label: Text(buttonLabel),
-      ),
-      child: Column(
-        children: [
-          const _HeaderRow(
-            labels: ['สินค้า', 'ราคา', 'สต๊อก', 'สถานะ', 'จัดการ'],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final bool compact = constraints.maxWidth < 940;
+
+        return AdminPanelShell(
+          title: title,
+          subtitle: subtitle,
+          trailing: FilledButton.icon(
+            onPressed: () {},
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF163A72),
+              foregroundColor: Colors.white,
+            ),
+            icon: const Icon(Icons.tune_rounded),
+            label: Text(buttonLabel),
           ),
-          const Divider(height: 1),
-          ...products.map(
-            (product) => _ProductRow(controller: controller, product: product),
-          ),
-          const SizedBox(height: 18),
-          Row(
+          child: Column(
             children: [
-              Text(
-                'ทั้งหมด ${products.length} รายการ',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF6B7A95),
+              if (compact)
+                ...products.map(
+                  (product) => _ProductCompactCard(
+                    controller: controller,
+                    product: product,
+                  ),
+                )
+              else ...[
+                const _HeaderRow(
+                  labels: ['สินค้า', 'ราคา', 'สต๊อก', 'สถานะ', 'จัดการ'],
                 ),
+                const Divider(height: 1),
+                ...products.map(
+                  (product) =>
+                      _ProductRow(controller: controller, product: product),
+                ),
+              ],
+              const SizedBox(height: 18),
+              Wrap(
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  Text(
+                    'ทั้งหมด ${products.length} รายการ',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF6B7A95),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {},
+                    child: const Text('จัดการสินค้า'),
+                  ),
+                ],
               ),
-              const Spacer(),
-              TextButton(onPressed: () {}, child: const Text('จัดการสินค้า')),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -826,6 +852,7 @@ class AdminStatCard extends StatelessWidget {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
             children: [
@@ -842,28 +869,33 @@ class AdminStatCard extends StatelessWidget {
               Icon(Icons.trending_up_rounded, color: accent),
             ],
           ),
-          const Spacer(),
-          Text(
-            title,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF6B7A95),
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: const Color(0xFF163A72),
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            subtitle,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: const Color(0xFF6B7A95),
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                title,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF6B7A95),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: const Color(0xFF163A72),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF6B7A95),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -1001,6 +1033,104 @@ class _ProductRow extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductCompactCard extends StatelessWidget {
+  const _ProductCompactCard({required this.controller, required this.product});
+
+  final MainHomeWebController controller;
+  final AdminProductModel product;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color accent = _productAccentColor(product);
+    final Color surface = _productSurfaceColor(product);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FBFF),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE2EAF5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: surface,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(_productIcon(product), color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF163A72),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${product.sku} • ${product.category}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF7B89A4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              _StatusBadge(
+                label: controller.formatCurrency(product.price),
+                color: const Color(0xFF163A72),
+              ),
+              _StatusBadge(label: '${product.stock} ชิ้น', color: accent),
+              _StatusBadge(
+                label: _productStatusLabel(product.status),
+                color: accent,
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          const Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _ActionButton(
+                icon: Icons.edit_rounded,
+                label: 'แก้ไข',
+                color: Color(0xFFEAF1FF),
+              ),
+              _ActionButton(
+                icon: Icons.tune_rounded,
+                label: 'สต๊อก',
+                color: Color(0xFFFFF1DA),
+              ),
+            ],
           ),
         ],
       ),
