@@ -40,10 +40,7 @@ class LoginAdminWebView extends GetView<LoginAdminWebController> {
                           ? Row(
                               crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
-                                const Expanded(
-                                  flex: 11,
-                                  child: _LeftPanel(),
-                                ),
+                                const Expanded(flex: 11, child: _LeftPanel()),
                                 const SizedBox(width: 28),
                                 Expanded(
                                   flex: 8,
@@ -184,18 +181,12 @@ class _LeftPanel extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _InfoChip(
-                icon: Icons.inventory_2_rounded,
-                label: 'จัดการสินค้า',
-              ),
+              _InfoChip(icon: Icons.inventory_2_rounded, label: 'จัดการสินค้า'),
               _InfoChip(
                 icon: Icons.receipt_long_rounded,
                 label: 'ดูคำสั่งซื้อ',
               ),
-              _InfoChip(
-                icon: Icons.analytics_rounded,
-                label: 'สรุปข้อมูลร้าน',
-              ),
+              _InfoChip(icon: Icons.analytics_rounded, label: 'สรุปข้อมูลร้าน'),
             ],
           ),
         ],
@@ -204,132 +195,167 @@ class _LeftPanel extends StatelessWidget {
   }
 }
 
-class _RightPanel extends StatelessWidget {
+class _RightPanel extends GetView<LoginAdminWebController> {
   const _RightPanel({required this.theme});
 
   final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(36),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF1E2A78).withValues(alpha: 0.15),
-            blurRadius: 28,
-            offset: const Offset(0, 16),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'เข้าสู่ระบบแอดมิน',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: const Color(0xFF1F2F78),
-              fontWeight: FontWeight.w800,
+    return Obx(
+      () => Container(
+        padding: const EdgeInsets.all(28),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(36),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF1E2A78).withValues(alpha: 0.15),
+              blurRadius: 28,
+              offset: const Offset(0, 16),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'กรอกอีเมลและรหัสผ่านเพื่อเข้าใช้งานระบบจัดการร้านค้า',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-              height: 1.5,
-            ),
-          ),
-          const SizedBox(height: 28),
-          Text(
-            'Email',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF22317C),
-            ),
-          ),
-          const SizedBox(height: 10),
-          TextField(
-            keyboardType: TextInputType.emailAddress,
-            decoration: InputDecoration(
-              hintText: 'admin@shoponline.com',
-              prefixIcon: const Icon(Icons.mail_outline_rounded),
-              filled: true,
-              fillColor: const Color(0xFFF8FAFF),
-            ),
-          ),
-          const SizedBox(height: 18),
-          Text(
-            'Password',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: const Color(0xFF22317C),
-            ),
-          ),
-          const SizedBox(height: 10),
-          const TextField(
-            obscureText: true,
-            decoration: InputDecoration(
-              hintText: 'กรอกรหัสผ่าน',
-              prefixIcon: Icon(Icons.lock_outline_rounded),
-              suffixIcon: Icon(Icons.visibility_off_rounded),
-              filled: true,
-              fillColor: Color(0xFFF8FAFF),
-            ),
-          ),
-          const SizedBox(height: 26),
-          SizedBox(
-            height: 58,
-            child: FilledButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.login_rounded),
-              label: const Text(
-                'Login',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-          const SizedBox(height: 14),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF6F8FF),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: theme.colorScheme.outlineVariant.withValues(alpha: 0.6),
-              ),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFE2E8FF),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.verified_user_rounded,
-                    color: Color(0xFF3147A8),
-                  ),
+          ],
+        ),
+        child: Form(
+          key: controller.formKey,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'เข้าสู่ระบบแอดมิน',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: const Color(0xFF1F2F78),
+                  fontWeight: FontWeight.w800,
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'รอบนี้เป็นงาน UI ก่อน ปุ่มยังไม่เชื่อม Firebase Auth',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      height: 1.45,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'กรอกอีเมลและรหัสผ่านเพื่อเข้าใช้งานระบบจัดการร้านค้า',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+              Text(
+                'Email',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF22317C),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: controller.emailController,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                validator: controller.validateEmail,
+                decoration: const InputDecoration(
+                  hintText: 'admin@shoponline.com',
+                  prefixIcon: Icon(Icons.mail_outline_rounded),
+                  filled: true,
+                  fillColor: Color(0xFFF8FAFF),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Password',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: const Color(0xFF22317C),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextFormField(
+                controller: controller.passwordController,
+                obscureText: controller.obscurePassword.value,
+                textInputAction: TextInputAction.done,
+                validator: controller.validatePassword,
+                onFieldSubmitted: (_) => controller.signInWithEmailPassword(),
+                decoration: InputDecoration(
+                  hintText: 'กรอกรหัสผ่าน',
+                  prefixIcon: const Icon(Icons.lock_outline_rounded),
+                  suffixIcon: IconButton(
+                    onPressed: controller.togglePasswordVisibility,
+                    icon: Icon(
+                      controller.obscurePassword.value
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
+                    ),
+                  ),
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFF),
+                ),
+              ),
+              const SizedBox(height: 26),
+              SizedBox(
+                height: 58,
+                child: FilledButton.icon(
+                  onPressed: controller.isLoading.value
+                      ? null
+                      : controller.signInWithEmailPassword,
+                  icon: controller.isLoading.value
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(Icons.login_rounded),
+                  label: Text(
+                    controller.isLoading.value ? 'Signing in...' : 'Login',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF6F8FF),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant.withValues(
+                      alpha: 0.6,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFFE2E8FF),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.verified_user_rounded,
+                        color: Color(0xFF3147A8),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'ตรวจสอบความว่าง รูปแบบอีเมล และรหัสผ่านขั้นต่ำ 6 ตัวอักษรก่อนเชื่อม Firebase Auth',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
