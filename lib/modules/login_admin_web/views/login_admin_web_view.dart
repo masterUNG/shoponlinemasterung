@@ -31,32 +31,35 @@ class LoginAdminWebView extends GetView<LoginAdminWebController> {
                   horizontal: isWide ? 40 : 20,
                   vertical: isWide ? 28 : 20,
                 ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 1240),
-                    child: isWide
-                        ? Row(
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              const Expanded(
-                                flex: 11,
-                                child: _LeftPanel(),
-                              ),
-                              const SizedBox(width: 28),
-                              Expanded(
-                                flex: 8,
-                                child: _RightPanel(theme: theme),
-                              ),
-                            ],
-                          )
-                        : Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              const _LeftPanel(),
-                              const SizedBox(height: 24),
-                              _RightPanel(theme: theme),
-                            ],
-                          ),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1240),
+                      child: isWide
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                const Expanded(
+                                  flex: 11,
+                                  child: _LeftPanel(),
+                                ),
+                                const SizedBox(width: 28),
+                                Expanded(
+                                  flex: 8,
+                                  child: _RightPanel(theme: theme),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                const _LeftPanel(),
+                                const SizedBox(height: 24),
+                                _RightPanel(theme: theme),
+                              ],
+                            ),
+                    ),
                   ),
                 ),
               );
