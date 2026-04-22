@@ -6,6 +6,8 @@ import '../../modules/login_admin_web/bindings/login_admin_web_binding.dart';
 import '../../modules/login_admin_web/views/login_admin_web_view.dart';
 import '../../modules/main_home/bindings/main_home_binding.dart';
 import '../../modules/main_home/views/main_home_view.dart';
+import '../../modules/main_home_web/bindings/main_home_web_binding.dart';
+import '../../modules/main_home_web/views/main_home_web_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -28,6 +30,11 @@ class AppPages {
       name: Routes.mainHome,
       page: MainHomeView.new,
       binding: MainHomeBinding(),
+    ),
+    GetPage<MainHomeWebView>(
+      name: Routes.mainHomeWeb,
+      page: MainHomeWebView.new,
+      binding: MainHomeWebBinding(),
     ),
   ];
 }
