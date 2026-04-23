@@ -58,7 +58,8 @@ class _DashboardSection extends StatelessWidget {
                       children: [
                         AdminProductsPanel(
                           controller: controller,
-                          products: controller.products.take(4).toList(),
+                          productsBuilder: () =>
+                              controller.products.take(4).toList(),
                           title: 'สินค้าล่าสุด',
                           subtitle: 'ดูสินค้า ปรับราคา และจัดการสถานะการขาย',
                           buttonLabel: 'ดูทั้งหมด',
@@ -96,7 +97,7 @@ class _DashboardSection extends StatelessWidget {
                 const SizedBox(height: 20),
                 AdminProductsPanel(
                   controller: controller,
-                  products: controller.products.take(4).toList(),
+                  productsBuilder: () => controller.products.take(4).toList(),
                   title: 'สินค้าล่าสุด',
                   subtitle: 'ดูสินค้า ปรับราคา และจัดการสถานะการขาย',
                   buttonLabel: 'ดูทั้งหมด',
@@ -138,7 +139,7 @@ class _ProductsSection extends StatelessWidget {
         const SizedBox(height: 20),
         AdminProductsPanel(
           controller: controller,
-          products: controller.products,
+          productsBuilder: () => controller.products,
           title: 'รายการสินค้าทั้งหมด',
           subtitle: 'ตัวอย่างข้อมูลจาก model Product ที่พร้อมต่อ backend',
           buttonLabel: 'Export',
@@ -178,7 +179,7 @@ class _StockSection extends StatelessWidget {
                     flex: 6,
                     child: AdminProductsPanel(
                       controller: controller,
-                      products: controller.lowStockProducts,
+                      productsBuilder: () => controller.lowStockProducts,
                       title: 'สินค้าใกล้หมด',
                       subtitle: 'รายการที่ควรเติมของก่อนเพื่อไม่ให้เสียยอดขาย',
                       buttonLabel: 'เติมสต๊อก',
@@ -197,7 +198,7 @@ class _StockSection extends StatelessWidget {
               children: [
                 AdminProductsPanel(
                   controller: controller,
-                  products: controller.lowStockProducts,
+                  productsBuilder: () => controller.lowStockProducts,
                   title: 'สินค้าใกล้หมด',
                   subtitle: 'รายการที่ควรเติมของก่อนเพื่อไม่ให้เสียยอดขาย',
                   buttonLabel: 'เติมสต๊อก',
@@ -475,7 +476,7 @@ class _StatsSection extends StatelessWidget {
 class AdminProductsPanel extends StatelessWidget {
   const AdminProductsPanel({
     required this.controller,
-    required this.products,
+    required this.productsBuilder,
     required this.title,
     required this.subtitle,
     required this.buttonLabel,
@@ -483,7 +484,7 @@ class AdminProductsPanel extends StatelessWidget {
   });
 
   final MainHomeWebController controller;
-  final List<AdminProductModel> products;
+  final List<AdminProductModel> Function() productsBuilder;
   final String title;
   final String subtitle;
   final String buttonLabel;
@@ -492,11 +493,13 @@ class AdminProductsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return Obx(
-      () => LayoutBuilder(
+    return Obx(() {
+      final bool isLoading = controller.isProductsLoading.value;
+      final List<AdminProductModel> currentProducts = productsBuilder();
+
+      return LayoutBuilder(
         builder: (context, constraints) {
           final bool compact = constraints.maxWidth < 940;
-          final List<AdminProductModel> currentProducts = products;
 
           return AdminPanelShell(
             title: title,
@@ -512,7 +515,7 @@ class AdminProductsPanel extends StatelessWidget {
             ),
             child: Column(
               children: [
-                if (controller.isProductsLoading.value)
+                if (isLoading)
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 32),
                     child: Center(child: CircularProgressIndicator()),
@@ -559,8 +562,8 @@ class AdminProductsPanel extends StatelessWidget {
             ),
           );
         },
-      ),
-    );
+      );
+    });
   }
 }
 
