@@ -1,7 +1,11 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shoponlinemasterung/model/product_model.dart';
 
 import '../controllers/main_home_web_controller.dart';
 import '../models/admin_order_model.dart';
@@ -488,64 +492,127 @@ class AdminProductsPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final bool compact = constraints.maxWidth < 940;
+    return Obx(
+      () => LayoutBuilder(
+        builder: (context, constraints) {
+          final bool compact = constraints.maxWidth < 940;
+          final List<AdminProductModel> currentProducts = products;
 
-        return AdminPanelShell(
-          title: title,
-          subtitle: subtitle,
-          trailing: FilledButton.icon(
-            onPressed: () {},
-            style: FilledButton.styleFrom(
-              backgroundColor: const Color(0xFF163A72),
-              foregroundColor: Colors.white,
+          return AdminPanelShell(
+            title: title,
+            subtitle: subtitle,
+            trailing: FilledButton.icon(
+              onPressed: () {},
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF163A72),
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(Icons.tune_rounded),
+              label: Text(buttonLabel),
             ),
-            icon: const Icon(Icons.tune_rounded),
-            label: Text(buttonLabel),
-          ),
-          child: Column(
-            children: [
-              if (compact)
-                ...products.map(
-                  (product) => _ProductCompactCard(
-                    controller: controller,
-                    product: product,
-                  ),
-                )
-              else ...[
-                const _HeaderRow(
-                  labels: ['สินค้า', 'ราคา', 'สต๊อก', 'สถานะ', 'จัดการ'],
-                ),
-                const Divider(height: 1),
-                ...products.map(
-                  (product) =>
-                      _ProductRow(controller: controller, product: product),
-                ),
-              ],
-              const SizedBox(height: 18),
-              Wrap(
-                alignment: WrapAlignment.spaceBetween,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 12,
-                runSpacing: 8,
-                children: [
-                  Text(
-                    'ทั้งหมด ${products.length} รายการ',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF6B7A95),
+            child: Column(
+              children: [
+                if (controller.isProductsLoading.value)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 32),
+                    child: Center(child: CircularProgressIndicator()),
+                  )
+                else if (currentProducts.isEmpty)
+                  _EmptyProductsState(theme: theme)
+                else if (compact)
+                  ...currentProducts.map(
+                    (product) => _ProductCompactCard(
+                      controller: controller,
+                      product: product,
                     ),
+                  )
+                else ...[
+                  const _HeaderRow(
+                    labels: ['สินค้า', 'ราคา', 'สต๊อก', 'สถานะ', 'จัดการ'],
                   ),
-                  TextButton(
-                    onPressed: () {},
-                    child: const Text('จัดการสินค้า'),
+                  const Divider(height: 1),
+                  ...currentProducts.map(
+                    (product) =>
+                        _ProductRow(controller: controller, product: product),
                   ),
                 ],
-              ),
-            ],
+                const SizedBox(height: 18),
+                Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
+                  children: [
+                    Text(
+                      'ทั้งหมด ${currentProducts.length} รายการ',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF6B7A95),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text('จัดการสินค้า'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _EmptyProductsState extends StatelessWidget {
+  const _EmptyProductsState({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFDDE6F2)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFFEAF1FF),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.inventory_2_outlined,
+              color: Color(0xFF163A72),
+              size: 32,
+            ),
           ),
-        );
-      },
+          const SizedBox(height: 14),
+          Text(
+            'ยังไม่มีสินค้าในระบบ',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: const Color(0xFF163A72),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'เพิ่มสินค้าใหม่จาก dialog แล้วรายการจะถูกดึงจาก Firestore collection product มาแสดงที่หน้านี้ทันที',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF6B7A95),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1595,6 +1662,8 @@ class _AddProductDialog extends StatefulWidget {
 }
 
 class _AddProductDialogState extends State<_AddProductDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final ImagePicker _imagePicker = ImagePicker();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
@@ -1605,6 +1674,9 @@ class _AddProductDialogState extends State<_AddProductDialog> {
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
   bool _isPickingImage = false;
+  bool _isSaving = false;
+  bool _submitted = false;
+  String? _imageErrorText;
 
   @override
   void dispose() {
@@ -1639,6 +1711,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
       setState(() {
         _selectedImageBytes = bytes;
         _selectedImageName = pickedFile.name;
+        _imageErrorText = null;
       });
     } catch (_) {
       if (!mounted) {
@@ -1655,6 +1728,58 @@ class _AddProductDialogState extends State<_AddProductDialog> {
     }
   }
 
+  Future<void> _validateAndSubmit() async {
+    setState(() {
+      _submitted = true;
+      _imageErrorText = _selectedImageBytes == null
+          ? 'กรุณาเลือกรูปสินค้า'
+          : null;
+    });
+
+    final bool isFormValid = _formKey.currentState?.validate() ?? false;
+    final bool hasImage = _selectedImageBytes != null;
+    if (!isFormValid || !hasImage) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      final ProductModel product = ProductModel(
+        name: _nameController.text.trim(),
+        description: _descriptionController.text.trim(),
+        base64Image: base64Encode(_selectedImageBytes!),
+        unit: _unitController.text.trim(),
+        price: num.parse(_priceController.text.trim()),
+        stock: num.parse(_stockController.text.trim()),
+        timestamp: Timestamp.now(),
+      );
+
+      await _firestore.collection('product').add(product.toMap());
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('บันทึกสินค้าเรียบร้อย')));
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('บันทึกสินค้าไม่สำเร็จ กรุณาลองใหม่')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -1664,101 +1789,120 @@ class _AddProductDialogState extends State<_AddProductDialog> {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 760),
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 52,
-                    height: 52,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF1FF),
-                      borderRadius: BorderRadius.circular(18),
+        child: Form(
+          key: _formKey,
+          autovalidateMode: _submitted
+              ? AutovalidateMode.always
+              : AutovalidateMode.disabled,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF1FF),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: const Icon(
+                        Icons.add_business_rounded,
+                        color: Color(0xFF163A72),
+                      ),
                     ),
-                    child: const Icon(
-                      Icons.add_business_rounded,
-                      color: Color(0xFF163A72),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'เพิ่มสินค้าใหม่',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              color: const Color(0xFF163A72),
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'เตรียม UI สำหรับเลือกรูปภาพและกรอกข้อมูลสินค้า ก่อนเชื่อมต่อ Firebase จริง',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF6B7A95),
+                              height: 1.45,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
+                    IconButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      icon: const Icon(Icons.close_rounded),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bool stacked = constraints.maxWidth < 640;
+
+                    final imageSection = _buildImageSection(theme);
+                    final formSection = _buildFormSection(theme);
+
+                    if (stacked) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          imageSection,
+                          const SizedBox(height: 20),
+                          formSection,
+                        ],
+                      );
+                    }
+
+                    return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'เพิ่มสินค้าใหม่',
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: const Color(0xFF163A72),
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'เตรียม UI สำหรับเลือกรูปภาพและกรอกข้อมูลสินค้า ก่อนเชื่อมต่อ Firebase จริง',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: const Color(0xFF6B7A95),
-                            height: 1.45,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close_rounded),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final bool stacked = constraints.maxWidth < 640;
-
-                  final imageSection = _buildImageSection(theme);
-                  final formSection = _buildFormSection(theme);
-
-                  if (stacked) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        imageSection,
-                        const SizedBox(height: 20),
-                        formSection,
+                        Expanded(flex: 4, child: imageSection),
+                        const SizedBox(width: 20),
+                        Expanded(flex: 5, child: formSection),
                       ],
                     );
-                  }
-
-                  return Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 4, child: imageSection),
-                      const SizedBox(width: 20),
-                      Expanded(flex: 5, child: formSection),
-                    ],
-                  );
-                },
-              ),
-              const SizedBox(height: 24),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('ยกเลิก'),
-                  ),
-                  const SizedBox(width: 12),
-                  FilledButton.icon(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.save_outlined),
-                    label: const Text('บันทึกสินค้า'),
-                  ),
-                ],
-              ),
-            ],
+                  },
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: _isSaving
+                          ? null
+                          : () => Navigator.of(context).pop(),
+                      child: const Text('ยกเลิก'),
+                    ),
+                    const SizedBox(width: 12),
+                    FilledButton.icon(
+                      onPressed: _isSaving ? null : _validateAndSubmit,
+                      icon: _isSaving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.save_outlined),
+                      label: Text(
+                        _isSaving ? 'กำลังบันทึก...' : 'บันทึกสินค้า',
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -1771,7 +1915,11 @@ class _AddProductDialogState extends State<_AddProductDialog> {
       decoration: BoxDecoration(
         color: const Color(0xFFF8FAFD),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFDDE6F2)),
+        border: Border.all(
+          color: _imageErrorText == null
+              ? const Color(0xFFDDE6F2)
+              : theme.colorScheme.error,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1839,6 +1987,16 @@ class _AddProductDialogState extends State<_AddProductDialog> {
               ),
             ),
           ],
+          if (_imageErrorText != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              _imageErrorText!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1897,6 +2055,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
           label: 'ชื่อสินค้า',
           hintText: 'เช่น เสื้อยืดคอกลม',
           prefixIcon: Icons.inventory_2_outlined,
+          validator: _requiredValidator('กรุณากรอกชื่อสินค้า'),
         ),
         const SizedBox(height: 16),
         _buildTextField(
@@ -1905,6 +2064,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
           hintText: 'อธิบายจุดเด่นของสินค้า วัสดุ หรือขนาด',
           prefixIcon: Icons.notes_rounded,
           maxLines: 4,
+          validator: _requiredValidator('กรุณากรอกรายละเอียดสินค้า'),
         ),
         const SizedBox(height: 16),
         Row(
@@ -1918,6 +2078,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
+                validator: _priceValidator,
               ),
             ),
             const SizedBox(width: 12),
@@ -1927,6 +2088,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
                 label: 'หน่วย',
                 hintText: 'ชิ้น / กล่อง / แพ็ก',
                 prefixIcon: Icons.straighten_outlined,
+                validator: _requiredValidator('กรุณากรอกหน่วย'),
               ),
             ),
           ],
@@ -1938,9 +2100,50 @@ class _AddProductDialogState extends State<_AddProductDialog> {
           hintText: '0',
           prefixIcon: Icons.warehouse_outlined,
           keyboardType: TextInputType.number,
+          validator: _stockValidator,
         ),
       ],
     );
+  }
+
+  String? Function(String?) _requiredValidator(String message) {
+    return (value) {
+      if (value == null || value.trim().isEmpty) {
+        return message;
+      }
+
+      return null;
+    };
+  }
+
+  String? _priceValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'กรุณากรอกราคา';
+    }
+
+    final double? price = double.tryParse(value.trim());
+    if (price == null) {
+      return 'กรุณากรอกราคาเป็นตัวเลข';
+    }
+
+    if (price <= 0) {
+      return 'ราคาต้องมากกว่า 0';
+    }
+
+    return null;
+  }
+
+  String? _stockValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'กรุณากรอกจำนวนสต๊อก';
+    }
+
+    final int? stock = int.tryParse(value.trim());
+    if (stock == null) {
+      return 'สต๊อกต้องเป็นจำนวนเต็มเท่านั้น';
+    }
+
+    return null;
   }
 
   Widget _buildTextField({
@@ -1950,11 +2153,13 @@ class _AddProductDialogState extends State<_AddProductDialog> {
     required IconData prefixIcon,
     TextInputType? keyboardType,
     int maxLines = 1,
+    String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       maxLines: maxLines,
+      validator: validator,
       decoration: InputDecoration(
         labelText: label,
         hintText: hintText,

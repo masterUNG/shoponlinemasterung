@@ -1,6 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:shoponlinemasterung/model/product_model.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../models/admin_order_model.dart';
@@ -37,62 +39,12 @@ extension MainHomeWebSectionX on MainHomeWebSection {
 }
 
 class MainHomeWebController extends GetxController {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final Rx<MainHomeWebSection> selectedSection =
       MainHomeWebSection.dashboard.obs;
-
-  final List<AdminProductModel> _products = <AdminProductModel>[
-    AdminProductModel(
-      id: 'P001',
-      name: 'เสื้อยืด Oversize สีขาว',
-      sku: 'SKU-TSH-001',
-      category: 'Apparel',
-      price: 390,
-      stock: 3,
-      status: AdminProductStatus.lowStock,
-      updatedAt: DateTime(2026, 4, 22),
-    ),
-    AdminProductModel(
-      id: 'P002',
-      name: 'แก้วเก็บความเย็น 890ml',
-      sku: 'SKU-CUP-014',
-      category: 'Lifestyle',
-      price: 259,
-      stock: 15,
-      status: AdminProductStatus.active,
-      updatedAt: DateTime(2026, 4, 21),
-    ),
-    AdminProductModel(
-      id: 'P003',
-      name: 'กระเป๋าผ้า Canvas',
-      sku: 'SKU-BAG-021',
-      category: 'Accessories',
-      price: 490,
-      stock: 7,
-      status: AdminProductStatus.active,
-      updatedAt: DateTime(2026, 4, 20),
-    ),
-    AdminProductModel(
-      id: 'P004',
-      name: 'หมวกแก๊ปสีกรม',
-      sku: 'SKU-CAP-102',
-      category: 'Apparel',
-      price: 320,
-      stock: 0,
-      status: AdminProductStatus.outOfStock,
-      updatedAt: DateTime(2026, 4, 18),
-    ),
-    AdminProductModel(
-      id: 'P005',
-      name: 'สเปรย์น้ำหอมในรถ',
-      sku: 'SKU-CAR-030',
-      category: 'Home',
-      price: 149,
-      stock: 24,
-      status: AdminProductStatus.active,
-      updatedAt: DateTime(2026, 4, 19),
-    ),
-  ];
+  final RxList<AdminProductModel> _products = <AdminProductModel>[].obs;
+  final RxBool isProductsLoading = true.obs;
 
   final List<AdminOrderModel> _orders = <AdminOrderModel>[
     AdminOrderModel(
@@ -133,6 +85,12 @@ class MainHomeWebController extends GetxController {
     ),
   ];
 
+  @override
+  void onInit() {
+    super.onInit();
+    _products.bindStream(_productStream());
+  }
+
   User? get currentUser => _firebaseAuth.currentUser;
   List<AdminProductModel> get products =>
       List<AdminProductModel>.unmodifiable(_products);
@@ -153,7 +111,7 @@ class MainHomeWebController extends GetxController {
       .where((order) => order.status != AdminOrderStatus.completed)
       .length;
   String get todaySalesLabel => formatCurrency(
-    _orders.fold<double>(0, (sum, order) => sum + order.total),
+    _orders.fold<double>(0, (totalAmount, order) => totalAmount + order.total),
   );
   String get totalProductsLabel => '$totalProducts';
   String get newOrdersLabel => '$newOrdersCount';
@@ -192,5 +150,54 @@ class MainHomeWebController extends GetxController {
 
   String formatOrderCount(int count) {
     return '$count รายการ';
+  }
+
+  Stream<List<AdminProductModel>> _productStream() {
+    return _firestore
+        .collection('product')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) {
+          isProductsLoading.value = false;
+          return snapshot.docs.map(_mapProductDocument).toList();
+        });
+  }
+
+  AdminProductModel _mapProductDocument(
+    QueryDocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
+    final ProductModel product = ProductModel.fromMap(doc.data());
+    final int stock = product.stock.toInt();
+
+    return AdminProductModel(
+      id: doc.id,
+      name: product.name,
+      sku: _buildSku(doc.id),
+      category: 'General',
+      price: product.price.toDouble(),
+      stock: stock,
+      status: _statusFromStock(stock),
+      updatedAt: product.timestamp.toDate(),
+    );
+  }
+
+  String _buildSku(String docId) {
+    final String normalized = docId.replaceAll('-', '').toUpperCase();
+    final String suffix = normalized.length > 8
+        ? normalized.substring(0, 8)
+        : normalized;
+    return 'SKU-$suffix';
+  }
+
+  AdminProductStatus _statusFromStock(int stock) {
+    if (stock <= 0) {
+      return AdminProductStatus.outOfStock;
+    }
+
+    if (stock <= 5) {
+      return AdminProductStatus.lowStock;
+    }
+
+    return AdminProductStatus.active;
   }
 }
