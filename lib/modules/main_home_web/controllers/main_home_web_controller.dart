@@ -178,6 +178,7 @@ class MainHomeWebController extends GetxController {
       stock: stock,
       status: _statusFromStock(stock),
       updatedAt: product.timestamp.toDate(),
+      imageBytes: product.imageBytes,
     );
   }
 

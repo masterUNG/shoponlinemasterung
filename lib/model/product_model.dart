@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ProductModel {
@@ -18,6 +21,21 @@ class ProductModel {
   final num price;
   final num stock;
   final Timestamp timestamp;
+
+  Uint8List? get imageBytes {
+    if (base64Image.trim().isEmpty) {
+      return null;
+    }
+
+    try {
+      final String normalized = base64Image.contains(',')
+          ? base64Image.split(',').last
+          : base64Image;
+      return base64Decode(normalized);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 enum AdminProductStatus { active, lowStock, outOfStock, hidden }
 
 class AdminProductModel {
@@ -10,6 +12,7 @@ class AdminProductModel {
     required this.stock,
     required this.status,
     required this.updatedAt,
+    this.imageBytes,
   });
 
   final String id;
@@ -20,6 +23,7 @@ class AdminProductModel {
   final int stock;
   final AdminProductStatus status;
   final DateTime updatedAt;
+  final Uint8List? imageBytes;
 
   bool get isLowStock => stock > 0 && stock <= 5;
   bool get isSellable =>

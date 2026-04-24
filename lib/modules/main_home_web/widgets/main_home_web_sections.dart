@@ -1044,7 +1044,8 @@ class _ProductRow extends StatelessWidget {
                     color: surface,
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: Icon(_productIcon(product), color: accent),
+                  clipBehavior: Clip.antiAlias,
+                  child: _ProductImage(product: product, accent: accent),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1155,7 +1156,8 @@ class _ProductCompactCard extends StatelessWidget {
                   color: surface,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(_productIcon(product), color: accent),
+                clipBehavior: Clip.antiAlias,
+                child: _ProductImage(product: product, accent: accent),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1576,6 +1578,29 @@ class _ActionButton extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProductImage extends StatelessWidget {
+  const _ProductImage({required this.product, required this.accent});
+
+  final AdminProductModel product;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final Uint8List? imageBytes = product.imageBytes;
+
+    if (imageBytes == null) {
+      return Icon(_productIcon(product), color: accent);
+    }
+
+    return Image.memory(
+      imageBytes,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) =>
+          Icon(_productIcon(product), color: accent),
     );
   }
 }
