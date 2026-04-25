@@ -1,30 +1,30 @@
-// This is a basic Flutter widget test.
-//
-// To perform an interaction with a widget in your test, use the WidgetTester
-// utility in the flutter_test package. For example, you can send tap and scroll
-// gestures. You can also use WidgetTester to find child widgets in the widget
-// tree, read text, and verify that the values of widget properties are correct.
+import 'dart:convert';
 
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
-
-import 'package:shoponlinemasterung/main.dart';
+import 'package:shoponlinemasterung/model/product_model.dart';
 
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+  test('ProductModel maps Firestore product data and decodes image bytes', () {
+    final Timestamp timestamp = Timestamp.fromDate(DateTime(2026, 4, 25));
+    final String base64Image = base64Encode(<int>[1, 2, 3, 4]);
 
-    // Verify that our counter starts at 0.
-    expect(find.text('0'), findsOneWidget);
-    expect(find.text('1'), findsNothing);
+    final ProductModel product = ProductModel.fromMap(<String, dynamic>{
+      'name': 'Orange',
+      'description': 'Fresh orange',
+      'base64Image': 'data:image/png;base64,$base64Image',
+      'unit': 'kg',
+      'price': 120,
+      'stock': 8,
+      'timestamp': timestamp,
+    });
 
-    // Tap the '+' icon and trigger a frame.
-    await tester.tap(find.byIcon(Icons.add));
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
+    expect(product.name, 'Orange');
+    expect(product.description, 'Fresh orange');
+    expect(product.unit, 'kg');
+    expect(product.price, 120);
+    expect(product.stock, 8);
+    expect(product.timestamp, timestamp);
+    expect(product.imageBytes, <int>[1, 2, 3, 4]);
   });
 }
