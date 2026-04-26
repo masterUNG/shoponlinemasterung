@@ -8,6 +8,426 @@ class CartView extends GetView<CartController> {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(body: Center(child: Text('cart')));
+    return ColoredBox(
+      color: const Color(0xFFF5F7FF),
+      child: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            _CartHeader(),
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: controller.refreshCart,
+                child: Obx(() {
+                  if (controller.isLoading.value) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (controller.errorMessage.value.isNotEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: MediaQuery.sizeOf(context).height / 5),
+                        _CartState(
+                          icon: Icons.wifi_off_rounded,
+                          title: controller.errorMessage.value,
+                          subtitle: 'ดึงลงเพื่อโหลดข้อมูลใหม่อีกครั้ง',
+                        ),
+                      ],
+                    );
+                  }
+
+                  if (controller.cartItems.isEmpty) {
+                    return ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        const SizedBox(height: 130),
+                        const _CartState(
+                          icon: Icons.shopping_cart_outlined,
+                          title: 'ตะกร้ายังว่าง',
+                          subtitle:
+                              'เพิ่มสินค้าจากหน้า Mall แล้วกลับมาดูที่นี่',
+                        ),
+                      ],
+                    );
+                  }
+
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 18),
+                    itemBuilder: (context, index) {
+                      return _CartItemTile(item: controller.cartItems[index]);
+                    },
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
+                    itemCount: controller.cartItems.length,
+                  );
+                }),
+              ),
+            ),
+            Obx(
+              () => _CartSummary(
+                totalItems: controller.totalQuantity,
+                totalAmount: controller.formatCurrency(controller.totalAmount),
+                enabled: controller.cartItems.isNotEmpty,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CartHeader extends GetView<CartController> {
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: const Color(0xFF172B7A),
+          borderRadius: BorderRadius.circular(26),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 54,
+              height: 54,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.14),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: const Icon(
+                Icons.shopping_cart_rounded,
+                color: Colors.white,
+                size: 30,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Cart',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Obx(
+                    () => Text(
+                      '${controller.totalQuantity} รายการในตะกร้า',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFFDCE5FF),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CartItemTile extends GetView<CartController> {
+  const _CartItemTile({required this.item});
+
+  final CartItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final imageBytes = item.imageBytes;
+
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: SizedBox(
+                width: 92,
+                height: 92,
+                child: imageBytes == null
+                    ? Container(
+                        color: const Color(0xFFE8ECFA),
+                        child: const Icon(
+                          Icons.image_not_supported_rounded,
+                          color: Color(0xFF7D87A8),
+                          size: 34,
+                        ),
+                      )
+                    : Image.memory(imageBytes, fit: BoxFit.cover),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: const Color(0xFF17224D),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    item.description.trim().isEmpty
+                        ? 'ไม่มีรายละเอียดสินค้า'
+                        : item.description.trim(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      height: 1.35,
+                      color: const Color(0xFF687191),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '${controller.formatCurrency(item.price)}/${item.unit}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: const Color(0xFF25388F),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _QuantityButton(
+                        icon: Icons.remove_rounded,
+                        tooltip: 'ลดจำนวน',
+                        onPressed: () => _handleDecrease(context),
+                      ),
+                      SizedBox(
+                        width: 48,
+                        child: Text(
+                          '${item.quantity}',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: const Color(0xFF17224D),
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      _QuantityButton(
+                        icon: Icons.add_rounded,
+                        tooltip: 'เพิ่มจำนวน',
+                        onPressed: item.quantity >= item.stock.toInt()
+                            ? null
+                            : () => controller.incrementQuantity(item),
+                      ),
+                      const Spacer(),
+                      Text(
+                        controller.formatCurrency(item.totalPrice),
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: const Color(0xFF17224D),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _handleDecrease(BuildContext context) async {
+    if (item.quantity > 1) {
+      await controller.decrementQuantity(item);
+      return;
+    }
+
+    final bool? shouldDelete = await Get.dialog<bool>(
+      AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('ลบสินค้าออกจากตะกร้า?'),
+        content: Text(
+          'ต้องการลบ ${item.name} จากตะกร้าไหม?',
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('ไม่ลบ'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('ลบสินค้า'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldDelete == true) {
+      await controller.deleteItem(item);
+    } else {
+      await controller.setQuantityToOne(item);
+    }
+  }
+}
+
+class _QuantityButton extends StatelessWidget {
+  const _QuantityButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: 38,
+      child: IconButton.filledTonal(
+        visualDensity: VisualDensity.compact,
+        onPressed: onPressed,
+        icon: Icon(icon),
+        tooltip: tooltip,
+      ),
+    );
+  }
+}
+
+class _CartSummary extends StatelessWidget {
+  const _CartSummary({
+    required this.totalItems,
+    required this.totalAmount,
+    required this.enabled,
+  });
+
+  final int totalItems;
+  final String totalAmount;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 18,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'รวม $totalItems รายการ',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: const Color(0xFF687191),
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    totalAmount,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      color: const Color(0xFF17224D),
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            FilledButton.icon(
+              onPressed: enabled ? () {} : null,
+              icon: const Icon(Icons.receipt_long_rounded),
+              label: const Text('Order สินค้า'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CartState extends StatelessWidget {
+  const _CartState({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 58, color: const Color(0xFF7D87A8)),
+            const SizedBox(height: 14),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: const Color(0xFF17224D),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: const Color(0xFF687191),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
