@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shoponlinemasterung/model/order_model.dart';
 import 'package:shoponlinemasterung/model/product_model.dart';
 
 import '../controllers/main_home_web_controller.dart';
@@ -67,9 +68,10 @@ class _DashboardSection extends StatelessWidget {
                         const SizedBox(height: 20),
                         AdminOrdersPanel(
                           controller: controller,
-                          orders: controller.orders.take(3).toList(),
+                          ordersBuilder: () =>
+                              controller.orders.take(3).toList(),
                           title: 'รายการสั่งซื้อล่าสุด',
-                          subtitle: 'ติดตามสถานะออเดอร์และคิวจัดส่งของวันนี้',
+                          subtitle: 'ติดตามสถานะออเดอร์รับที่ร้านของวันนี้',
                         ),
                       ],
                     ),
@@ -105,9 +107,9 @@ class _DashboardSection extends StatelessWidget {
                 const SizedBox(height: 20),
                 AdminOrdersPanel(
                   controller: controller,
-                  orders: controller.orders.take(3).toList(),
+                  ordersBuilder: () => controller.orders.take(3).toList(),
                   title: 'รายการสั่งซื้อล่าสุด',
-                  subtitle: 'ติดตามสถานะออเดอร์และคิวจัดส่งของวันนี้',
+                  subtitle: 'ติดตามสถานะออเดอร์รับที่ร้านของวันนี้',
                 ),
               ],
             );
@@ -226,7 +228,7 @@ class _OrdersSection extends StatelessWidget {
         const _SectionIntroCard(
           title: 'จัดการรายการสั่งซื้อ',
           subtitle:
-              'ใช้ติดตามออเดอร์รอชำระ รอแพ็ก และจัดส่งแล้ว ก่อนต่อระบบอัปเดตสถานะจริงจาก backend',
+              'ใช้ติดตามออเดอร์รับที่ร้าน ตั้งแต่รอร้านรับ กำลังเตรียม พร้อมรับ ไปจนถึงสำเร็จหรือยกเลิก',
           actionLabel: 'ดูออเดอร์ใหม่',
           icon: Icons.receipt_long_rounded,
           accent: Color(0xFFE9FBF2),
@@ -234,9 +236,9 @@ class _OrdersSection extends StatelessWidget {
         const SizedBox(height: 20),
         AdminOrdersPanel(
           controller: controller,
-          orders: controller.orders,
+          ordersBuilder: () => controller.orders,
           title: 'รายการสั่งซื้อทั้งหมด',
-          subtitle: 'ตัวอย่างข้อมูลจาก model Order ที่พร้อมเชื่อมกับฐานข้อมูล',
+          subtitle: 'ข้อมูลจริงจาก Firestore collection orders',
         ),
       ],
     );
@@ -299,7 +301,7 @@ class _HeroSection extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'โครงนี้ตอนนี้ใช้ model จริงของ Product และ Order ใน controller แล้ว ทำให้ต่อ Firestore หรือ API ภายหลังได้ตรงจุดกว่าเดิม',
+                'โครงนี้ใช้ Product และ Order จาก Firestore แล้ว ทำให้จัดการสินค้าและออเดอร์ได้จากฐานข้อมูลเดียวกัน',
                 style: theme.textTheme.bodyLarge?.copyWith(
                   color: Colors.white.withValues(alpha: 0.86),
                   height: 1.6,
@@ -320,7 +322,7 @@ class _HeroSection extends StatelessWidget {
                   ),
                   _HighlightChip(
                     icon: Icons.local_shipping_rounded,
-                    label: 'ติดตามออเดอร์ได้ง่าย',
+                    label: 'ติดตามออเดอร์รับที่ร้าน',
                   ),
                 ],
               ),
@@ -387,7 +389,7 @@ class _HeroFocusCard extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           _TaskTile(
-            title: 'เช็กออเดอร์รอจัดส่ง',
+            title: 'เช็กออเดอร์รับที่ร้าน',
             subtitle:
                 'มี ${controller.openOrders.length} รายการที่ยังต้องติดตาม',
             color: const Color(0xFFFFF2D9),
@@ -623,14 +625,14 @@ class _EmptyProductsState extends StatelessWidget {
 class AdminOrdersPanel extends StatelessWidget {
   const AdminOrdersPanel({
     required this.controller,
-    required this.orders,
+    required this.ordersBuilder,
     required this.title,
     required this.subtitle,
     super.key,
   });
 
   final MainHomeWebController controller;
-  final List<AdminOrderModel> orders;
+  final List<AdminOrderModel> Function() ordersBuilder;
   final String title;
   final String subtitle;
 
@@ -638,28 +640,94 @@ class AdminOrdersPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return AdminPanelShell(
-      title: title,
-      subtitle: subtitle,
-      trailing: OutlinedButton.icon(
-        onPressed: () {},
-        icon: const Icon(Icons.visibility_rounded),
-        label: const Text('ดูทั้งหมด'),
+    return Obx(() {
+      final bool isLoading = controller.isOrdersLoading.value;
+      final List<AdminOrderModel> currentOrders = ordersBuilder();
+
+      return AdminPanelShell(
+        title: title,
+        subtitle: subtitle,
+        trailing: OutlinedButton.icon(
+          onPressed: () {},
+          icon: const Icon(Icons.visibility_rounded),
+          label: const Text('ดูทั้งหมด'),
+        ),
+        child: Column(
+          children: [
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 32),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else if (currentOrders.isEmpty)
+              _EmptyOrdersState(theme: theme)
+            else
+              ...currentOrders.map(
+                (order) => _OrderCard(controller: controller, order: order),
+              ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Flow: pending -> accepted -> preparing -> ready -> completed หรือ cancelled',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF6B7A95),
+                  height: 1.5,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+}
+
+class _EmptyOrdersState extends StatelessWidget {
+  const _EmptyOrdersState({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFDDE6F2)),
       ),
       child: Column(
         children: [
-          ...orders.map(
-            (order) => _OrderCard(controller: controller, order: order),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE9FBF2),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: const Icon(
+              Icons.receipt_long_outlined,
+              color: Color(0xFF16805A),
+              size: 32,
+            ),
           ),
-          const SizedBox(height: 16),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'แนะนำ: ใช้สีสถานะแยก รอชำระเงิน, กำลังแพ็ก, จัดส่งแล้ว เพื่อให้แอดมินสแกนข้อมูลได้เร็ว',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF6B7A95),
-                height: 1.5,
-              ),
+          const SizedBox(height: 14),
+          Text(
+            'ยังไม่มีออเดอร์ในระบบ',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: const Color(0xFF163A72),
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'เมื่อลูกค้ากด Order สินค้า รายการจาก collection orders จะแสดงที่นี่ทันที',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF6B7A95),
+              height: 1.5,
             ),
           ),
         ],
@@ -1264,7 +1332,7 @@ class _OrderCard extends StatelessWidget {
                   crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Text(
-                      '#${order.id}',
+                      order.orderNo,
                       style: theme.textTheme.titleSmall?.copyWith(
                         color: const Color(0xFF163A72),
                         fontWeight: FontWeight.w800,
@@ -1291,7 +1359,419 @@ class _OrderCard extends StatelessWidget {
                     height: 1.5,
                   ),
                 ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => _showOrderDetailDialog(
+                    context,
+                    controller: controller,
+                    order: order,
+                  ),
+                  icon: const Icon(Icons.info_outline_rounded, size: 18),
+                  label: const Text('รายละเอียด'),
+                ),
+                const SizedBox(height: 10),
+                _OrderActionRow(controller: controller, order: order),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderActionRow extends StatelessWidget {
+  const _OrderActionRow({required this.controller, required this.order});
+
+  final MainHomeWebController controller;
+  final AdminOrderModel order;
+
+  @override
+  Widget build(BuildContext context) {
+    final List<AdminOrderStatus> nextStatuses = controller.nextOrderStatuses(
+      order.status,
+    );
+
+    if (nextStatuses.isEmpty) {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: _StatusBadge(
+          label: order.status == AdminOrderStatus.completed
+              ? 'ปิดออเดอร์แล้ว'
+              : 'ออเดอร์ถูกยกเลิก',
+          color: _orderColor(order.status),
+        ),
+      );
+    }
+
+    return Obx(() {
+      final bool isUpdating = controller.updatingOrderId.value == order.id;
+      final bool anotherOrderIsUpdating =
+          controller.updatingOrderId.value.isNotEmpty && !isUpdating;
+
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: nextStatuses.map((status) {
+          final bool isCancel = status == AdminOrderStatus.cancelled;
+          return isCancel
+              ? OutlinedButton.icon(
+                  onPressed: isUpdating || anotherOrderIsUpdating
+                      ? null
+                      : () => controller.updateOrderStatus(
+                          order: order,
+                          status: status,
+                        ),
+                  icon: isUpdating
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(_orderIcon(status), size: 18),
+                  label: Text(_orderActionLabel(status)),
+                )
+              : FilledButton.icon(
+                  onPressed: isUpdating || anotherOrderIsUpdating
+                      ? null
+                      : () => controller.updateOrderStatus(
+                          order: order,
+                          status: status,
+                        ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _orderColor(status),
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: isUpdating
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : Icon(_orderIcon(status), size: 18),
+                  label: Text(_orderActionLabel(status)),
+                );
+        }).toList(),
+      );
+    });
+  }
+}
+
+Future<void> _showOrderDetailDialog(
+  BuildContext context, {
+  required MainHomeWebController controller,
+  required AdminOrderModel order,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (context) =>
+        _OrderDetailDialog(controller: controller, order: order),
+  );
+}
+
+class _OrderDetailDialog extends StatelessWidget {
+  const _OrderDetailDialog({required this.controller, required this.order});
+
+  final MainHomeWebController controller;
+  final AdminOrderModel order;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color statusColor = _orderColor(order.status);
+    final String pickupName = order.pickupInfo.pickupName.trim().isEmpty
+        ? order.customerName
+        : order.pickupInfo.pickupName.trim();
+    final String pickupPhone = order.pickupInfo.pickupPhone.trim().isEmpty
+        ? '-'
+        : order.pickupInfo.pickupPhone.trim();
+    final String pickupNote = order.pickupInfo.note.trim().isEmpty
+        ? '-'
+        : order.pickupInfo.note.trim();
+
+    return AlertDialog(
+      insetPadding: const EdgeInsets.all(24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              order.orderNo,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: const Color(0xFF163A72),
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          _StatusBadge(
+            label: _orderStatusLabel(order.status),
+            color: statusColor,
+          ),
+        ],
+      ),
+      content: SizedBox(
+        width: 680,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                children: [
+                  _OrderDetailInfo(
+                    label: 'ลูกค้า',
+                    value: order.customerName,
+                    icon: Icons.person_rounded,
+                  ),
+                  _OrderDetailInfo(
+                    label: 'เวลาสั่ง',
+                    value: controller.formatDateTime(order.createdAt),
+                    icon: Icons.schedule_rounded,
+                  ),
+                  _OrderDetailInfo(
+                    label: 'ชำระเงิน',
+                    value: order.paymentStatus == 'paid'
+                        ? 'ชำระเงินแล้ว'
+                        : 'ยังไม่ชำระเงิน',
+                    icon: Icons.payments_rounded,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'ข้อมูลรับที่ร้าน',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFF163A72),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _OrderDetailLine(label: 'ชื่อผู้รับ', value: pickupName),
+              _OrderDetailLine(label: 'เบอร์โทร', value: pickupPhone),
+              _OrderDetailLine(label: 'หมายเหตุ', value: pickupNote),
+              const SizedBox(height: 18),
+              Text(
+                'สินค้าในออเดอร์',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFF163A72),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              if (order.items.isEmpty)
+                Text(
+                  'ไม่มีสินค้าในออเดอร์',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF6B7A95),
+                  ),
+                )
+              else
+                ...order.items.map(
+                  (item) =>
+                      _OrderDetailItemTile(controller: controller, item: item),
+                ),
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 14),
+              _OrderDetailLine(
+                label: 'Subtotal',
+                value: controller.formatCurrency(order.subtotal),
+              ),
+              _OrderDetailLine(
+                label: 'Discount',
+                value: controller.formatCurrency(order.discount),
+              ),
+              _OrderDetailLine(
+                label: 'Grand Total',
+                value: controller.formatCurrency(order.total),
+                emphasize: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('ปิด'),
+        ),
+      ],
+    );
+  }
+}
+
+class _OrderDetailInfo extends StatelessWidget {
+  const _OrderDetailInfo({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2EAF5)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFF163A72)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF72809A),
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF163A72),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderDetailLine extends StatelessWidget {
+  const _OrderDetailLine({
+    required this.label,
+    required this.value,
+    this.emphasize = false,
+  });
+
+  final String label;
+  final String value;
+  final bool emphasize;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 5),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: const Color(0xFF6B7A95),
+                fontWeight: emphasize ? FontWeight.w800 : FontWeight.w500,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: emphasize
+                  ? const Color(0xFF163A72)
+                  : const Color(0xFF273757),
+              fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _OrderDetailItemTile extends StatelessWidget {
+  const _OrderDetailItemTile({required this.controller, required this.item});
+
+  final MainHomeWebController controller;
+  final OrderItemModel item;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final imageBytes = item.imageBytes;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FBFF),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE2EAF5)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              width: 54,
+              height: 54,
+              child: imageBytes == null
+                  ? Container(
+                      color: const Color(0xFFE8ECFA),
+                      child: const Icon(
+                        Icons.image_not_supported_rounded,
+                        color: Color(0xFF7D87A8),
+                      ),
+                    )
+                  : Image.memory(imageBytes, fit: BoxFit.cover),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.productName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: const Color(0xFF163A72),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${controller.formatCurrency(item.price)}/${item.unit} x ${item.quantity}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: const Color(0xFF6B7A95),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            controller.formatCurrency(item.total),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: const Color(0xFF163A72),
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],
@@ -1661,16 +2141,35 @@ IconData _productIcon(AdminProductModel product) {
 
 String _orderStatusLabel(AdminOrderStatus status) {
   switch (status) {
-    case AdminOrderStatus.pendingPayment:
-      return 'รอชำระเงิน';
-    case AdminOrderStatus.packing:
-      return 'กำลังแพ็ก';
-    case AdminOrderStatus.shipped:
-      return 'จัดส่งแล้ว';
+    case AdminOrderStatus.pending:
+      return 'รอร้านรับ';
+    case AdminOrderStatus.accepted:
+      return 'รับออเดอร์แล้ว';
+    case AdminOrderStatus.preparing:
+      return 'กำลังเตรียม';
+    case AdminOrderStatus.ready:
+      return 'พร้อมให้รับ';
     case AdminOrderStatus.completed:
       return 'สำเร็จ';
     case AdminOrderStatus.cancelled:
       return 'ยกเลิก';
+  }
+}
+
+String _orderActionLabel(AdminOrderStatus status) {
+  switch (status) {
+    case AdminOrderStatus.accepted:
+      return 'รับออเดอร์';
+    case AdminOrderStatus.preparing:
+      return 'เริ่มเตรียม';
+    case AdminOrderStatus.ready:
+      return 'พร้อมรับ';
+    case AdminOrderStatus.completed:
+      return 'ลูกค้ารับแล้ว';
+    case AdminOrderStatus.cancelled:
+      return 'ยกเลิก';
+    case AdminOrderStatus.pending:
+      return 'รอร้านรับ';
   }
 }
 
@@ -2214,11 +2713,13 @@ class _AddProductDialogState extends State<_AddProductDialog> {
 
 Color _orderColor(AdminOrderStatus status) {
   switch (status) {
-    case AdminOrderStatus.pendingPayment:
+    case AdminOrderStatus.pending:
       return const Color(0xFFDA7A12);
-    case AdminOrderStatus.packing:
+    case AdminOrderStatus.accepted:
       return const Color(0xFF2667D8);
-    case AdminOrderStatus.shipped:
+    case AdminOrderStatus.preparing:
+      return const Color(0xFF9254DE);
+    case AdminOrderStatus.ready:
       return const Color(0xFF16805A);
     case AdminOrderStatus.completed:
       return const Color(0xFF6B7A95);
@@ -2229,12 +2730,14 @@ Color _orderColor(AdminOrderStatus status) {
 
 IconData _orderIcon(AdminOrderStatus status) {
   switch (status) {
-    case AdminOrderStatus.pendingPayment:
-      return Icons.payments_rounded;
-    case AdminOrderStatus.packing:
+    case AdminOrderStatus.pending:
+      return Icons.pending_actions_rounded;
+    case AdminOrderStatus.accepted:
+      return Icons.task_alt_rounded;
+    case AdminOrderStatus.preparing:
       return Icons.inventory_2_rounded;
-    case AdminOrderStatus.shipped:
-      return Icons.local_shipping_rounded;
+    case AdminOrderStatus.ready:
+      return Icons.storefront_rounded;
     case AdminOrderStatus.completed:
       return Icons.verified_rounded;
     case AdminOrderStatus.cancelled:

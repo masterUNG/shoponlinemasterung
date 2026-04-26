@@ -6,6 +6,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 
+import '../../main_home/controllers/main_home_controller.dart';
+
 class CartItem {
   const CartItem({required this.id, required this.data});
 
@@ -43,6 +45,7 @@ class CartController extends GetxController {
 
   final RxList<CartItem> cartItems = <CartItem>[].obs;
   final RxBool isLoading = true.obs;
+  final RxBool isOrdering = false.obs;
   final RxString errorMessage = ''.obs;
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _cartSubscription;
@@ -173,6 +176,127 @@ class CartController extends GetxController {
     }
   }
 
+  Future<void> createOrderFromCart() async {
+    if (isOrdering.value || cartItems.isEmpty) {
+      return;
+    }
+
+    final User? user = _firebaseAuth.currentUser;
+    if (user == null) {
+      Get.snackbar(
+        'ยังไม่ได้เข้าสู่ระบบ',
+        'กรุณาเข้าสู่ระบบก่อนสั่งสินค้า',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    isOrdering.value = true;
+
+    try {
+      final List<CartItem> orderingItems = List<CartItem>.from(cartItems);
+      final DocumentReference<Map<String, dynamic>> orderRef = _firestore
+          .collection('orders')
+          .doc();
+      final String orderNo = _buildOrderNo(orderRef.id);
+      final num orderingTotal = orderingItems.fold<num>(
+        0,
+        (amount, item) => amount + item.totalPrice,
+      );
+
+      await _firestore.runTransaction((transaction) async {
+        for (final CartItem item in orderingItems) {
+          final DocumentReference<Map<String, dynamic>> productRef = _firestore
+              .collection('product')
+              .doc(item.id);
+          final DocumentSnapshot<Map<String, dynamic>> productSnapshot =
+              await transaction.get(productRef);
+          final int currentStock =
+              ((productSnapshot.data()?['stock'] ?? 0) as num).toInt();
+
+          if (!productSnapshot.exists || currentStock < item.quantity) {
+            throw StateError('stock-limit:${item.name}');
+          }
+        }
+
+        final FieldValue serverTimestamp = FieldValue.serverTimestamp();
+        final List<Map<String, dynamic>> orderItems = orderingItems.map((item) {
+          return <String, dynamic>{
+            'productId': item.data['productId'] ?? item.id,
+            'productName': item.name,
+            'description': item.description,
+            'base64Image': item.base64Image,
+            'unit': item.unit,
+            'price': item.price,
+            'quantity': item.quantity,
+            'total': item.totalPrice,
+          };
+        }).toList();
+
+        transaction.set(orderRef, <String, dynamic>{
+          'orderNo': orderNo,
+          'userId': user.uid,
+          'userName': _resolveUserName(user),
+          'userPhone': user.phoneNumber ?? '',
+          'orderType': 'pickup',
+          'items': orderItems,
+          'subtotal': orderingTotal,
+          'discount': 0,
+          'grandTotal': orderingTotal,
+          'status': 'pending',
+          'paymentStatus': 'unpaid',
+          'pickupInfo': <String, dynamic>{
+            'pickupName': _resolveUserName(user),
+            'pickupPhone': user.phoneNumber ?? '',
+            'note': '',
+          },
+          'createdAt': serverTimestamp,
+          'updatedAt': serverTimestamp,
+        });
+
+        for (final CartItem item in orderingItems) {
+          transaction.update(_firestore.collection('product').doc(item.id), {
+            'stock': FieldValue.increment(-item.quantity),
+          });
+          transaction.delete(
+            _firestore
+                .collection('users')
+                .doc(user.uid)
+                .collection('cart')
+                .doc(item.id),
+          );
+        }
+      });
+
+      Get.snackbar(
+        'สั่งซื้อสำเร็จ',
+        'สร้างออเดอร์ $orderNo แล้ว',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+
+      if (Get.isRegistered<MainHomeController>()) {
+        Get.find<MainHomeController>().changeIndexBody(2);
+      }
+    } on StateError catch (error) {
+      final String itemName = error.message.split(':').skip(1).join(':');
+      Get.snackbar(
+        'สต๊อกสินค้าไม่พอ',
+        itemName.isEmpty
+            ? 'มีบางสินค้าในตะกร้าที่สต๊อกไม่พอ'
+            : '$itemName มีจำนวนในสต๊อกไม่พอ',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (_) {
+      Get.snackbar(
+        'สั่งซื้อไม่สำเร็จ',
+        'กรุณาลองใหม่อีกครั้ง',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      isOrdering.value = false;
+    }
+  }
+
   Future<void> _updateQuantity(CartItem item, int quantity) async {
     final User? user = _firebaseAuth.currentUser;
     if (user == null || quantity < 1) {
@@ -194,4 +318,25 @@ class CartController extends GetxController {
       );
     }
   }
+
+  String _buildOrderNo(String documentId) {
+    final DateTime now = DateTime.now();
+    final String date =
+        '${now.year}${_twoDigits(now.month)}${_twoDigits(now.day)}';
+    return 'ORD-$date-${documentId.substring(0, 6).toUpperCase()}';
+  }
+
+  String _resolveUserName(User user) {
+    if (user.displayName?.trim().isNotEmpty == true) {
+      return user.displayName!.trim();
+    }
+
+    if (user.email?.trim().isNotEmpty == true) {
+      return user.email!.trim();
+    }
+
+    return user.uid;
+  }
+
+  String _twoDigits(int value) => value.toString().padLeft(2, '0');
 }

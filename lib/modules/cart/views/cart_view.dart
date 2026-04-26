@@ -69,6 +69,8 @@ class CartView extends GetView<CartController> {
                 totalItems: controller.totalQuantity,
                 totalAmount: controller.formatCurrency(controller.totalAmount),
                 enabled: controller.cartItems.isNotEmpty,
+                isOrdering: controller.isOrdering.value,
+                onOrderPressed: controller.createOrderFromCart,
               ),
             ),
           ],
@@ -321,11 +323,15 @@ class _CartSummary extends StatelessWidget {
     required this.totalItems,
     required this.totalAmount,
     required this.enabled,
+    required this.isOrdering,
+    required this.onOrderPressed,
   });
 
   final int totalItems;
   final String totalAmount;
   final bool enabled;
+  final bool isOrdering;
+  final VoidCallback onOrderPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -375,9 +381,14 @@ class _CartSummary extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             FilledButton.icon(
-              onPressed: enabled ? () {} : null,
-              icon: const Icon(Icons.receipt_long_rounded),
-              label: const Text('Order สินค้า'),
+              onPressed: enabled && !isOrdering ? onOrderPressed : null,
+              icon: isOrdering
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.receipt_long_rounded),
+              label: Text(isOrdering ? 'กำลังสั่ง...' : 'Order สินค้า'),
             ),
           ],
         ),
