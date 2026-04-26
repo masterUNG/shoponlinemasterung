@@ -65,13 +65,13 @@ class OrderView extends GetView<OrderController> {
                   return TabBarView(
                     children: [
                       _OrderList(
-                        orders: controller.unCompleteOrders,
+                        ordersBuilder: () => controller.unCompleteOrders,
                         emptyTitle: 'ยังไม่มีออเดอร์ที่กำลังดำเนินการ',
                         emptySubtitle:
                             'เมื่อกด Order สินค้า รายการจะแสดงในหน้านี้',
                       ),
                       _OrderList(
-                        orders: controller.completeOrCancelOrders,
+                        ordersBuilder: () => controller.completeOrCancelOrders,
                         emptyTitle: 'ยังไม่มีประวัติออเดอร์',
                         emptySubtitle:
                             'ออเดอร์ที่สำเร็จหรือยกเลิกแล้วจะแสดงที่นี่',
@@ -153,46 +153,50 @@ class _OrderHeader extends GetView<OrderController> {
 
 class _OrderList extends GetView<OrderController> {
   const _OrderList({
-    required this.orders,
+    required this.ordersBuilder,
     required this.emptyTitle,
     required this.emptySubtitle,
   });
 
-  final List<OrderModel> orders;
+  final List<OrderModel> Function() ordersBuilder;
   final String emptyTitle;
   final String emptySubtitle;
 
   @override
   Widget build(BuildContext context) {
-    if (orders.isEmpty) {
+    return Obx(() {
+      final List<OrderModel> currentOrders = ordersBuilder();
+
+      if (currentOrders.isEmpty) {
+        return RefreshIndicator(
+          onRefresh: controller.refreshOrders,
+          child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              const SizedBox(height: 130),
+              _OrderState(
+                icon: Icons.receipt_long_outlined,
+                title: emptyTitle,
+                subtitle: emptySubtitle,
+              ),
+            ],
+          ),
+        );
+      }
+
       return RefreshIndicator(
         onRefresh: controller.refreshOrders,
-        child: ListView(
+        child: ListView.separated(
           physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            const SizedBox(height: 130),
-            _OrderState(
-              icon: Icons.receipt_long_outlined,
-              title: emptyTitle,
-              subtitle: emptySubtitle,
-            ),
-          ],
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+          itemBuilder: (context, index) {
+            return _OrderTile(order: currentOrders[index]);
+          },
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
+          itemCount: currentOrders.length,
         ),
       );
-    }
-
-    return RefreshIndicator(
-      onRefresh: controller.refreshOrders,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-        itemBuilder: (context, index) {
-          return _OrderTile(order: orders[index]);
-        },
-        separatorBuilder: (_, _) => const SizedBox(height: 12),
-        itemCount: orders.length,
-      ),
-    );
+    });
   }
 }
 
