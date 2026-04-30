@@ -1151,7 +1151,7 @@ class _ProductRow extends StatelessWidget {
           ),
           Expanded(
             child: Text(
-              '${product.stock} ชิ้น',
+              '${product.stock} ${product.unit}',
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: accent,
                 fontWeight: FontWeight.w700,
@@ -1167,7 +1167,7 @@ class _ProductRow extends StatelessWidget {
               ),
             ),
           ),
-          const Expanded(
+          Expanded(
             child: Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -1175,9 +1175,10 @@ class _ProductRow extends StatelessWidget {
                 _ActionButton(
                   icon: Icons.edit_rounded,
                   label: 'แก้ไข',
-                  color: Color(0xFFEAF1FF),
+                  color: const Color(0xFFEAF1FF),
+                  onTap: () => _showEditProductDialog(context, product),
                 ),
-                _ActionButton(
+                const _ActionButton(
                   icon: Icons.tune_rounded,
                   label: 'สต๊อก',
                   color: Color(0xFFFFF1DA),
@@ -1260,7 +1261,10 @@ class _ProductCompactCard extends StatelessWidget {
                 label: controller.formatCurrency(product.price),
                 color: const Color(0xFF163A72),
               ),
-              _StatusBadge(label: '${product.stock} ชิ้น', color: accent),
+              _StatusBadge(
+                label: '${product.stock} ${product.unit}',
+                color: accent,
+              ),
               _StatusBadge(
                 label: _productStatusLabel(product.status),
                 color: accent,
@@ -1268,16 +1272,17 @@ class _ProductCompactCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          const Wrap(
+          Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               _ActionButton(
                 icon: Icons.edit_rounded,
                 label: 'แก้ไข',
-                color: Color(0xFFEAF1FF),
+                color: const Color(0xFFEAF1FF),
+                onTap: () => _showEditProductDialog(context, product),
               ),
-              _ActionButton(
+              const _ActionButton(
                 icon: Icons.tune_rounded,
                 label: 'สต๊อก',
                 color: Color(0xFFFFF1DA),
@@ -2030,32 +2035,663 @@ class _ActionButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.color,
+    this.onTap,
   });
 
   final IconData icon;
   final String label;
   final Color color;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: color,
+    return Material(
+      color: color,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 16, color: const Color(0xFF14386F)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF14386F),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 16, color: const Color(0xFF14386F)),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF14386F),
-              fontWeight: FontWeight.w700,
+    );
+  }
+}
+
+Future<void> _showEditProductDialog(
+  BuildContext context,
+  AdminProductModel product,
+) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) => _EditProductDialog(product: product),
+  );
+}
+
+class _EditProductDialog extends StatefulWidget {
+  const _EditProductDialog({required this.product});
+
+  final AdminProductModel product;
+
+  @override
+  State<_EditProductDialog> createState() => _EditProductDialogState();
+}
+
+class _EditProductDialogState extends State<_EditProductDialog> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final ImagePicker _imagePicker = ImagePicker();
+  late final TextEditingController _nameController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _priceController;
+  late final TextEditingController _unitController;
+  late final TextEditingController _stockController;
+
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
+  bool _isPickingImage = false;
+  bool _isSaving = false;
+  bool _submitted = false;
+  bool _imageEditing = false;
+  bool _nameEditing = false;
+  bool _descriptionEditing = false;
+  bool _priceEditing = false;
+  bool _unitEditing = false;
+  bool _stockEditing = false;
+
+  bool get _hasImage => _selectedImageBytes != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.product.name);
+    _descriptionController = TextEditingController(
+      text: widget.product.description,
+    );
+    _priceController = TextEditingController(
+      text: _formatNumber(widget.product.price),
+    );
+    _unitController = TextEditingController(text: widget.product.unit);
+    _stockController = TextEditingController(
+      text: widget.product.stock.toString(),
+    );
+    _selectedImageBytes = widget.product.imageBytes;
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _priceController.dispose();
+    _unitController.dispose();
+    _stockController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    setState(() {
+      _isPickingImage = true;
+      _imageEditing = true;
+    });
+
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 480,
+        maxHeight: 480,
+        imageQuality: 90,
+      );
+
+      if (pickedFile == null) {
+        return;
+      }
+
+      final Uint8List bytes = await pickedFile.readAsBytes();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _selectedImageBytes = bytes;
+        _selectedImageName = pickedFile.name;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingImage = false);
+      }
+    }
+  }
+
+  Future<void> _validateAndSubmit() async {
+    setState(() => _submitted = true);
+
+    final bool isFormValid = _formKey.currentState?.validate() ?? false;
+    if (!isFormValid || !_hasImage) {
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      await _firestore.collection('product').doc(widget.product.id).update({
+        'name': _nameController.text.trim(),
+        'description': _descriptionController.text.trim(),
+        'base64Image': _selectedImageBytes == null
+            ? widget.product.base64Image
+            : base64Encode(_selectedImageBytes!),
+        'unit': _unitController.text.trim(),
+        'price': num.parse(_priceController.text.trim()),
+        'stock': int.parse(_stockController.text.trim()),
+        'timestamp': Timestamp.now(),
+      });
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('อัปเดตสินค้าเรียบร้อย')));
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('อัปเดตสินค้าไม่สำเร็จ กรุณาลองใหม่')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 820),
+        child: Form(
+          key: _formKey,
+          autovalidateMode: _submitted
+              ? AutovalidateMode.always
+              : AutovalidateMode.disabled,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(theme),
+                const SizedBox(height: 24),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final bool stacked = constraints.maxWidth < 700;
+                    final Widget imageSection = _buildImageSection(theme);
+                    final Widget detailSection = _buildDetailSection(theme);
+
+                    if (stacked) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          imageSection,
+                          const SizedBox(height: 16),
+                          detailSection,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(flex: 4, child: imageSection),
+                        const SizedBox(width: 18),
+                        Expanded(flex: 6, child: detailSection),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 24),
+                _buildActions(),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(ThemeData theme) {
+    return Row(
+      children: [
+        Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEAF1FF),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: const Icon(Icons.edit_note_rounded, color: Color(0xFF163A72)),
+        ),
+        const SizedBox(width: 14),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'แก้ไขสินค้า',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: const Color(0xFF163A72),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                widget.product.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF6B7A95),
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ),
+        IconButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+          icon: const Icon(Icons.close_rounded),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActions() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        TextButton(
+          onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
+          child: const Text('ยกเลิก'),
+        ),
+        const SizedBox(width: 12),
+        FilledButton.icon(
+          onPressed: _isSaving ? null : _validateAndSubmit,
+          icon: _isSaving
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.save_outlined),
+          label: Text(_isSaving ? 'กำลังบันทึก...' : 'บันทึก'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImageSection(ThemeData theme) {
+    return _EditableSection(
+      title: 'รูปภาพสินค้า',
+      icon: Icons.image_outlined,
+      isEditing: _imageEditing,
+      onEdit: _isSaving ? null : () => setState(() => _imageEditing = true),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AspectRatio(
+            aspectRatio: 1,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: !_submitted || _hasImage
+                      ? const Color(0xFFD7E3F2)
+                      : theme.colorScheme.error,
+                ),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: _selectedImageBytes == null
+                  ? Icon(
+                      Icons.image_not_supported_outlined,
+                      color: theme.colorScheme.error,
+                      size: 48,
+                    )
+                  : Image.memory(_selectedImageBytes!, fit: BoxFit.cover),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: !_imageEditing || _isPickingImage || _isSaving
+                  ? null
+                  : _pickImage,
+              icon: _isPickingImage
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.photo_library_outlined),
+              label: Text(_hasImage ? 'เปลี่ยนรูป' : 'เลือกรูป'),
+            ),
+          ),
+          if (_selectedImageName != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              _selectedImageName!,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF4A5C7A),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          if (_submitted && !_hasImage) ...[
+            const SizedBox(height: 8),
+            Text(
+              'กรุณาเลือกรูปสินค้า',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetailSection(ThemeData theme) {
+    return Column(
+      children: [
+        _EditableSection(
+          title: 'ชื่อสินค้า',
+          icon: Icons.inventory_2_outlined,
+          isEditing: _nameEditing,
+          onEdit: _isSaving ? null : () => setState(() => _nameEditing = true),
+          child: _buildTextField(
+            controller: _nameController,
+            label: 'ชื่อสินค้า',
+            hintText: 'เช่น เสื้อยืดคอกลม',
+            prefixIcon: Icons.inventory_2_outlined,
+            enabled: _nameEditing && !_isSaving,
+            validator: _requiredValidator('กรุณากรอกชื่อสินค้า'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _EditableSection(
+          title: 'รายละเอียด',
+          icon: Icons.notes_rounded,
+          isEditing: _descriptionEditing,
+          onEdit: _isSaving
+              ? null
+              : () => setState(() => _descriptionEditing = true),
+          child: _buildTextField(
+            controller: _descriptionController,
+            label: 'รายละเอียดสินค้า',
+            hintText: 'อธิบายจุดเด่นของสินค้า วัสดุ หรือขนาด',
+            prefixIcon: Icons.notes_rounded,
+            enabled: _descriptionEditing && !_isSaving,
+            maxLines: 3,
+            validator: _requiredValidator('กรุณากรอกรายละเอียดสินค้า'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: _EditableSection(
+                title: 'ราคา',
+                icon: Icons.sell_outlined,
+                isEditing: _priceEditing,
+                onEdit: _isSaving
+                    ? null
+                    : () => setState(() => _priceEditing = true),
+                child: _buildTextField(
+                  controller: _priceController,
+                  label: 'ราคา',
+                  hintText: '0.00',
+                  prefixIcon: Icons.sell_outlined,
+                  enabled: _priceEditing && !_isSaving,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                  validator: _priceValidator,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _EditableSection(
+                title: 'หน่วย',
+                icon: Icons.straighten_outlined,
+                isEditing: _unitEditing,
+                onEdit: _isSaving
+                    ? null
+                    : () => setState(() => _unitEditing = true),
+                child: _buildTextField(
+                  controller: _unitController,
+                  label: 'หน่วย',
+                  hintText: 'ชิ้น / กล่อง / แพ็ก',
+                  prefixIcon: Icons.straighten_outlined,
+                  enabled: _unitEditing && !_isSaving,
+                  validator: _requiredValidator('กรุณากรอกหน่วย'),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _EditableSection(
+          title: 'สต๊อก',
+          icon: Icons.warehouse_outlined,
+          isEditing: _stockEditing,
+          onEdit: _isSaving ? null : () => setState(() => _stockEditing = true),
+          child: _buildTextField(
+            controller: _stockController,
+            label: 'จำนวนสต๊อก',
+            hintText: '0',
+            prefixIcon: Icons.warehouse_outlined,
+            enabled: _stockEditing && !_isSaving,
+            keyboardType: TextInputType.number,
+            validator: _stockValidator,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String? Function(String?) _requiredValidator(String message) {
+    return (value) {
+      if (value == null || value.trim().isEmpty) {
+        return message;
+      }
+
+      return null;
+    };
+  }
+
+  String? _priceValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'กรุณากรอกราคา';
+    }
+
+    final double? price = double.tryParse(value.trim());
+    if (price == null) {
+      return 'กรุณากรอกราคาเป็นตัวเลข';
+    }
+
+    if (price <= 0) {
+      return 'ราคาต้องมากกว่า 0';
+    }
+
+    return null;
+  }
+
+  String? _stockValidator(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'กรุณากรอกจำนวนสต๊อก';
+    }
+
+    final int? stock = int.tryParse(value.trim());
+    if (stock == null) {
+      return 'สต๊อกต้องเป็นจำนวนเต็มเท่านั้น';
+    }
+
+    if (stock < 0) {
+      return 'สต๊อกต้องไม่ติดลบ';
+    }
+
+    return null;
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hintText,
+    required IconData prefixIcon,
+    required bool enabled,
+    TextInputType? keyboardType,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      enabled: enabled,
+      keyboardType: keyboardType,
+      maxLines: maxLines,
+      validator: validator,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hintText,
+        prefixIcon: Icon(prefixIcon),
+        alignLabelWithHint: maxLines > 1,
+        filled: true,
+        fillColor: enabled ? const Color(0xFFF8FAFD) : const Color(0xFFF0F4FA),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: Color(0xFF3C69C8), width: 1.3),
+        ),
+      ),
+    );
+  }
+
+  String _formatNumber(num value) {
+    if (value % 1 == 0) {
+      return value.toInt().toString();
+    }
+
+    return value.toString();
+  }
+}
+
+class _EditableSection extends StatelessWidget {
+  const _EditableSection({
+    required this.title,
+    required this.icon,
+    required this.isEditing,
+    required this.child,
+    this.onEdit,
+  });
+
+  final String title;
+  final IconData icon;
+  final bool isEditing;
+  final Widget child;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isEditing ? const Color(0xFF9AB7F4) : const Color(0xFFDDE6F2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: const Color(0xFF163A72)),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: const Color(0xFF163A72),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              Tooltip(
+                message: isEditing ? 'กำลังแก้ไข' : 'แก้ไขส่วนนี้',
+                child: IconButton.filledTonal(
+                  onPressed: onEdit,
+                  icon: Icon(
+                    isEditing ? Icons.check_circle_rounded : Icons.edit_rounded,
+                    size: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          child,
         ],
       ),
     );

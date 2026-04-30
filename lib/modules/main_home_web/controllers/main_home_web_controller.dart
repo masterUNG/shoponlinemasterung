@@ -206,8 +206,11 @@ class MainHomeWebController extends GetxController {
     return AdminProductModel(
       id: doc.id,
       name: product.name,
+      description: product.description,
+      base64Image: product.base64Image,
       sku: _buildSku(doc.id),
       category: 'General',
+      unit: product.unit,
       price: product.price.toDouble(),
       stock: stock,
       status: _statusFromStock(stock),

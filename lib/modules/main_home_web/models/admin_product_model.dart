@@ -6,8 +6,11 @@ class AdminProductModel {
   const AdminProductModel({
     required this.id,
     required this.name,
+    required this.description,
+    required this.base64Image,
     required this.sku,
     required this.category,
+    required this.unit,
     required this.price,
     required this.stock,
     required this.status,
@@ -17,8 +20,11 @@ class AdminProductModel {
 
   final String id;
   final String name;
+  final String description;
+  final String base64Image;
   final String sku;
   final String category;
+  final String unit;
   final double price;
   final int stock;
   final AdminProductStatus status;
