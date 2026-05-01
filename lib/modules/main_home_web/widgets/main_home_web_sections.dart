@@ -1178,10 +1178,15 @@ class _ProductRow extends StatelessWidget {
                   color: const Color(0xFFEAF1FF),
                   onTap: () => _showEditProductDialog(context, product),
                 ),
-                const _ActionButton(
-                  icon: Icons.tune_rounded,
-                  label: 'สต๊อก',
-                  color: Color(0xFFFFF1DA),
+                _ActionButton(
+                  icon: Icons.delete_outline_rounded,
+                  label: 'ลบ',
+                  color: const Color(0xFFFFE7E7),
+                  onTap: () => _showDeleteProductDialog(
+                    context,
+                    product,
+                    controller.formatCurrency(product.price),
+                  ),
                 ),
               ],
             ),
@@ -1282,10 +1287,15 @@ class _ProductCompactCard extends StatelessWidget {
                 color: const Color(0xFFEAF1FF),
                 onTap: () => _showEditProductDialog(context, product),
               ),
-              const _ActionButton(
-                icon: Icons.tune_rounded,
-                label: 'สต๊อก',
-                color: Color(0xFFFFF1DA),
+              _ActionButton(
+                icon: Icons.delete_outline_rounded,
+                label: 'ลบ',
+                color: const Color(0xFFFFE7E7),
+                onTap: () => _showDeleteProductDialog(
+                  context,
+                  product,
+                  controller.formatCurrency(product.price),
+                ),
               ),
             ],
           ),
@@ -2082,6 +2092,237 @@ Future<void> _showEditProductDialog(
     barrierDismissible: true,
     builder: (context) => _EditProductDialog(product: product),
   );
+}
+
+Future<void> _showDeleteProductDialog(
+  BuildContext context,
+  AdminProductModel product,
+  String priceLabel,
+) {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    builder: (context) =>
+        _DeleteProductDialog(product: product, priceLabel: priceLabel),
+  );
+}
+
+class _DeleteProductDialog extends StatefulWidget {
+  const _DeleteProductDialog({required this.product, required this.priceLabel});
+
+  final AdminProductModel product;
+  final String priceLabel;
+
+  @override
+  State<_DeleteProductDialog> createState() => _DeleteProductDialogState();
+}
+
+class _DeleteProductDialogState extends State<_DeleteProductDialog> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  bool _isDeleting = false;
+
+  Future<void> _deleteProduct() async {
+    setState(() => _isDeleting = true);
+
+    try {
+      await _firestore.collection('product').doc(widget.product.id).delete();
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ลบสินค้าเรียบร้อย')));
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ลบสินค้าไม่สำเร็จ กรุณาลองใหม่')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isDeleting = false);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Color accent = _productAccentColor(widget.product);
+    final Color surface = _productSurfaceColor(widget.product);
+
+    return Dialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFE7E7),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Color(0xFFB42318),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      'ยืนยันการลบสินค้า',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: const Color(0xFF163A72),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _isDeleting
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 116,
+                    height: 116,
+                    decoration: BoxDecoration(
+                      color: surface,
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: const Color(0xFFE2EAF5)),
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: _ProductImage(
+                      product: widget.product,
+                      accent: accent,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _DeleteProductInfoRow(
+                          label: 'ชื่อ',
+                          value: widget.product.name,
+                        ),
+                        const SizedBox(height: 10),
+                        _DeleteProductInfoRow(
+                          label: 'ราคา',
+                          value: widget.priceLabel,
+                        ),
+                        const SizedBox(height: 10),
+                        _DeleteProductInfoRow(
+                          label: 'สต๊อก',
+                          value:
+                              '${widget.product.stock} ${widget.product.unit}',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'ต้องการลบสินค้านี้ออกจาก Firebase collection product หรือไม่?',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF6B7A95),
+                  height: 1.45,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  TextButton(
+                    onPressed: _isDeleting
+                        ? null
+                        : () => Navigator.of(context).pop(),
+                    child: const Text('ยกเลิก'),
+                  ),
+                  const SizedBox(width: 12),
+                  FilledButton.icon(
+                    onPressed: _isDeleting ? null : _deleteProduct,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: const Color(0xFFB42318),
+                      foregroundColor: Colors.white,
+                    ),
+                    icon: _isDeleting
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.delete_outline_rounded),
+                    label: Text(_isDeleting ? 'กำลังลบ...' : 'ยืนยันการลบ'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _DeleteProductInfoRow extends StatelessWidget {
+  const _DeleteProductInfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: const Color(0xFF7B89A4),
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: const Color(0xFF1A2B4F),
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class _EditProductDialog extends StatefulWidget {
