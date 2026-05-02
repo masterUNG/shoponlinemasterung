@@ -113,13 +113,13 @@ class LoginController extends GetxController {
   }
 
   Future<void> _createUserDocumentIfMissing(User user) async {
-    final QuerySnapshot<Map<String, dynamic>> existingUsers = await _firestore
+    final DocumentReference<Map<String, dynamic>> userDocument = _firestore
         .collection('users')
-        .where('uid', isEqualTo: user.uid)
-        .limit(1)
-        .get();
+        .doc(user.uid);
+    final DocumentSnapshot<Map<String, dynamic>> existingUser =
+        await userDocument.get();
 
-    if (existingUsers.docs.isNotEmpty) {
+    if (existingUser.exists) {
       return;
     }
 
@@ -129,7 +129,7 @@ class LoginController extends GetxController {
       uid: user.uid,
     );
 
-    await _firestore.collection('users').doc(user.uid).set(appUser.toMap());
+    await userDocument.set(appUser.toMap());
   }
 
   Future<String> _getBase64Avatar(String? photoUrl) async {

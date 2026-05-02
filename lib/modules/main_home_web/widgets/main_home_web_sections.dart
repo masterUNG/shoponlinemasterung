@@ -1178,16 +1178,17 @@ class _ProductRow extends StatelessWidget {
                   color: const Color(0xFFEAF1FF),
                   onTap: () => _showEditProductDialog(context, product),
                 ),
-                _ActionButton(
-                  icon: Icons.delete_outline_rounded,
-                  label: 'ลบ',
-                  color: const Color(0xFFFFE7E7),
-                  onTap: () => _showDeleteProductDialog(
-                    context,
-                    product,
-                    controller.formatCurrency(product.price),
+                if (controller.canDeleteProducts)
+                  _ActionButton(
+                    icon: Icons.delete_outline_rounded,
+                    label: 'ลบ',
+                    color: const Color(0xFFFFE7E7),
+                    onTap: () => _showDeleteProductDialog(
+                      context,
+                      product,
+                      controller.formatCurrency(product.price),
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -1287,16 +1288,17 @@ class _ProductCompactCard extends StatelessWidget {
                 color: const Color(0xFFEAF1FF),
                 onTap: () => _showEditProductDialog(context, product),
               ),
-              _ActionButton(
-                icon: Icons.delete_outline_rounded,
-                label: 'ลบ',
-                color: const Color(0xFFFFE7E7),
-                onTap: () => _showDeleteProductDialog(
-                  context,
-                  product,
-                  controller.formatCurrency(product.price),
+              if (controller.canDeleteProducts)
+                _ActionButton(
+                  icon: Icons.delete_outline_rounded,
+                  label: 'ลบ',
+                  color: const Color(0xFFFFE7E7),
+                  onTap: () => _showDeleteProductDialog(
+                    context,
+                    product,
+                    controller.formatCurrency(product.price),
+                  ),
                 ),
-              ),
             ],
           ),
         ],

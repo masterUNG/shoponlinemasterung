@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../services/admin_role_service.dart';
 
 class LoginAdminWebController extends GetxController {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final AdminRoleService _adminRoleService = AdminRoleService();
 
   final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
@@ -17,9 +19,7 @@ class LoginAdminWebController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    if (_firebaseAuth.currentUser != null) {
-      Get.offAllNamed(Routes.mainHomeWeb);
-    }
+    _redirectSignedInAdmin();
   }
 
   @override
@@ -79,6 +79,18 @@ class LoginAdminWebController extends GetxController {
         password: passwordController.text.trim(),
       );
 
+      final bool isAdmin = await _adminRoleService.currentUserIsAdmin();
+      if (!isAdmin) {
+        await _firebaseAuth.signOut();
+        Get.snackbar(
+          'ไม่มีสิทธิ์ผู้ดูแล',
+          'บัญชีนี้ยังไม่ได้รับ role admin ใน Firestore',
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
+
       Get.offAllNamed(Routes.mainHomeWeb);
       Get.snackbar(
         'เข้าสู่ระบบสำเร็จ',
@@ -121,6 +133,19 @@ class LoginAdminWebController extends GetxController {
         return 'การเชื่อมต่อเครือข่ายมีปัญหา';
       default:
         return error.message ?? 'ไม่สามารถเข้าสู่ระบบได้ในขณะนี้';
+    }
+  }
+
+  Future<void> _redirectSignedInAdmin() async {
+    if (_firebaseAuth.currentUser == null) {
+      return;
+    }
+
+    final bool isAdmin = await _adminRoleService.currentUserIsAdmin();
+    if (isAdmin) {
+      Get.offAllNamed(Routes.mainHomeWeb);
+    } else {
+      await _firebaseAuth.signOut();
     }
   }
 }

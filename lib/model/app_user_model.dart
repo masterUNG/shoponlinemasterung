@@ -3,17 +3,20 @@ class AppUserModel {
     required this.displayName,
     required this.base64Avatar,
     required this.uid,
+    this.role = 'customer',
   });
 
   final String displayName;
   final String base64Avatar;
   final String uid;
+  final String role;
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'displayname': displayName,
       'base64avatar': base64Avatar,
       'uid': uid,
+      'role': role,
     };
   }
 
@@ -22,6 +25,7 @@ class AppUserModel {
       displayName: (map['displayname'] ?? '') as String,
       base64Avatar: (map['base64avatar'] ?? '') as String,
       uid: (map['uid'] ?? '') as String,
+      role: (map['role'] ?? 'customer') as String,
     );
   }
 }

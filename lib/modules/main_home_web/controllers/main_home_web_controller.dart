@@ -6,6 +6,7 @@ import 'package:shoponlinemasterung/model/order_model.dart';
 import 'package:shoponlinemasterung/model/product_model.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../services/admin_role_service.dart';
 import '../models/admin_order_model.dart';
 import '../models/admin_product_model.dart';
 
@@ -42,6 +43,7 @@ extension MainHomeWebSectionX on MainHomeWebSection {
 class MainHomeWebController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final AdminRoleService _adminRoleService = AdminRoleService();
   final Rx<MainHomeWebSection> selectedSection =
       MainHomeWebSection.dashboard.obs;
   final RxList<AdminProductModel> _products = <AdminProductModel>[].obs;
@@ -53,8 +55,7 @@ class MainHomeWebController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _products.bindStream(_productStream());
-    _orders.bindStream(_orderStream());
+    _bindAdminDataIfAllowed();
   }
 
   User? get currentUser => _firebaseAuth.currentUser;
@@ -80,10 +81,29 @@ class MainHomeWebController extends GetxController {
   String get totalProductsLabel => '$totalProducts';
   String get newOrdersLabel => '$newOrdersCount';
   String get lowStockLabel => '$lowStockCount';
+  bool get canDeleteProducts =>
+      _adminRoleService.currentUserCanDeleteProducts();
 
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
     Get.offAllNamed(Routes.loginAdminWeb);
+  }
+
+  Future<void> _bindAdminDataIfAllowed() async {
+    final bool isAdmin = await _adminRoleService.currentUserIsAdmin();
+    if (!isAdmin) {
+      await _firebaseAuth.signOut();
+      Get.offAllNamed(Routes.loginAdminWeb);
+      Get.snackbar(
+        'ไม่มีสิทธิ์ผู้ดูแล',
+        'กรุณาเข้าสู่ระบบด้วยบัญชี admin',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return;
+    }
+
+    _products.bindStream(_productStream());
+    _orders.bindStream(_orderStream());
   }
 
   void changeSection(MainHomeWebSection section) {
