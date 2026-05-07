@@ -30,9 +30,12 @@ service cloud.firestore {
           'displayname',
           'base64avatar',
           'uid',
-          'role'
+          'role',
+          'geopoint'
         ])
         && request.resource.data.uid == userId
+        && (!('geopoint' in request.resource.data)
+          || request.resource.data.geopoint is latlng)
         && (!('role' in request.resource.data)
           || request.resource.data.role == 'customer');
     }
@@ -96,8 +99,11 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (isOwner(userId)
           && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['displayname', 'base64avatar'])
-          && request.resource.data.uid == userId);
+            .hasOnly(['displayname', 'base64avatar', 'geopoint'])
+          && (!('geopoint' in request.resource.data)
+            || request.resource.data.geopoint is latlng)
+          && (!('uid' in request.resource.data)
+            || request.resource.data.uid == userId));
       allow delete: if isAdmin();
 
       match /cart/{cartId} {

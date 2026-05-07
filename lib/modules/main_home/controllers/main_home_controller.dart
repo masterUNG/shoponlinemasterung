@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../profile/controllers/profile_controller.dart';
 
 class MainHomeController extends GetxController {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -13,6 +14,9 @@ class MainHomeController extends GetxController {
 
   void changeIndexBody(int index) {
     indexBody.value = index;
+    if (index == 3 && Get.isRegistered<ProfileController>()) {
+      Get.find<ProfileController>().onProfileOpened();
+    }
   }
 
   Future<void> signOut() async {

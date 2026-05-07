@@ -75,9 +75,47 @@ class ProfileView extends GetView<ProfileController> {
                   context,
                 ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
               ),
+              const SizedBox(height: 24),
+              _LocationStatus(controller: controller),
             ],
           ),
         ),
+      );
+    });
+  }
+}
+
+class _LocationStatus extends StatelessWidget {
+  const _LocationStatus({required this.controller});
+
+  final ProfileController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final bool hasLocation = controller.userData.value?.geopoint != null;
+
+      return ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+        leading: Icon(
+          hasLocation ? Icons.location_on_rounded : Icons.location_off_rounded,
+          color: hasLocation ? Colors.green : Colors.orange,
+        ),
+        title: Text(
+          hasLocation ? 'บันทึกพิกัดจัดส่งแล้ว' : 'ยังไม่ได้บันทึกพิกัดจัดส่ง',
+        ),
+        subtitle: Text(
+          hasLocation
+              ? 'มีตัวเลือกส่งสินค้าให้ใช้งานตอนสั่งซื้อ'
+              : 'ถ้าไม่มีพิกัด จะไม่มีตัวเลือกส่งสินค้าในหน้า order',
+        ),
+        trailing: controller.isSavingLocation.value
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : null,
       );
     });
   }

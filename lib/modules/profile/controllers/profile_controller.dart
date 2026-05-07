@@ -4,6 +4,8 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../../model/app_user_model.dart';
@@ -14,9 +16,12 @@ class ProfileController extends GetxController {
 
   final isLoading = true.obs;
   final errorMessage = ''.obs;
+  final isSavingLocation = false.obs;
   final userData = Rxn<AppUserModel>();
 
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
+  bool _isLocationDialogOpen = false;
+  bool _askedLocationForCurrentProfileVisit = false;
 
   @override
   void onInit() {
@@ -53,6 +58,11 @@ class ProfileController extends GetxController {
     _listenToCurrentUserProfile();
   }
 
+  void onProfileOpened() {
+    _askedLocationForCurrentProfileVisit = false;
+    _askLocationIfNeeded();
+  }
+
   void _listenToCurrentUserProfile() {
     final User? user = currentUser;
     if (user == null) {
@@ -80,6 +90,7 @@ class ProfileController extends GetxController {
             }
 
             isLoading.value = false;
+            _askLocationIfNeeded();
           },
           onError: (_) {
             userData.value = null;
@@ -87,5 +98,110 @@ class ProfileController extends GetxController {
             isLoading.value = false;
           },
         );
+  }
+
+  Future<void> _askLocationIfNeeded() async {
+    final AppUserModel? appUser = userData.value;
+    final User? user = currentUser;
+    if (appUser == null ||
+        user == null ||
+        appUser.geopoint != null ||
+        isLoading.value ||
+        isSavingLocation.value ||
+        _isLocationDialogOpen ||
+        _askedLocationForCurrentProfileVisit) {
+      return;
+    }
+
+    _askedLocationForCurrentProfileVisit = true;
+    _isLocationDialogOpen = true;
+    final bool accepted =
+        await Get.dialog<bool>(
+          AlertDialog(
+            title: const Text('เปิดใช้ตำแหน่งจัดส่ง'),
+            content: const Text(
+              'แอปจะใช้พิกัดของคุณเพื่อช่วยคำนวณและเตรียมบริการส่งสินค้าให้ถึงที่ หากไม่บันทึกพิกัด ตอนสั่งซื้อจะไม่มีตัวเลือกส่งสินค้า',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: const Text('ไว้ก่อน'),
+              ),
+              FilledButton(
+                onPressed: () => Get.back(result: true),
+                child: const Text('อนุญาต'),
+              ),
+            ],
+          ),
+          barrierDismissible: false,
+        ) ??
+        false;
+    _isLocationDialogOpen = false;
+
+    if (!accepted) {
+      return;
+    }
+
+    await _saveCurrentLocation(user.uid);
+  }
+
+  Future<void> _saveCurrentLocation(String uid) async {
+    try {
+      isSavingLocation.value = true;
+
+      final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        Get.snackbar(
+          'ยังไม่ได้เปิด Location',
+          'กรุณาเปิด Location Service บนอุปกรณ์ก่อนใช้งานบริการส่งสินค้า',
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        Get.snackbar(
+          'ไม่ได้รับสิทธิ์ตำแหน่ง',
+          'คุณสามารถเปิดสิทธิ์ตำแหน่งภายหลังได้จากหน้า Settings ของเครื่อง',
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
+
+      final Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+
+      await _firestore.collection('users').doc(uid).update(<String, dynamic>{
+        'geopoint': GeoPoint(position.latitude, position.longitude),
+      });
+
+      Get.snackbar(
+        'บันทึกพิกัดแล้ว',
+        'ตอนสั่งซื้อจะสามารถใช้ตัวเลือกส่งสินค้าได้',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } catch (_) {
+      Get.snackbar(
+        'บันทึกพิกัดไม่สำเร็จ',
+        'กรุณาลองใหม่อีกครั้งเมื่ออุปกรณ์พร้อมใช้งาน Location',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } finally {
+      isSavingLocation.value = false;
+    }
   }
 }
