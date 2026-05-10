@@ -51,6 +51,7 @@ class MainHomeWebController extends GetxController {
   final RxBool isProductsLoading = true.obs;
   final RxBool isOrdersLoading = true.obs;
   final RxString updatingOrderId = ''.obs;
+  final RxString updatingPaymentOrderId = ''.obs;
 
   @override
   void onInit() {
@@ -135,6 +136,60 @@ class MainHomeWebController extends GetxController {
       );
     } finally {
       updatingOrderId.value = '';
+    }
+  }
+
+  Future<void> verifyOrderPayment(AdminOrderModel order) async {
+    if (updatingPaymentOrderId.value.isNotEmpty ||
+        order.paymentStatus != 'waiting_verify') {
+      return;
+    }
+
+    updatingPaymentOrderId.value = order.id;
+    _replaceOrder(order.copyWith(paymentStatus: 'paid'));
+
+    try {
+      await _firestore.collection('orders').doc(order.id).update({
+        'paymentStatus': 'paid',
+        'paymentVerifiedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      _replaceOrder(order);
+      Get.snackbar(
+        'ยืนยันสลิปไม่สำเร็จ',
+        'กรุณาลองใหม่อีกครั้ง',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      updatingPaymentOrderId.value = '';
+    }
+  }
+
+  Future<void> rejectOrderPayment(AdminOrderModel order) async {
+    if (updatingPaymentOrderId.value.isNotEmpty ||
+        order.paymentStatus != 'waiting_verify') {
+      return;
+    }
+
+    updatingPaymentOrderId.value = order.id;
+    _replaceOrder(order.copyWith(paymentStatus: 'rejected'));
+
+    try {
+      await _firestore.collection('orders').doc(order.id).update({
+        'paymentStatus': 'rejected',
+        'paymentRejectedAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (_) {
+      _replaceOrder(order);
+      Get.snackbar(
+        'ปฏิเสธสลิปไม่สำเร็จ',
+        'กรุณาลองใหม่อีกครั้ง',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      updatingPaymentOrderId.value = '';
     }
   }
 
@@ -261,6 +316,8 @@ class MainHomeWebController extends GetxController {
           order.createdAt?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0),
       note: _buildOrderNote(order),
       paymentStatus: order.paymentStatus,
+      paymentSlipBase64: order.paymentSlipBase64,
+      paymentSlipUploadedAt: order.paymentSlipUploadedAt?.toDate(),
       items: order.items,
       pickupInfo: order.pickupInfo,
       subtotal: order.subtotal.toDouble(),
@@ -309,9 +366,7 @@ class MainHomeWebController extends GetxController {
   }
 
   String _buildOrderNote(OrderModel order) {
-    final String payment = order.paymentStatus == 'paid'
-        ? 'ชำระเงินแล้ว'
-        : 'ยังไม่ชำระเงิน';
+    final String payment = paymentStatusLabel(order.paymentStatus);
     final String pickupName = order.pickupInfo.pickupName.trim();
     final String pickupPhone = order.pickupInfo.pickupPhone.trim();
     final String note = order.pickupInfo.note.trim();
@@ -326,6 +381,16 @@ class MainHomeWebController extends GetxController {
       if (pickup.isNotEmpty) pickup,
       if (note.isNotEmpty) note,
     ].join(' • ');
+  }
+
+  String paymentStatusLabel(String status) {
+    return switch (status) {
+      'unpaid' => 'ยังไม่ชำระเงิน',
+      'waiting_verify' => 'รอตรวจสลิป',
+      'paid' => 'ชำระเงินแล้ว',
+      'rejected' => 'สลิปไม่ผ่าน',
+      _ => status,
+    };
   }
 
   String _twoDigits(int value) => value.toString().padLeft(2, '0');

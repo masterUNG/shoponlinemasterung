@@ -329,6 +329,8 @@ class _OrderTile extends GetView<OrderController> {
                 ),
               ],
             ),
+            const SizedBox(height: 12),
+            _PaymentSlipAction(order: order),
           ],
         ),
       ),
@@ -357,6 +359,119 @@ class _OrderTile extends GetView<OrderController> {
     }
 
     return 'ส่งฟรีถึงที่ (${(meters / 1000).toStringAsFixed(2)} กม.)';
+  }
+}
+
+class _PaymentSlipAction extends GetView<OrderController> {
+  const _PaymentSlipAction({required this.order});
+
+  final OrderModel order;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final bool canUpload = controller.canUploadPaymentSlip(order);
+    final bool waitingVerify = order.paymentStatus == 'waiting_verify';
+    final bool paid = order.paymentStatus == 'paid';
+
+    if (paid) {
+      return _PaymentHint(
+        icon: Icons.verified_rounded,
+        text: 'ร้านยืนยันการชำระเงินแล้ว',
+        color: const Color(0xFF12805C),
+      );
+    }
+
+    if (waitingVerify) {
+      return _PaymentHint(
+        icon: Icons.hourglass_top_rounded,
+        text: 'ส่งสลิปแล้ว รอร้านตรวจสอบ',
+        color: const Color(0xFFB36B00),
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            order.paymentStatus == 'rejected'
+                ? 'สลิปเดิมไม่ผ่าน กรุณาอัปโหลดใหม่'
+                : 'ชำระยอด ${controller.formatCurrency(order.grandTotal)} แล้วอัปโหลดสลิป',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF687191),
+              height: 1.35,
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Obx(() {
+          final bool isUploading =
+              controller.uploadingPaymentOrderId.value == order.id;
+          final bool anotherOrderUploading =
+              controller.uploadingPaymentOrderId.value.isNotEmpty &&
+              !isUploading;
+
+          return FilledButton.icon(
+            onPressed: !canUpload || isUploading || anotherOrderUploading
+                ? null
+                : () => controller.uploadPaymentSlip(order),
+            icon: isUploading
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.upload_file_rounded, size: 18),
+            label: Text(isUploading ? 'กำลังส่ง' : 'อัปโหลดสลิป'),
+          );
+        }),
+      ],
+    );
+  }
+}
+
+class _PaymentHint extends StatelessWidget {
+  const _PaymentHint({
+    required this.icon,
+    required this.text,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 

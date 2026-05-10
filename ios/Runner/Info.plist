@@ -28,6 +28,8 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>แอปต้องการใช้ตำแหน่งของคุณเพื่อเปิดใช้งานตัวเลือกส่งสินค้าไปยังที่อยู่ปัจจุบัน</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>แอปต้องการเข้าถึงรูปภาพเพื่อให้คุณเลือกสลิปชำระเงินอัปโหลดให้ร้านตรวจสอบ</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

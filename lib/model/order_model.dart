@@ -109,10 +109,14 @@ class OrderModel {
     required this.grandTotal,
     required this.status,
     required this.paymentStatus,
+    required this.paymentSlipBase64,
     required this.pickupInfo,
     this.deliveryDistanceMeters,
     this.deliveryLocation,
     this.shopLocation,
+    this.paymentSlipUploadedAt,
+    this.paymentVerifiedAt,
+    this.paymentRejectedAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -130,12 +134,31 @@ class OrderModel {
   final num grandTotal;
   final String status;
   final String paymentStatus;
+  final String paymentSlipBase64;
   final PickupInfoModel pickupInfo;
   final num? deliveryDistanceMeters;
   final GeoPoint? deliveryLocation;
   final GeoPoint? shopLocation;
+  final Timestamp? paymentSlipUploadedAt;
+  final Timestamp? paymentVerifiedAt;
+  final Timestamp? paymentRejectedAt;
   final Timestamp? createdAt;
   final Timestamp? updatedAt;
+
+  Uint8List? get paymentSlipBytes {
+    if (paymentSlipBase64.trim().isEmpty) {
+      return null;
+    }
+
+    try {
+      final String normalized = paymentSlipBase64.contains(',')
+          ? paymentSlipBase64.split(',').last
+          : paymentSlipBase64;
+      return base64Decode(normalized);
+    } catch (_) {
+      return null;
+    }
+  }
 
   bool get isCompleteOrCancelled {
     return status == 'completed' || status == 'cancelled';
@@ -163,6 +186,11 @@ class OrderModel {
       'grandTotal': grandTotal,
       'status': status,
       'paymentStatus': paymentStatus,
+      'paymentSlipBase64': paymentSlipBase64,
+      if (paymentSlipUploadedAt != null)
+        'paymentSlipUploadedAt': paymentSlipUploadedAt,
+      if (paymentVerifiedAt != null) 'paymentVerifiedAt': paymentVerifiedAt,
+      if (paymentRejectedAt != null) 'paymentRejectedAt': paymentRejectedAt,
       'pickupInfo': pickupInfo.toMap(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
@@ -197,6 +225,7 @@ class OrderModel {
       grandTotal: (map['grandTotal'] ?? 0) as num,
       status: (map['status'] ?? 'pending') as String,
       paymentStatus: (map['paymentStatus'] ?? 'unpaid') as String,
+      paymentSlipBase64: (map['paymentSlipBase64'] ?? '') as String,
       pickupInfo: PickupInfoModel.fromMap(
         (map['pickupInfo'] ?? <String, dynamic>{}) as Map<String, dynamic>,
       ),
@@ -206,6 +235,15 @@ class OrderModel {
           : null,
       shopLocation: map['shopLocation'] is GeoPoint
           ? map['shopLocation'] as GeoPoint
+          : null,
+      paymentSlipUploadedAt: map['paymentSlipUploadedAt'] is Timestamp
+          ? map['paymentSlipUploadedAt'] as Timestamp
+          : null,
+      paymentVerifiedAt: map['paymentVerifiedAt'] is Timestamp
+          ? map['paymentVerifiedAt'] as Timestamp
+          : null,
+      paymentRejectedAt: map['paymentRejectedAt'] is Timestamp
+          ? map['paymentRejectedAt'] as Timestamp
           : null,
       createdAt: map['createdAt'] is Timestamp
           ? map['createdAt'] as Timestamp

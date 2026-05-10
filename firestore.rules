@@ -71,6 +71,10 @@ service cloud.firestore {
           'items',
           'subtotal',
           'discount',
+          'deliveryFee',
+          'deliveryDistanceMeters',
+          'deliveryLocation',
+          'shopLocation',
           'grandTotal',
           'status',
           'paymentStatus',
@@ -81,15 +85,37 @@ service cloud.firestore {
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.status == 'pending'
         && request.resource.data.paymentStatus == 'unpaid'
-        && request.resource.data.orderType == 'pickup'
+        && request.resource.data.orderType in ['pickup', 'delivery']
         && request.resource.data.items is list
         && request.resource.data.items.size() > 0
         && request.resource.data.subtotal is number
         && request.resource.data.subtotal >= 0
         && request.resource.data.discount is number
         && request.resource.data.discount >= 0
+        && (!('deliveryFee' in request.resource.data)
+          || (request.resource.data.deliveryFee is number
+            && request.resource.data.deliveryFee >= 0))
         && request.resource.data.grandTotal is number
         && request.resource.data.grandTotal >= 0;
+    }
+
+    function validCustomerPaymentSlipUpdate() {
+      return signedIn()
+        && resource.data.userId == request.auth.uid
+        && resource.data.status != 'completed'
+        && resource.data.status != 'cancelled'
+        && resource.data.paymentStatus in ['unpaid', 'rejected']
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly([
+            'paymentSlipBase64',
+            'paymentStatus',
+            'paymentSlipUploadedAt',
+            'updatedAt'
+          ])
+        && request.resource.data.paymentStatus == 'waiting_verify'
+        && request.resource.data.paymentSlipBase64 is string
+        && request.resource.data.paymentSlipBase64.size() > 0
+        && request.resource.data.paymentSlipBase64.size() <= 1048487;
     }
 
     match /users/{userId} {
@@ -130,9 +156,16 @@ service cloud.firestore {
       allow get, list: if isAdmin()
         || (signedIn() && resource.data.userId == request.auth.uid);
       allow create: if signedIn() && validOrderCreate();
-      allow update: if isAdmin()
-        && request.resource.data.diff(resource.data).affectedKeys()
-          .hasOnly(['status', 'paymentStatus', 'updatedAt']);
+      allow update: if validCustomerPaymentSlipUpdate()
+        || (isAdmin()
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly([
+              'status',
+              'paymentStatus',
+              'paymentVerifiedAt',
+              'paymentRejectedAt',
+              'updatedAt'
+            ]));
       allow delete: if isAdmin();
     }
 

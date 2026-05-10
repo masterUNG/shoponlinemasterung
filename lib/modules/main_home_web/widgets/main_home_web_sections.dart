@@ -1359,6 +1359,10 @@ class _OrderCard extends StatelessWidget {
                       label: _orderStatusLabel(order.status),
                       color: color,
                     ),
+                    _StatusBadge(
+                      label: controller.paymentStatusLabel(order.paymentStatus),
+                      color: _paymentStatusColor(order.paymentStatus),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 6),
@@ -1421,6 +1425,20 @@ class _OrderActionRow extends StatelessWidget {
       );
     }
 
+    if (order.paymentStatus == 'waiting_verify') {
+      return _PaymentVerifyActions(controller: controller, order: order);
+    }
+
+    if (order.paymentStatus != 'paid') {
+      return Align(
+        alignment: Alignment.centerLeft,
+        child: _StatusBadge(
+          label: 'รอลูกค้าอัปโหลดสลิป',
+          color: _paymentStatusColor(order.paymentStatus),
+        ),
+      );
+    }
+
     return Obx(() {
       final bool isUpdating = controller.updatingOrderId.value == order.id;
       final bool anotherOrderIsUpdating =
@@ -1470,6 +1488,67 @@ class _OrderActionRow extends StatelessWidget {
                   label: Text(_orderActionLabel(status)),
                 );
         }).toList(),
+      );
+    });
+  }
+}
+
+class _PaymentVerifyActions extends StatelessWidget {
+  const _PaymentVerifyActions({required this.controller, required this.order});
+
+  final MainHomeWebController controller;
+  final AdminOrderModel order;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final bool isUpdating =
+          controller.updatingPaymentOrderId.value == order.id;
+      final bool anotherOrderIsUpdating =
+          controller.updatingPaymentOrderId.value.isNotEmpty && !isUpdating;
+
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: order.hasPaymentSlip
+                ? () => _showPaymentSlipDialog(
+                    context,
+                    controller: controller,
+                    order: order,
+                  )
+                : null,
+            icon: const Icon(Icons.receipt_long_rounded, size: 18),
+            label: const Text('ดูสลิป'),
+          ),
+          FilledButton.icon(
+            onPressed: isUpdating || anotherOrderIsUpdating
+                ? null
+                : () => controller.verifyOrderPayment(order),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF16805A),
+              foregroundColor: Colors.white,
+            ),
+            icon: isUpdating
+                ? const SizedBox.square(
+                    dimension: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.verified_rounded, size: 18),
+            label: const Text('ยืนยันสลิป'),
+          ),
+          OutlinedButton.icon(
+            onPressed: isUpdating || anotherOrderIsUpdating
+                ? null
+                : () => controller.rejectOrderPayment(order),
+            icon: const Icon(Icons.close_rounded, size: 18),
+            label: const Text('ปฏิเสธ'),
+          ),
+        ],
       );
     });
   }
@@ -1553,9 +1632,7 @@ class _OrderDetailDialog extends StatelessWidget {
                   ),
                   _OrderDetailInfo(
                     label: 'ชำระเงิน',
-                    value: order.paymentStatus == 'paid'
-                        ? 'ชำระเงินแล้ว'
-                        : 'ยังไม่ชำระเงิน',
+                    value: controller.paymentStatusLabel(order.paymentStatus),
                     icon: Icons.payments_rounded,
                   ),
                 ],
@@ -1572,6 +1649,16 @@ class _OrderDetailDialog extends StatelessWidget {
               _OrderDetailLine(label: 'ชื่อผู้รับ', value: pickupName),
               _OrderDetailLine(label: 'เบอร์โทร', value: pickupPhone),
               _OrderDetailLine(label: 'หมายเหตุ', value: pickupNote),
+              const SizedBox(height: 18),
+              Text(
+                'สลิปชำระเงิน',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: const Color(0xFF163A72),
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 10),
+              _PaymentSlipPreview(order: order),
               const SizedBox(height: 18),
               Text(
                 'สินค้าในออเดอร์',
@@ -1614,11 +1701,113 @@ class _OrderDetailDialog extends StatelessWidget {
         ),
       ),
       actions: [
+        if (order.paymentStatus == 'waiting_verify') ...[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              controller.rejectOrderPayment(order);
+            },
+            child: const Text('ปฏิเสธสลิป'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              controller.verifyOrderPayment(order);
+            },
+            child: const Text('ยืนยันสลิป'),
+          ),
+        ],
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('ปิด'),
         ),
       ],
+    );
+  }
+}
+
+Future<void> _showPaymentSlipDialog(
+  BuildContext context, {
+  required MainHomeWebController controller,
+  required AdminOrderModel order,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        insetPadding: const EdgeInsets.all(24),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(order.orderNo),
+        content: SizedBox(
+          width: 420,
+          child: _PaymentSlipPreview(order: order, large: true),
+        ),
+        actions: [
+          if (order.paymentStatus == 'waiting_verify') ...[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                controller.rejectOrderPayment(order);
+              },
+              child: const Text('ปฏิเสธ'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                controller.verifyOrderPayment(order);
+              },
+              child: const Text('ยืนยันสลิป'),
+            ),
+          ],
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ปิด'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _PaymentSlipPreview extends StatelessWidget {
+  const _PaymentSlipPreview({required this.order, this.large = false});
+
+  final AdminOrderModel order;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+    final Uint8List? bytes = _decodeBase64Image(order.paymentSlipBase64);
+
+    if (bytes == null) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFD),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFDDE6F2)),
+        ),
+        child: Text(
+          'ยังไม่มีสลิปจากลูกค้า',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: const Color(0xFF6B7A95),
+          ),
+        ),
+      );
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        color: const Color(0xFFF8FAFD),
+        constraints: BoxConstraints(
+          maxHeight: large ? 560 : 260,
+          minHeight: large ? 320 : 180,
+        ),
+        child: Image.memory(bytes, fit: BoxFit.contain, width: double.infinity),
+      ),
     );
   }
 }
@@ -3604,6 +3793,30 @@ Color _orderColor(AdminOrderStatus status) {
       return const Color(0xFF6B7A95);
     case AdminOrderStatus.cancelled:
       return const Color(0xFFD05A2D);
+  }
+}
+
+Color _paymentStatusColor(String status) {
+  return switch (status) {
+    'paid' => const Color(0xFF16805A),
+    'waiting_verify' => const Color(0xFFDA7A12),
+    'rejected' => const Color(0xFFD05A2D),
+    _ => const Color(0xFF6B7A95),
+  };
+}
+
+Uint8List? _decodeBase64Image(String base64Image) {
+  if (base64Image.trim().isEmpty) {
+    return null;
+  }
+
+  try {
+    final String normalized = base64Image.contains(',')
+        ? base64Image.split(',').last
+        : base64Image;
+    return base64Decode(normalized);
+  } catch (_) {
+    return null;
   }
 }
 

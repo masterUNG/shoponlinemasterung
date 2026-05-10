@@ -38,6 +38,8 @@ class AdminOrderModel {
     required this.createdAt,
     required this.note,
     required this.paymentStatus,
+    required this.paymentSlipBase64,
+    required this.paymentSlipUploadedAt,
     required this.items,
     required this.pickupInfo,
     required this.subtotal,
@@ -53,14 +55,22 @@ class AdminOrderModel {
   final DateTime createdAt;
   final String note;
   final String paymentStatus;
+  final String paymentSlipBase64;
+  final DateTime? paymentSlipUploadedAt;
   final List<OrderItemModel> items;
   final PickupInfoModel pickupInfo;
   final double subtotal;
   final double discount;
 
   bool get isOpen => !status.isClosed;
+  bool get hasPaymentSlip => paymentSlipBase64.trim().isNotEmpty;
 
-  AdminOrderModel copyWith({AdminOrderStatus? status}) {
+  AdminOrderModel copyWith({
+    AdminOrderStatus? status,
+    String? paymentStatus,
+    String? paymentSlipBase64,
+    DateTime? paymentSlipUploadedAt,
+  }) {
     return AdminOrderModel(
       id: id,
       orderNo: orderNo,
@@ -70,7 +80,10 @@ class AdminOrderModel {
       status: status ?? this.status,
       createdAt: createdAt,
       note: note,
-      paymentStatus: paymentStatus,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentSlipBase64: paymentSlipBase64 ?? this.paymentSlipBase64,
+      paymentSlipUploadedAt:
+          paymentSlipUploadedAt ?? this.paymentSlipUploadedAt,
       items: items,
       pickupInfo: pickupInfo,
       subtotal: subtotal,

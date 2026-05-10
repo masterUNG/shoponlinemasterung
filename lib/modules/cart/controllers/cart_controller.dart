@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
@@ -351,10 +351,8 @@ class CartController extends GetxController {
           'items': orderItems,
           'subtotal': orderingTotal,
           'discount': 0,
-          'deliveryFee': 0,
           'deliveryDistanceMeters': ?deliveryDistanceMeters,
           'deliveryLocation': ?deliveryLocation,
-          'shopLocation': AppConstant.shopLocation,
           'grandTotal': orderingTotal,
           'status': 'pending',
           'paymentStatus': 'unpaid',
@@ -399,7 +397,9 @@ class CartController extends GetxController {
             : '$itemName มีจำนวนในสต๊อกไม่พอ',
         snackPosition: SnackPosition.BOTTOM,
       );
-    } catch (_) {
+    } catch (error, stackTrace) {
+      debugPrint('createOrderFromCart failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
       Get.snackbar(
         'สั่งซื้อไม่สำเร็จ',
         'กรุณาลองใหม่อีกครั้ง',
