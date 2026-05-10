@@ -310,7 +310,9 @@ class _OrderTile extends GetView<OrderController> {
               children: [
                 Expanded(
                   child: Text(
-                    'รับที่ร้าน',
+                    order.orderType == 'delivery'
+                        ? _buildDeliveryLabel(order)
+                        : 'มารับเองที่ร้าน',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -342,6 +344,19 @@ class _OrderTile extends GetView<OrderController> {
     final int otherCount = order.items.length - 1;
     final String suffix = otherCount > 0 ? ' +$otherCount รายการ' : '';
     return '$firstName$suffix (${order.totalQuantity} ชิ้น)';
+  }
+
+  String _buildDeliveryLabel(OrderModel order) {
+    final num? meters = order.deliveryDistanceMeters;
+    if (meters == null) {
+      return 'ส่งฟรีถึงที่';
+    }
+
+    if (meters < 1000) {
+      return 'ส่งฟรีถึงที่ (${meters.round()} เมตร)';
+    }
+
+    return 'ส่งฟรีถึงที่ (${(meters / 1000).toStringAsFixed(2)} กม.)';
   }
 }
 

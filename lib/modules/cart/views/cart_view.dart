@@ -70,6 +70,10 @@ class CartView extends GetView<CartController> {
                 totalAmount: controller.formatCurrency(controller.totalAmount),
                 enabled: controller.cartItems.isNotEmpty,
                 isOrdering: controller.isOrdering.value,
+                selectedFulfillment: controller.fulfillmentType.value,
+                canUseDelivery: controller.canUseDelivery,
+                deliveryStatusText: controller.deliveryStatusText,
+                onFulfillmentChanged: controller.selectFulfillment,
                 onOrderPressed: controller.createOrderFromCart,
               ),
             ),
@@ -324,6 +328,10 @@ class _CartSummary extends StatelessWidget {
     required this.totalAmount,
     required this.enabled,
     required this.isOrdering,
+    required this.selectedFulfillment,
+    required this.canUseDelivery,
+    required this.deliveryStatusText,
+    required this.onFulfillmentChanged,
     required this.onOrderPressed,
   });
 
@@ -331,6 +339,10 @@ class _CartSummary extends StatelessWidget {
   final String totalAmount;
   final bool enabled;
   final bool isOrdering;
+  final FulfillmentType selectedFulfillment;
+  final bool canUseDelivery;
+  final String deliveryStatusText;
+  final ValueChanged<FulfillmentType> onFulfillmentChanged;
   final VoidCallback onOrderPressed;
 
   @override
@@ -351,48 +363,130 @@ class _CartSummary extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'รวม $totalItems รายการ',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF687191),
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    totalAmount,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: const Color(0xFF17224D),
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ],
-              ),
+            _FulfillmentSelector(
+              selectedFulfillment: selectedFulfillment,
+              canUseDelivery: canUseDelivery,
+              statusText: deliveryStatusText,
+              onChanged: onFulfillmentChanged,
             ),
-            const SizedBox(width: 12),
-            FilledButton.icon(
-              onPressed: enabled && !isOrdering ? onOrderPressed : null,
-              icon: isOrdering
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.receipt_long_rounded),
-              label: Text(isOrdering ? 'กำลังสั่ง...' : 'Order สินค้า'),
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'รวม $totalItems รายการ',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: const Color(0xFF687191),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        totalAmount,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: const Color(0xFF17224D),
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                FilledButton.icon(
+                  onPressed: enabled && !isOrdering ? onOrderPressed : null,
+                  icon: isOrdering
+                      ? const SizedBox.square(
+                          dimension: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.receipt_long_rounded),
+                  label: Text(isOrdering ? 'กำลังสั่ง...' : 'Order สินค้า'),
+                ),
+              ],
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _FulfillmentSelector extends StatelessWidget {
+  const _FulfillmentSelector({
+    required this.selectedFulfillment,
+    required this.canUseDelivery,
+    required this.statusText,
+    required this.onChanged,
+  });
+
+  final FulfillmentType selectedFulfillment;
+  final bool canUseDelivery;
+  final String statusText;
+  final ValueChanged<FulfillmentType> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SegmentedButton<FulfillmentType>(
+          segments: [
+            const ButtonSegment<FulfillmentType>(
+              value: FulfillmentType.pickup,
+              icon: Icon(Icons.store_rounded),
+              label: Text('มารับเอง'),
+            ),
+            ButtonSegment<FulfillmentType>(
+              value: FulfillmentType.delivery,
+              enabled: canUseDelivery,
+              icon: const Icon(Icons.local_shipping_rounded),
+              label: const Text('ให้ไปส่งฟรี'),
+            ),
+          ],
+          selected: {selectedFulfillment},
+          showSelectedIcon: false,
+          onSelectionChanged: (Set<FulfillmentType> values) {
+            onChanged(values.first);
+          },
+        ),
+        const SizedBox(height: 8),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(
+              canUseDelivery
+                  ? Icons.check_circle_rounded
+                  : Icons.info_outline_rounded,
+              color: canUseDelivery
+                  ? const Color(0xFF12805C)
+                  : const Color(0xFFB36B00),
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                statusText,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF687191),
+                  height: 1.35,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

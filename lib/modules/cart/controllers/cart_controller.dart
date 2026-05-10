@@ -4,9 +4,13 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
+import '../../../core/app_constant.dart';
 import '../../main_home/controllers/main_home_controller.dart';
+
+enum FulfillmentType { pickup, delivery }
 
 class CartItem {
   const CartItem({required this.id, required this.data});
@@ -47,8 +51,14 @@ class CartController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxBool isOrdering = false.obs;
   final RxString errorMessage = ''.obs;
+  final Rx<FulfillmentType> fulfillmentType = FulfillmentType.pickup.obs;
+  final Rxn<GeoPoint> customerLocation = Rxn<GeoPoint>();
+  final RxnDouble distanceFromShopMeters = RxnDouble();
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _cartSubscription;
+  StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
+
+  static const double freeDeliveryRadiusMeters = 1000;
 
   num get totalAmount =>
       cartItems.fold<num>(0, (amount, item) => amount + item.totalPrice);
@@ -57,15 +67,38 @@ class CartController extends GetxController {
     return quantityTotal + item.quantity;
   });
 
+  bool get canUseDelivery {
+    final double? distance = distanceFromShopMeters.value;
+    return customerLocation.value != null &&
+        distance != null &&
+        distance <= freeDeliveryRadiusMeters;
+  }
+
+  String get deliveryStatusText {
+    final double? distance = distanceFromShopMeters.value;
+    if (customerLocation.value == null || distance == null) {
+      return 'ยังไม่มีพิกัดจัดส่ง จึงเลือกได้เฉพาะมารับเองที่ร้าน';
+    }
+
+    final String distanceText = formatDistance(distance);
+    if (canUseDelivery) {
+      return 'ระยะ $distanceText จากร้าน ส่งฟรีได้ในรัศมี 1 กม.';
+    }
+
+    return 'ระยะ $distanceText จากร้าน เกิน 1 กม. จึงต้องมารับเองที่ร้าน';
+  }
+
   @override
   void onInit() {
     super.onInit();
     listenCartFeed();
+    listenUserProfile();
   }
 
   @override
   void onClose() {
     _cartSubscription?.cancel();
+    _userSubscription?.cancel();
     super.onClose();
   }
 
@@ -110,6 +143,54 @@ class CartController extends GetxController {
         );
   }
 
+  void listenUserProfile() {
+    final User? user = _firebaseAuth.currentUser;
+    if (user == null) {
+      customerLocation.value = null;
+      distanceFromShopMeters.value = null;
+      fulfillmentType.value = FulfillmentType.pickup;
+      return;
+    }
+
+    _userSubscription = _firestore
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .listen((DocumentSnapshot<Map<String, dynamic>> snapshot) {
+          final Object? geopoint = snapshot.data()?['geopoint'];
+          if (geopoint is GeoPoint) {
+            customerLocation.value = geopoint;
+            distanceFromShopMeters.value = Geolocator.distanceBetween(
+              AppConstant.shopLocation.latitude,
+              AppConstant.shopLocation.longitude,
+              geopoint.latitude,
+              geopoint.longitude,
+            );
+          } else {
+            customerLocation.value = null;
+            distanceFromShopMeters.value = null;
+          }
+
+          if (!canUseDelivery) {
+            fulfillmentType.value = FulfillmentType.pickup;
+          }
+        });
+  }
+
+  void selectFulfillment(FulfillmentType type) {
+    if (type == FulfillmentType.delivery && !canUseDelivery) {
+      Get.snackbar(
+        'ยังใช้บริการส่งไม่ได้',
+        deliveryStatusText,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      fulfillmentType.value = FulfillmentType.pickup;
+      return;
+    }
+
+    fulfillmentType.value = type;
+  }
+
   String formatCurrency(num amount) {
     final String digits = amount.round().toString();
     final String formatted = digits.replaceAllMapped(
@@ -117,6 +198,14 @@ class CartController extends GetxController {
       (match) => ',',
     );
     return '฿$formatted';
+  }
+
+  String formatDistance(double meters) {
+    if (meters < 1000) {
+      return '${meters.round()} เมตร';
+    }
+
+    return '${(meters / 1000).toStringAsFixed(2)} กม.';
   }
 
   Future<void> incrementQuantity(CartItem item) async {
@@ -194,6 +283,18 @@ class CartController extends GetxController {
     isOrdering.value = true;
 
     try {
+      final FulfillmentType selectedFulfillment = canUseDelivery
+          ? fulfillmentType.value
+          : FulfillmentType.pickup;
+      if (fulfillmentType.value == FulfillmentType.delivery &&
+          selectedFulfillment == FulfillmentType.pickup) {
+        Get.snackbar(
+          'จัดส่งไม่ได้',
+          deliveryStatusText,
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      }
+
       final List<CartItem> orderingItems = List<CartItem>.from(cartItems);
       final DocumentReference<Map<String, dynamic>> orderRef = _firestore
           .collection('orders')
@@ -220,6 +321,14 @@ class CartController extends GetxController {
         }
 
         final FieldValue serverTimestamp = FieldValue.serverTimestamp();
+        final GeoPoint? deliveryLocation =
+            selectedFulfillment == FulfillmentType.delivery
+            ? customerLocation.value
+            : null;
+        final double? deliveryDistanceMeters =
+            selectedFulfillment == FulfillmentType.delivery
+            ? distanceFromShopMeters.value
+            : null;
         final List<Map<String, dynamic>> orderItems = orderingItems.map((item) {
           return <String, dynamic>{
             'productId': item.data['productId'] ?? item.id,
@@ -238,10 +347,14 @@ class CartController extends GetxController {
           'userId': user.uid,
           'userName': _resolveUserName(user),
           'userPhone': user.phoneNumber ?? '',
-          'orderType': 'pickup',
+          'orderType': selectedFulfillment.name,
           'items': orderItems,
           'subtotal': orderingTotal,
           'discount': 0,
+          'deliveryFee': 0,
+          'deliveryDistanceMeters': ?deliveryDistanceMeters,
+          'deliveryLocation': ?deliveryLocation,
+          'shopLocation': AppConstant.shopLocation,
           'grandTotal': orderingTotal,
           'status': 'pending',
           'paymentStatus': 'unpaid',

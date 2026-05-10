@@ -105,10 +105,14 @@ class OrderModel {
     required this.items,
     required this.subtotal,
     required this.discount,
+    required this.deliveryFee,
     required this.grandTotal,
     required this.status,
     required this.paymentStatus,
     required this.pickupInfo,
+    this.deliveryDistanceMeters,
+    this.deliveryLocation,
+    this.shopLocation,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -122,10 +126,14 @@ class OrderModel {
   final List<OrderItemModel> items;
   final num subtotal;
   final num discount;
+  final num deliveryFee;
   final num grandTotal;
   final String status;
   final String paymentStatus;
   final PickupInfoModel pickupInfo;
+  final num? deliveryDistanceMeters;
+  final GeoPoint? deliveryLocation;
+  final GeoPoint? shopLocation;
   final Timestamp? createdAt;
   final Timestamp? updatedAt;
 
@@ -147,6 +155,11 @@ class OrderModel {
       'items': items.map((item) => item.toMap()).toList(),
       'subtotal': subtotal,
       'discount': discount,
+      'deliveryFee': deliveryFee,
+      if (deliveryDistanceMeters != null)
+        'deliveryDistanceMeters': deliveryDistanceMeters,
+      if (deliveryLocation != null) 'deliveryLocation': deliveryLocation,
+      if (shopLocation != null) 'shopLocation': shopLocation,
       'grandTotal': grandTotal,
       'status': status,
       'paymentStatus': paymentStatus,
@@ -180,12 +193,20 @@ class OrderModel {
           .toList(),
       subtotal: (map['subtotal'] ?? 0) as num,
       discount: (map['discount'] ?? 0) as num,
+      deliveryFee: (map['deliveryFee'] ?? 0) as num,
       grandTotal: (map['grandTotal'] ?? 0) as num,
       status: (map['status'] ?? 'pending') as String,
       paymentStatus: (map['paymentStatus'] ?? 'unpaid') as String,
       pickupInfo: PickupInfoModel.fromMap(
         (map['pickupInfo'] ?? <String, dynamic>{}) as Map<String, dynamic>,
       ),
+      deliveryDistanceMeters: map['deliveryDistanceMeters'] as num?,
+      deliveryLocation: map['deliveryLocation'] is GeoPoint
+          ? map['deliveryLocation'] as GeoPoint
+          : null,
+      shopLocation: map['shopLocation'] is GeoPoint
+          ? map['shopLocation'] as GeoPoint
+          : null,
       createdAt: map['createdAt'] is Timestamp
           ? map['createdAt'] as Timestamp
           : null,
