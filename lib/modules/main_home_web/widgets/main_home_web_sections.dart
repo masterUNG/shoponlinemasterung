@@ -1585,6 +1585,12 @@ class _OrderDetailDialog extends StatelessWidget {
     final String pickupNote = order.pickupInfo.note.trim().isEmpty
         ? '-'
         : order.pickupInfo.note.trim();
+    final String deliveryDistance = order.deliveryDistanceMeters == null
+        ? '-'
+        : controller.formatDistance(order.deliveryDistanceMeters!);
+    final String deliveryCoordinate = order.hasDeliveryLocation
+        ? '${order.deliveryLatitude!.toStringAsFixed(6)}, ${order.deliveryLongitude!.toStringAsFixed(6)}'
+        : '-';
 
     return AlertDialog(
       insetPadding: const EdgeInsets.all(24),
@@ -1639,16 +1645,30 @@ class _OrderDetailDialog extends StatelessWidget {
               ),
               const SizedBox(height: 18),
               Text(
-                'ข้อมูลรับที่ร้าน',
+                order.isDelivery ? 'ข้อมูลส่งฟรี' : 'ข้อมูลรับที่ร้าน',
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: const Color(0xFF163A72),
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 10),
-              _OrderDetailLine(label: 'ชื่อผู้รับ', value: pickupName),
-              _OrderDetailLine(label: 'เบอร์โทร', value: pickupPhone),
-              _OrderDetailLine(label: 'หมายเหตุ', value: pickupNote),
+              if (order.isDelivery) ...[
+                _OrderDetailLine(
+                  label: 'เงื่อนไข',
+                  value: 'ส่งฟรีเฉพาะในหมู่บ้าน/รัศมี 1 กม. จากร้าน',
+                ),
+                _OrderDetailLine(label: 'ระยะจากร้าน', value: deliveryDistance),
+                _OrderDetailLine(
+                  label: 'พิกัดลูกค้า',
+                  value: deliveryCoordinate,
+                ),
+                _OrderDetailLine(label: 'เบอร์โทร', value: pickupPhone),
+                _OrderDetailLine(label: 'หมายเหตุ', value: pickupNote),
+              ] else ...[
+                _OrderDetailLine(label: 'ชื่อผู้รับ', value: pickupName),
+                _OrderDetailLine(label: 'เบอร์โทร', value: pickupPhone),
+                _OrderDetailLine(label: 'หมายเหตุ', value: pickupNote),
+              ],
               const SizedBox(height: 18),
               Text(
                 'สลิปชำระเงิน',
@@ -1896,13 +1916,17 @@ class _OrderDetailLine extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            value,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: emphasize
-                  ? const Color(0xFF163A72)
-                  : const Color(0xFF273757),
-              fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: emphasize
+                    ? const Color(0xFF163A72)
+                    : const Color(0xFF273757),
+                fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
+              ),
             ),
           ),
         ],

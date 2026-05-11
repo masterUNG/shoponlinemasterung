@@ -351,14 +351,14 @@ class _OrderTile extends GetView<OrderController> {
   String _buildDeliveryLabel(OrderModel order) {
     final num? meters = order.deliveryDistanceMeters;
     if (meters == null) {
-      return 'ส่งฟรีถึงที่';
+      return 'ส่งฟรีในหมู่บ้าน/รัศมี 1 กม.';
     }
 
     if (meters < 1000) {
-      return 'ส่งฟรีถึงที่ (${meters.round()} เมตร)';
+      return 'ส่งฟรีในหมู่บ้าน (${meters.round()} เมตรจากร้าน)';
     }
 
-    return 'ส่งฟรีถึงที่ (${(meters / 1000).toStringAsFixed(2)} กม.)';
+    return 'ส่งฟรีในรัศมีร้าน (${(meters / 1000).toStringAsFixed(2)} กม.จากร้าน)';
   }
 }
 

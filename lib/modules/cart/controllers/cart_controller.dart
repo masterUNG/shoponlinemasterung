@@ -77,15 +77,15 @@ class CartController extends GetxController {
   String get deliveryStatusText {
     final double? distance = distanceFromShopMeters.value;
     if (customerLocation.value == null || distance == null) {
-      return 'ยังไม่มีพิกัดจัดส่ง จึงเลือกได้เฉพาะมารับเองที่ร้าน';
+      return 'ส่งฟรีเฉพาะลูกค้าในหมู่บ้าน/รัศมี 1 กม. จากร้าน กรุณาบันทึกพิกัดก่อนเลือกให้ไปส่งฟรี';
     }
 
     final String distanceText = formatDistance(distance);
     if (canUseDelivery) {
-      return 'ระยะ $distanceText จากร้าน ส่งฟรีได้ในรัศมี 1 กม.';
+      return 'พิกัดของคุณอยู่ห่างร้าน $distanceText ส่งฟรีเฉพาะในหมู่บ้าน/รัศมี 1 กม. ใช้บริการส่งฟรีได้';
     }
 
-    return 'ระยะ $distanceText จากร้าน เกิน 1 กม. จึงต้องมารับเองที่ร้าน';
+    return 'พิกัดของคุณอยู่ห่างร้าน $distanceText เกินรัศมีส่งฟรี 1 กม. จึงเลือกได้เฉพาะมารับเองที่ร้าน';
   }
 
   @override

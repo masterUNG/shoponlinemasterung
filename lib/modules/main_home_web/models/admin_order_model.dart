@@ -42,6 +42,10 @@ class AdminOrderModel {
     required this.paymentSlipUploadedAt,
     required this.items,
     required this.pickupInfo,
+    required this.orderType,
+    required this.deliveryDistanceMeters,
+    required this.deliveryLatitude,
+    required this.deliveryLongitude,
     required this.subtotal,
     required this.discount,
   });
@@ -59,11 +63,18 @@ class AdminOrderModel {
   final DateTime? paymentSlipUploadedAt;
   final List<OrderItemModel> items;
   final PickupInfoModel pickupInfo;
+  final String orderType;
+  final num? deliveryDistanceMeters;
+  final double? deliveryLatitude;
+  final double? deliveryLongitude;
   final double subtotal;
   final double discount;
 
   bool get isOpen => !status.isClosed;
   bool get hasPaymentSlip => paymentSlipBase64.trim().isNotEmpty;
+  bool get isDelivery => orderType == 'delivery';
+  bool get hasDeliveryLocation =>
+      deliveryLatitude != null && deliveryLongitude != null;
 
   AdminOrderModel copyWith({
     AdminOrderStatus? status,
@@ -86,6 +97,10 @@ class AdminOrderModel {
           paymentSlipUploadedAt ?? this.paymentSlipUploadedAt,
       items: items,
       pickupInfo: pickupInfo,
+      orderType: orderType,
+      deliveryDistanceMeters: deliveryDistanceMeters,
+      deliveryLatitude: deliveryLatitude,
+      deliveryLongitude: deliveryLongitude,
       subtotal: subtotal,
       discount: discount,
     );

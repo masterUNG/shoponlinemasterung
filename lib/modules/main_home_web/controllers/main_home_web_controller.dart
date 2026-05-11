@@ -320,6 +320,10 @@ class MainHomeWebController extends GetxController {
       paymentSlipUploadedAt: order.paymentSlipUploadedAt?.toDate(),
       items: order.items,
       pickupInfo: order.pickupInfo,
+      orderType: order.orderType,
+      deliveryDistanceMeters: order.deliveryDistanceMeters,
+      deliveryLatitude: order.deliveryLocation?.latitude,
+      deliveryLongitude: order.deliveryLocation?.longitude,
       subtotal: order.subtotal.toDouble(),
       discount: order.discount.toDouble(),
     );
@@ -370,17 +374,36 @@ class MainHomeWebController extends GetxController {
     final String pickupName = order.pickupInfo.pickupName.trim();
     final String pickupPhone = order.pickupInfo.pickupPhone.trim();
     final String note = order.pickupInfo.note.trim();
+    final String fulfillment = order.orderType == 'delivery'
+        ? _buildDeliverySummary(order.deliveryDistanceMeters)
+        : 'รับที่ร้าน';
     final String pickup = [
       if (pickupName.isNotEmpty) pickupName,
       if (pickupPhone.isNotEmpty) pickupPhone,
     ].join(' • ');
 
     return [
-      'รับที่ร้าน',
+      fulfillment,
       payment,
       if (pickup.isNotEmpty) pickup,
       if (note.isNotEmpty) note,
     ].join(' • ');
+  }
+
+  String _buildDeliverySummary(num? distanceMeters) {
+    if (distanceMeters == null) {
+      return 'ส่งฟรีในหมู่บ้าน/รัศมี 1 กม.';
+    }
+
+    return 'ส่งฟรี • ระยะ ${formatDistance(distanceMeters)} จากร้าน';
+  }
+
+  String formatDistance(num meters) {
+    if (meters < 1000) {
+      return '${meters.round()} เมตร';
+    }
+
+    return '${(meters / 1000).toStringAsFixed(2)} กม.';
   }
 
   String paymentStatusLabel(String status) {

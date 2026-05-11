@@ -486,6 +486,16 @@ class _FulfillmentSelector extends StatelessWidget {
             ),
           ],
         ),
+        if (canUseDelivery) ...[
+          const SizedBox(height: 6),
+          Text(
+            'ร้านจะใช้พิกัดนี้เป็นจุดส่งสินค้า กรุณาตรวจสอบว่าตรงบ้าน/จุดรับของในหมู่บ้าน',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: const Color(0xFF687191),
+              height: 1.35,
+            ),
+          ),
+        ],
       ],
     );
   }
