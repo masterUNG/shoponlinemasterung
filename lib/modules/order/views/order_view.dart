@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 
 import '../../../model/order_model.dart';
 import '../controllers/order_controller.dart';
@@ -367,6 +369,10 @@ class _PaymentSlipAction extends GetView<OrderController> {
 
   final OrderModel order;
 
+  static const String _promptPayAsset = 'images/promptpay.JPG';
+  static const String _accountName = 'นาย ชัยวุฒิ พรหมบุตร';
+  static const String _accountNumber = 'xxx-x-x2767-x';
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
@@ -375,63 +381,413 @@ class _PaymentSlipAction extends GetView<OrderController> {
     final bool paid = order.paymentStatus == 'paid';
 
     if (paid) {
-      return _PaymentHint(
-        icon: Icons.verified_rounded,
-        text: 'ร้านยืนยันการชำระเงินแล้ว',
-        color: const Color(0xFF12805C),
+      return Column(
+        children: [
+          _PaymentHint(
+            icon: Icons.verified_rounded,
+            text: 'ร้านยืนยันการชำระเงินแล้ว',
+            color: const Color(0xFF12805C),
+          ),
+          if (order.paymentSlipBytes != null) ...[
+            const SizedBox(height: 8),
+            _SlipPreviewButton(order: order),
+          ],
+        ],
       );
     }
 
     if (waitingVerify) {
-      return _PaymentHint(
-        icon: Icons.hourglass_top_rounded,
-        text: 'ส่งสลิปแล้ว รอร้านตรวจสอบ',
-        color: const Color(0xFFB36B00),
+      return Column(
+        children: [
+          _PaymentHint(
+            icon: Icons.hourglass_top_rounded,
+            text: 'ส่งสลิปแล้ว รอร้านตรวจสอบ',
+            color: const Color(0xFFB36B00),
+          ),
+          if (order.paymentSlipBytes != null) ...[
+            const SizedBox(height: 8),
+            _SlipPreviewButton(order: order),
+          ],
+        ],
       );
     }
 
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Text(
-            order.paymentStatus == 'rejected'
-                ? 'สลิปเดิมไม่ผ่าน กรุณาอัปโหลดใหม่'
-                : 'ชำระยอด ${controller.formatCurrency(order.grandTotal)} แล้วอัปโหลดสลิป',
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+        _PromptPayPaymentCard(
+          amount: controller.formatCurrency(order.grandTotal),
+          assetPath: _promptPayAsset,
+          accountName: _accountName,
+          accountNumber: _accountNumber,
+        ),
+        const SizedBox(height: 12),
+        if (order.paymentSlipBytes != null) ...[
+          _SlipPreviewButton(order: order),
+          const SizedBox(height: 10),
+        ],
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                order.paymentStatus == 'rejected'
+                    ? 'สลิปเดิมไม่ผ่าน กรุณาอัปโหลดใหม่'
+                    : 'ชำระยอด ${controller.formatCurrency(order.grandTotal)} แล้วอัปโหลดสลิป',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: const Color(0xFF687191),
+                  height: 1.35,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Obx(() {
+              final bool isUploading =
+                  controller.uploadingPaymentOrderId.value == order.id;
+              final bool anotherOrderUploading =
+                  controller.uploadingPaymentOrderId.value.isNotEmpty &&
+                  !isUploading;
+
+              return FilledButton.icon(
+                onPressed: !canUpload || isUploading || anotherOrderUploading
+                    ? null
+                    : () => controller.uploadPaymentSlip(order),
+                icon: isUploading
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.upload_file_rounded, size: 18),
+                label: Text(isUploading ? 'กำลังส่ง' : 'อัปโหลดสลิป'),
+              );
+            }),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _PromptPayPaymentCard extends StatelessWidget {
+  const _PromptPayPaymentCard({
+    required this.amount,
+    required this.assetPath,
+    required this.accountName,
+    required this.accountNumber,
+  });
+
+  final String amount;
+  final String assetPath;
+  final String accountName;
+  final String accountNumber;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFD),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFDDE6F2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(14),
+                child: Container(
+                  width: 104,
+                  height: 124,
+                  color: Colors.white,
+                  child: Image.asset(assetPath, fit: BoxFit.cover),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ชำระผ่านพร้อมเพย์',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: const Color(0xFF17224D),
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    _PaymentInfoLine(label: 'ยอดชำระ', value: amount),
+                    _PaymentInfoLine(label: 'ชื่อบัญชี', value: accountName),
+                    _PaymentInfoLine(label: 'บัญชี', value: accountNumber),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => _showPromptPayDialog(
+                            context,
+                            assetPath: assetPath,
+                            amount: amount,
+                            accountName: accountName,
+                            accountNumber: accountNumber,
+                          ),
+                          icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                          label: const Text('ดู QR'),
+                        ),
+                        _SavePromptPayQrButton(assetPath: assetPath),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'สแกน QR แล้วอัปโหลดสลิปในออเดอร์นี้ ร้านจะตรวจสอบยอดก่อนจัดเตรียมสินค้า',
             style: theme.textTheme.bodySmall?.copyWith(
               color: const Color(0xFF687191),
               height: 1.35,
             ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Obx(() {
-          final bool isUploading =
-              controller.uploadingPaymentOrderId.value == order.id;
-          final bool anotherOrderUploading =
-              controller.uploadingPaymentOrderId.value.isNotEmpty &&
-              !isUploading;
-
-          return FilledButton.icon(
-            onPressed: !canUpload || isUploading || anotherOrderUploading
-                ? null
-                : () => controller.uploadPaymentSlip(order),
-            icon: isUploading
-                ? const SizedBox.square(
-                    dimension: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Icon(Icons.upload_file_rounded, size: 18),
-            label: Text(isUploading ? 'กำลังส่ง' : 'อัปโหลดสลิป'),
-          );
-        }),
-      ],
+        ],
+      ),
     );
   }
+}
+
+class _PaymentInfoLine extends StatelessWidget {
+  const _PaymentInfoLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 3),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 58,
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF7D87A8),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: const Color(0xFF17224D),
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SlipPreviewButton extends StatelessWidget {
+  const _SlipPreviewButton({required this.order});
+
+  final OrderModel order;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: OutlinedButton.icon(
+        onPressed: () => _showSlipPreviewDialog(context, order: order),
+        icon: const Icon(Icons.receipt_long_rounded, size: 18),
+        label: const Text('ดูตัวอย่างสลิป'),
+      ),
+    );
+  }
+}
+
+Future<void> _showPromptPayDialog(
+  BuildContext context, {
+  required String assetPath,
+  required String amount,
+  required String accountName,
+  required String accountNumber,
+}) {
+  return showDialog<void>(
+    context: context,
+    builder: (context) {
+      final ThemeData theme = Theme.of(context);
+
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Text('QR พร้อมเพย์ร้าน'),
+        content: SizedBox(
+          width: 360,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Image.asset(assetPath, fit: BoxFit.contain),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                amount,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: const Color(0xFF25388F),
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                '$accountName • $accountNumber',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: const Color(0xFF687191),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          _SavePromptPayQrButton(assetPath: assetPath),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ปิด'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _SavePromptPayQrButton extends StatefulWidget {
+  const _SavePromptPayQrButton({required this.assetPath});
+
+  final String assetPath;
+
+  @override
+  State<_SavePromptPayQrButton> createState() => _SavePromptPayQrButtonState();
+}
+
+class _SavePromptPayQrButtonState extends State<_SavePromptPayQrButton> {
+  bool _isSaving = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: _isSaving ? null : _saveQrToGallery,
+      icon: _isSaving
+          ? const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            )
+          : const Icon(Icons.download_rounded, size: 18),
+      label: Text(_isSaving ? 'กำลังบันทึก' : 'บันทึก QR'),
+    );
+  }
+
+  Future<void> _saveQrToGallery() async {
+    setState(() => _isSaving = true);
+
+    try {
+      final ByteData data = await rootBundle.load(widget.assetPath);
+      final Uint8List bytes = data.buffer.asUint8List();
+      final Object? result = await ImageGallerySaverPlus.saveImage(
+        bytes,
+        quality: 100,
+        name: 'promptpay_qr_${DateTime.now().millisecondsSinceEpoch}',
+      );
+
+      if (!_isSaveSuccess(result)) {
+        throw StateError('save-gallery-failed');
+      }
+
+      Get.snackbar(
+        'บันทึก QR แล้ว',
+        'เปิดแอพธนาคารแล้วเลือกสแกนจากรูปใน Gallery ได้เลย',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } catch (_) {
+      Get.snackbar(
+        'บันทึก QR ไม่สำเร็จ',
+        'กรุณาตรวจสอบสิทธิ์การเข้าถึงรูปภาพ แล้วลองใหม่อีกครั้ง',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  bool _isSaveSuccess(Object? result) {
+    if (result is bool) {
+      return result;
+    }
+
+    if (result is Map) {
+      return result['isSuccess'] == true || result['success'] == true;
+    }
+
+    return result != null;
+  }
+}
+
+Future<void> _showSlipPreviewDialog(
+  BuildContext context, {
+  required OrderModel order,
+}) {
+  final Uint8List? bytes = order.paymentSlipBytes;
+  if (bytes == null) {
+    return Future<void>.value();
+  }
+
+  return showDialog<void>(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(order.orderNo),
+        content: SizedBox(
+          width: 360,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Image.memory(bytes, fit: BoxFit.contain),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ปิด'),
+          ),
+        ],
+      );
+    },
+  );
 }
 
 class _PaymentHint extends StatelessWidget {

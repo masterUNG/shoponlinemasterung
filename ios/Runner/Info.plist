@@ -30,6 +30,8 @@
 	<string>แอปต้องการใช้ตำแหน่งของคุณเพื่อเปิดใช้งานตัวเลือกส่งสินค้าไปยังที่อยู่ปัจจุบัน</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>แอปต้องการเข้าถึงรูปภาพเพื่อให้คุณเลือกสลิปชำระเงินอัปโหลดให้ร้านตรวจสอบ</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>แอปต้องการบันทึก QR พร้อมเพย์ลงรูปภาพ เพื่อให้คุณนำไปสแกนจากแอปธนาคารได้</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
