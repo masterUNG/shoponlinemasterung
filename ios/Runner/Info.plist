@@ -24,14 +24,33 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>GIDClientID</key>
+	<string>247194165705-upgoip3reo3v8lbnj564fngasdsuqcr9.apps.googleusercontent.com</string>
+	<key>GIDServerClientID</key>
+	<string>247194165705-2rdt0j6gkrsrpl3jr2huraknltu1gjk4.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.247194165705-upgoip3reo3v8lbnj564fngasdsuqcr9</string>
+			</array>
+		</dict>
+	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>แอปต้องการใช้กล้องเพื่อถ่ายรูปสำหรับอัปโหลดรูปภาพหรือสลิปชำระเงิน</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>แอปต้องการใช้ตำแหน่งของคุณเพื่อเปิดใช้งานตัวเลือกส่งสินค้าไปยังที่อยู่ปัจจุบัน</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>แอปต้องการเข้าถึงรูปภาพเพื่อให้คุณเลือกสลิปชำระเงินอัปโหลดให้ร้านตรวจสอบ</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>แอปต้องการใช้ไมโครโฟนเมื่อมีการบันทึกวิดีโอผ่านตัวเลือกรูปภาพ</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>แอปต้องการบันทึก QR พร้อมเพย์ลงรูปภาพ เพื่อให้คุณนำไปสแกนจากแอปธนาคารได้</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>แอปต้องการเข้าถึงรูปภาพเพื่อให้คุณเลือกสลิปชำระเงินอัปโหลดให้ร้านตรวจสอบ</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
