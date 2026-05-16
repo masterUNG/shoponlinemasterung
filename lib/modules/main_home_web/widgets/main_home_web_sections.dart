@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shoponlinemasterung/model/order_model.dart';
@@ -135,7 +136,7 @@ class _ProductsSection extends StatelessWidget {
               'หน้านี้เหมาะสำหรับต่อฟอร์มเพิ่มสินค้า แก้ไขข้อมูล เปลี่ยนราคา และจัดหมวดหมู่ในขั้นถัดไป',
           actionLabel: 'เพิ่มสินค้าใหม่',
           icon: Icons.inventory_2_rounded,
-          accent: Color(0xFFEAF1FF),
+          accent: AppConstant.appColorSoft,
           onActionPressed: () => _showAddProductDialog(context),
         ),
         const SizedBox(height: 20),
@@ -258,7 +259,11 @@ class _HeroSection extends StatelessWidget {
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF163A72), Color(0xFF1F5AA6), Color(0xFF57A7FF)],
+          colors: [
+            AppConstant.appColorDark,
+            AppConstant.appColor,
+            AppConstant.appColorLight,
+          ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -376,7 +381,7 @@ class _HeroFocusCard extends StatelessWidget {
           Text(
             'สิ่งที่ควรทำต่อ',
             style: theme.textTheme.titleLarge?.copyWith(
-              color: const Color(0xFF14386F),
+              color: AppConstant.appColorDark,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -384,7 +389,7 @@ class _HeroFocusCard extends StatelessWidget {
           const _TaskTile(
             title: 'เพิ่มสินค้าใหม่',
             subtitle: 'เพิ่มชื่อ ราคา หมวดหมู่ และจำนวนคงเหลือ',
-            color: Color(0xFFE9F5FF),
+            color: AppConstant.appColorSoft,
             icon: Icons.inventory_2_rounded,
           ),
           const SizedBox(height: 12),
@@ -449,8 +454,8 @@ class _StatsSection extends StatelessWidget {
               value: controller.newOrdersLabel,
               subtitle: '${controller.openOrders.length} รายการยังเปิดอยู่',
               icon: Icons.shopping_bag_rounded,
-              accent: const Color(0xFF2667D8),
-              surface: const Color(0xFFEAF1FF),
+              accent: AppConstant.appColor,
+              surface: AppConstant.appColorSoft,
             ),
             AdminStatCard(
               title: 'สินค้าทั้งหมด',
@@ -509,7 +514,7 @@ class AdminProductsPanel extends StatelessWidget {
             trailing: FilledButton.icon(
               onPressed: () {},
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFF163A72),
+                backgroundColor: AppConstant.appColorDark,
                 foregroundColor: Colors.white,
               ),
               icon: const Icon(Icons.tune_rounded),
@@ -551,7 +556,7 @@ class AdminProductsPanel extends StatelessWidget {
                     Text(
                       'ทั้งหมด ${currentProducts.length} รายการ',
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFF6B7A95),
+                        color: AppConstant.appColorMuted,
                       ),
                     ),
                     TextButton(
@@ -580,9 +585,9 @@ class _EmptyProductsState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFD),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFDDE6F2)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Column(
         children: [
@@ -590,12 +595,12 @@ class _EmptyProductsState extends StatelessWidget {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF1FF),
+              color: AppConstant.appColorSoft,
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Icon(
               Icons.inventory_2_outlined,
-              color: Color(0xFF163A72),
+              color: AppConstant.appColorDark,
               size: 32,
             ),
           ),
@@ -603,7 +608,7 @@ class _EmptyProductsState extends StatelessWidget {
           Text(
             'ยังไม่มีสินค้าในระบบ',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: const Color(0xFF163A72),
+              color: AppConstant.appColorDark,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -612,7 +617,7 @@ class _EmptyProductsState extends StatelessWidget {
             'เพิ่มสินค้าใหม่จาก dialog แล้วรายการจะถูกดึงจาก Firestore collection product มาแสดงที่หน้านี้ทันที',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF6B7A95),
+              color: AppConstant.appColorMuted,
               height: 1.5,
             ),
           ),
@@ -671,7 +676,7 @@ class AdminOrdersPanel extends StatelessWidget {
               child: Text(
                 'Flow: pending -> accepted -> preparing -> ready -> completed หรือ cancelled',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF6B7A95),
+                  color: AppConstant.appColorMuted,
                   height: 1.5,
                 ),
               ),
@@ -694,9 +699,9 @@ class _EmptyOrdersState extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFD),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFDDE6F2)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Column(
         children: [
@@ -717,7 +722,7 @@ class _EmptyOrdersState extends StatelessWidget {
           Text(
             'ยังไม่มีออเดอร์ในระบบ',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: const Color(0xFF163A72),
+              color: AppConstant.appColorDark,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -726,7 +731,7 @@ class _EmptyOrdersState extends StatelessWidget {
             'เมื่อลูกค้ากด Order สินค้า รายการจาก collection orders จะแสดงที่นี่ทันที',
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF6B7A95),
+              color: AppConstant.appColorMuted,
               height: 1.5,
             ),
           ),
@@ -750,7 +755,7 @@ class _QuickActionsPanel extends StatelessWidget {
             icon: Icons.add_business_rounded,
             title: 'เพิ่มสินค้าใหม่',
             subtitle: 'เปิดฟอร์มกรอกสินค้า ราคา และจำนวน',
-            accent: Color(0xFFE7F2FF),
+            accent: AppConstant.appColorSoft,
           ),
           SizedBox(height: 12),
           _QuickActionTile(
@@ -828,7 +833,7 @@ class _SectionIntroCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFDDE6F2)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -842,7 +847,7 @@ class _SectionIntroCard extends StatelessWidget {
                 color: accent,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: Icon(icon, color: const Color(0xFF163A72), size: 30),
+              child: Icon(icon, color: AppConstant.appColorDark, size: 30),
             ),
             const SizedBox(width: 16, height: 16),
             Expanded(
@@ -852,7 +857,7 @@ class _SectionIntroCard extends StatelessWidget {
                   Text(
                     title,
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      color: const Color(0xFF163A72),
+                      color: AppConstant.appColorDark,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -860,7 +865,7 @@ class _SectionIntroCard extends StatelessWidget {
                   Text(
                     subtitle,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF6B7A95),
+                      color: AppConstant.appColorMuted,
                       height: 1.5,
                     ),
                   ),
@@ -923,10 +928,10 @@ class AdminPanelShell extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: const Color(0xFFDDE6F2)),
+        border: Border.all(color: AppConstant.appColorBorder),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF123B7A).withValues(alpha: 0.06),
+            color: AppConstant.appColorDark.withValues(alpha: 0.06),
             blurRadius: 22,
             offset: const Offset(0, 10),
           ),
@@ -947,7 +952,7 @@ class AdminPanelShell extends StatelessWidget {
                   Text(
                     title,
                     style: theme.textTheme.titleLarge?.copyWith(
-                      color: const Color(0xFF163A72),
+                      color: AppConstant.appColorDark,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -955,7 +960,7 @@ class AdminPanelShell extends StatelessWidget {
                   Text(
                     subtitle,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF6B7A95),
+                      color: AppConstant.appColorMuted,
                     ),
                   ),
                 ],
@@ -998,7 +1003,7 @@ class AdminStatCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFDDE6F2)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1026,7 +1031,7 @@ class AdminStatCard extends StatelessWidget {
               Text(
                 title,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF6B7A95),
+                  color: AppConstant.appColorMuted,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -1034,7 +1039,7 @@ class AdminStatCard extends StatelessWidget {
               Text(
                 value,
                 style: theme.textTheme.headlineSmall?.copyWith(
-                  color: const Color(0xFF163A72),
+                  color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1042,7 +1047,7 @@ class AdminStatCard extends StatelessWidget {
               Text(
                 subtitle,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF6B7A95),
+                  color: AppConstant.appColorMuted,
                 ),
               ),
             ],
@@ -1071,7 +1076,7 @@ class _HeaderRow extends StatelessWidget {
                 child: Text(
                   label,
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: const Color(0xFF6B7A95),
+                    color: AppConstant.appColorMuted,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -1098,7 +1103,7 @@ class _ProductRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 16),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0xFFEDF2F8))),
+        border: Border(bottom: BorderSide(color: AppConstant.appColorSoft)),
       ),
       child: Row(
         children: [
@@ -1123,7 +1128,7 @@ class _ProductRow extends StatelessWidget {
                       Text(
                         product.name,
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: const Color(0xFF163A72),
+                          color: AppConstant.appColorDark,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -1131,7 +1136,7 @@ class _ProductRow extends StatelessWidget {
                       Text(
                         '${product.sku} • ${product.category}',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF7B89A4),
+                          color: AppConstant.appColorMuted,
                         ),
                       ),
                     ],
@@ -1145,7 +1150,7 @@ class _ProductRow extends StatelessWidget {
               controller.formatCurrency(product.price),
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w700,
-                color: const Color(0xFF1A2B4F),
+                color: AppConstant.appColorDeep,
               ),
             ),
           ),
@@ -1175,7 +1180,7 @@ class _ProductRow extends StatelessWidget {
                 _ActionButton(
                   icon: Icons.edit_rounded,
                   label: 'แก้ไข',
-                  color: const Color(0xFFEAF1FF),
+                  color: AppConstant.appColorSoft,
                   onTap: () => _showEditProductDialog(context, product),
                 ),
                 if (controller.canDeleteProducts)
@@ -1214,9 +1219,9 @@ class _ProductCompactCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FBFF),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2EAF5)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1242,7 +1247,7 @@ class _ProductCompactCard extends StatelessWidget {
                     Text(
                       product.name,
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF163A72),
+                        color: AppConstant.appColorDark,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -1250,7 +1255,7 @@ class _ProductCompactCard extends StatelessWidget {
                     Text(
                       '${product.sku} • ${product.category}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF7B89A4),
+                        color: AppConstant.appColorMuted,
                       ),
                     ),
                   ],
@@ -1265,7 +1270,7 @@ class _ProductCompactCard extends StatelessWidget {
             children: [
               _StatusBadge(
                 label: controller.formatCurrency(product.price),
-                color: const Color(0xFF163A72),
+                color: AppConstant.appColorDark,
               ),
               _StatusBadge(
                 label: '${product.stock} ${product.unit}',
@@ -1285,7 +1290,7 @@ class _ProductCompactCard extends StatelessWidget {
               _ActionButton(
                 icon: Icons.edit_rounded,
                 label: 'แก้ไข',
-                color: const Color(0xFFEAF1FF),
+                color: AppConstant.appColorSoft,
                 onTap: () => _showEditProductDialog(context, product),
               ),
               if (controller.canDeleteProducts)
@@ -1322,9 +1327,9 @@ class _OrderCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FBFF),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE2EAF5)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1351,7 +1356,7 @@ class _OrderCard extends StatelessWidget {
                     Text(
                       order.orderNo,
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF163A72),
+                        color: AppConstant.appColorDark,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -1369,14 +1374,14 @@ class _OrderCard extends StatelessWidget {
                 Text(
                   '${order.customerName} • ${controller.formatOrderCount(order.itemCount)} • ${controller.formatCurrency(order.total)}',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF60708C),
+                    color: AppConstant.appColorMuted,
                   ),
                 ),
                 const SizedBox(height: 10),
                 Text(
                   order.note,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF72809A),
+                    color: AppConstant.appColorMuted,
                     height: 1.5,
                   ),
                 ),
@@ -1603,7 +1608,7 @@ class _OrderDetailDialog extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.titleLarge?.copyWith(
-                color: const Color(0xFF163A72),
+                color: AppConstant.appColorDark,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1647,7 +1652,7 @@ class _OrderDetailDialog extends StatelessWidget {
               Text(
                 order.isDelivery ? 'ข้อมูลส่งฟรี' : 'ข้อมูลรับที่ร้าน',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF163A72),
+                  color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1673,7 +1678,7 @@ class _OrderDetailDialog extends StatelessWidget {
               Text(
                 'สลิปชำระเงิน',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF163A72),
+                  color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1683,7 +1688,7 @@ class _OrderDetailDialog extends StatelessWidget {
               Text(
                 'สินค้าในออเดอร์',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: const Color(0xFF163A72),
+                  color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -1692,7 +1697,7 @@ class _OrderDetailDialog extends StatelessWidget {
                 Text(
                   'ไม่มีสินค้าในออเดอร์',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF6B7A95),
+                    color: AppConstant.appColorMuted,
                   ),
                 )
               else
@@ -1805,14 +1810,14 @@ class _PaymentSlipPreview extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFF8FAFD),
+          color: AppConstant.appColorSurface,
           borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xFFDDE6F2)),
+          border: Border.all(color: AppConstant.appColorBorder),
         ),
         child: Text(
           'ยังไม่มีสลิปจากลูกค้า',
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: const Color(0xFF6B7A95),
+            color: AppConstant.appColorMuted,
           ),
         ),
       );
@@ -1821,7 +1826,7 @@ class _PaymentSlipPreview extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(18),
       child: Container(
-        color: const Color(0xFFF8FAFD),
+        color: AppConstant.appColorSurface,
         constraints: BoxConstraints(
           maxHeight: large ? 560 : 260,
           minHeight: large ? 320 : 180,
@@ -1851,13 +1856,13 @@ class _OrderDetailInfo extends StatelessWidget {
       width: 200,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFD),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2EAF5)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF163A72)),
+          Icon(icon, color: AppConstant.appColorDark),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -1866,7 +1871,7 @@ class _OrderDetailInfo extends StatelessWidget {
                 Text(
                   label,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF72809A),
+                    color: AppConstant.appColorMuted,
                   ),
                 ),
                 const SizedBox(height: 3),
@@ -1875,7 +1880,7 @@ class _OrderDetailInfo extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF163A72),
+                    color: AppConstant.appColorDark,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -1911,7 +1916,7 @@ class _OrderDetailLine extends StatelessWidget {
             child: Text(
               label,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF6B7A95),
+                color: AppConstant.appColorMuted,
                 fontWeight: emphasize ? FontWeight.w800 : FontWeight.w500,
               ),
             ),
@@ -1923,8 +1928,8 @@ class _OrderDetailLine extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: emphasize
-                    ? const Color(0xFF163A72)
-                    : const Color(0xFF273757),
+                    ? AppConstant.appColorDark
+                    : AppConstant.appColorDeep,
                 fontWeight: emphasize ? FontWeight.w900 : FontWeight.w700,
               ),
             ),
@@ -1950,9 +1955,9 @@ class _OrderDetailItemTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FBFF),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2EAF5)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Row(
         children: [
@@ -1963,10 +1968,10 @@ class _OrderDetailItemTile extends StatelessWidget {
               height: 54,
               child: imageBytes == null
                   ? Container(
-                      color: const Color(0xFFE8ECFA),
+                      color: AppConstant.appColorSoft,
                       child: const Icon(
                         Icons.image_not_supported_rounded,
-                        color: Color(0xFF7D87A8),
+                        color: AppConstant.appColorMuted,
                       ),
                     )
                   : Image.memory(imageBytes, fit: BoxFit.cover),
@@ -1982,7 +1987,7 @@ class _OrderDetailItemTile extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF163A72),
+                    color: AppConstant.appColorDark,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -1990,7 +1995,7 @@ class _OrderDetailItemTile extends StatelessWidget {
                 Text(
                   '${controller.formatCurrency(item.price)}/${item.unit} x ${item.quantity}',
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: const Color(0xFF6B7A95),
+                    color: AppConstant.appColorMuted,
                   ),
                 ),
               ],
@@ -2000,7 +2005,7 @@ class _OrderDetailItemTile extends StatelessWidget {
           Text(
             controller.formatCurrency(item.total),
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF163A72),
+              color: AppConstant.appColorDark,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -2100,7 +2105,7 @@ class _TaskTile extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: const Color(0xFF153A77)),
+            child: Icon(icon, color: AppConstant.appColorDark),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2110,7 +2115,7 @@ class _TaskTile extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Color(0xFF153A77),
+                    color: AppConstant.appColorDark,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -2118,7 +2123,7 @@ class _TaskTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    color: Color(0xFF5E6C87),
+                    color: AppConstant.appColorMuted,
                     fontSize: 13,
                     height: 1.5,
                   ),
@@ -2162,7 +2167,7 @@ class _QuickActionTile extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Icon(icon, color: const Color(0xFF14386F)),
+            child: Icon(icon, color: AppConstant.appColorDark),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -2172,7 +2177,7 @@ class _QuickActionTile extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: Color(0xFF14386F),
+                    color: AppConstant.appColorDark,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -2180,7 +2185,7 @@ class _QuickActionTile extends StatelessWidget {
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    color: Color(0xFF62718D),
+                    color: AppConstant.appColorMuted,
                     fontSize: 13,
                     height: 1.5,
                   ),
@@ -2215,9 +2220,9 @@ class _StockAlertTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFFF9FBFF),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2EAF5)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2228,7 +2233,7 @@ class _StockAlertTile extends StatelessWidget {
                 child: Text(
                   title,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: const Color(0xFF163A72),
+                    color: AppConstant.appColorDark,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -2245,7 +2250,7 @@ class _StockAlertTile extends StatelessWidget {
             child: LinearProgressIndicator(
               minHeight: 10,
               value: progress.clamp(0.0, 1.0),
-              backgroundColor: const Color(0xFFE5ECF6),
+              backgroundColor: AppConstant.appColorSoft,
               valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
@@ -2281,12 +2286,12 @@ class _ActionButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: const Color(0xFF14386F)),
+              Icon(icon, size: 16, color: AppConstant.appColorDark),
               const SizedBox(width: 6),
               Text(
                 label,
                 style: const TextStyle(
-                  color: Color(0xFF14386F),
+                  color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -2402,7 +2407,7 @@ class _DeleteProductDialogState extends State<_DeleteProductDialog> {
                     child: Text(
                       'ยืนยันการลบสินค้า',
                       style: theme.textTheme.titleLarge?.copyWith(
-                        color: const Color(0xFF163A72),
+                        color: AppConstant.appColorDark,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
@@ -2425,7 +2430,7 @@ class _DeleteProductDialogState extends State<_DeleteProductDialog> {
                     decoration: BoxDecoration(
                       color: surface,
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: const Color(0xFFE2EAF5)),
+                      border: Border.all(color: AppConstant.appColorBorder),
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: _ProductImage(
@@ -2462,7 +2467,7 @@ class _DeleteProductDialogState extends State<_DeleteProductDialog> {
               Text(
                 'ต้องการลบสินค้านี้ออกจาก Firebase collection product หรือไม่?',
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF6B7A95),
+                  color: AppConstant.appColorMuted,
                   height: 1.45,
                 ),
               ),
@@ -2521,7 +2526,7 @@ class _DeleteProductInfoRow extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.labelMedium?.copyWith(
-            color: const Color(0xFF7B89A4),
+            color: AppConstant.appColorMuted,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -2531,7 +2536,7 @@ class _DeleteProductInfoRow extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyLarge?.copyWith(
-            color: const Color(0xFF1A2B4F),
+            color: AppConstant.appColorDeep,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -2754,10 +2759,13 @@ class _EditProductDialogState extends State<_EditProductDialog> {
           width: 52,
           height: 52,
           decoration: BoxDecoration(
-            color: const Color(0xFFEAF1FF),
+            color: AppConstant.appColorSoft,
             borderRadius: BorderRadius.circular(18),
           ),
-          child: const Icon(Icons.edit_note_rounded, color: Color(0xFF163A72)),
+          child: const Icon(
+            Icons.edit_note_rounded,
+            color: AppConstant.appColorDark,
+          ),
         ),
         const SizedBox(width: 14),
         Expanded(
@@ -2767,7 +2775,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
               Text(
                 'แก้ไขสินค้า',
                 style: theme.textTheme.titleLarge?.copyWith(
-                  color: const Color(0xFF163A72),
+                  color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -2777,7 +2785,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF6B7A95),
+                  color: AppConstant.appColorMuted,
                   height: 1.45,
                 ),
               ),
@@ -2836,7 +2844,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
                   color: !_submitted || _hasImage
-                      ? const Color(0xFFD7E3F2)
+                      ? AppConstant.appColorBorder
                       : theme.colorScheme.error,
                 ),
               ),
@@ -2874,7 +2882,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF4A5C7A),
+                color: AppConstant.appColorMuted,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -3060,22 +3068,24 @@ class _EditProductDialogState extends State<_EditProductDialog> {
         prefixIcon: Icon(prefixIcon),
         alignLabelWithHint: maxLines > 1,
         filled: true,
-        fillColor: enabled ? const Color(0xFFF8FAFD) : const Color(0xFFF0F4FA),
+        fillColor: enabled
+            ? AppConstant.appColorSurface
+            : AppConstant.appColorSurface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+          borderSide: const BorderSide(color: AppConstant.appColorBorder),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+          borderSide: const BorderSide(color: AppConstant.appColorBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+          borderSide: const BorderSide(color: AppConstant.appColorBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFF3C69C8), width: 1.3),
+          borderSide: const BorderSide(color: AppConstant.appColor, width: 1.3),
         ),
       ),
     );
@@ -3112,10 +3122,12 @@ class _EditableSection extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFD),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: isEditing ? const Color(0xFF9AB7F4) : const Color(0xFFDDE6F2),
+          color: isEditing
+              ? AppConstant.appColorLight
+              : AppConstant.appColorBorder,
         ),
       ),
       child: Column(
@@ -3123,13 +3135,13 @@ class _EditableSection extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 18, color: const Color(0xFF163A72)),
+              Icon(icon, size: 18, color: AppConstant.appColorDark),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   title,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: const Color(0xFF163A72),
+                    color: AppConstant.appColorDark,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -3199,7 +3211,7 @@ Color _productAccentColor(AdminProductModel product) {
     case AdminProductStatus.outOfStock:
       return const Color(0xFF9254DE);
     case AdminProductStatus.hidden:
-      return const Color(0xFF6B7A95);
+      return AppConstant.appColorMuted;
   }
 }
 
@@ -3212,7 +3224,7 @@ Color _productSurfaceColor(AdminProductModel product) {
     case AdminProductStatus.outOfStock:
       return const Color(0xFFF2EAFF);
     case AdminProductStatus.hidden:
-      return const Color(0xFFF3F6FB);
+      return AppConstant.appColorSurface;
   }
 }
 
@@ -3425,12 +3437,12 @@ class _AddProductDialogState extends State<_AddProductDialog> {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF1FF),
+                        color: AppConstant.appColorSoft,
                         borderRadius: BorderRadius.circular(18),
                       ),
                       child: const Icon(
                         Icons.add_business_rounded,
-                        color: Color(0xFF163A72),
+                        color: AppConstant.appColorDark,
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -3441,7 +3453,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
                           Text(
                             'เพิ่มสินค้าใหม่',
                             style: theme.textTheme.titleLarge?.copyWith(
-                              color: const Color(0xFF163A72),
+                              color: AppConstant.appColorDark,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
@@ -3449,7 +3461,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
                           Text(
                             'เตรียม UI สำหรับเลือกรูปภาพและกรอกข้อมูลสินค้า ก่อนเชื่อมต่อ Firebase จริง',
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: const Color(0xFF6B7A95),
+                              color: AppConstant.appColorMuted,
                               height: 1.45,
                             ),
                           ),
@@ -3532,11 +3544,11 @@ class _AddProductDialogState extends State<_AddProductDialog> {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFD),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
           color: _imageErrorText == null
-              ? const Color(0xFFDDE6F2)
+              ? AppConstant.appColorBorder
               : theme.colorScheme.error,
         ),
       ),
@@ -3546,7 +3558,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
           Text(
             'รูปสินค้า',
             style: theme.textTheme.titleMedium?.copyWith(
-              color: const Color(0xFF163A72),
+              color: AppConstant.appColorDark,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -3554,7 +3566,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
           Text(
             'เลือกจาก Gallery ด้วย image_picker ขนาดสูงสุด 480 x 480',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: const Color(0xFF6B7A95),
+              color: AppConstant.appColorMuted,
               height: 1.5,
             ),
           ),
@@ -3565,7 +3577,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: const Color(0xFFD7E3F2)),
+                border: Border.all(color: AppConstant.appColorBorder),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(23),
@@ -3601,7 +3613,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF4A5C7A),
+                color: AppConstant.appColorMuted,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -3632,12 +3644,12 @@ class _AddProductDialogState extends State<_AddProductDialog> {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFEAF1FF),
+                color: AppConstant.appColorSoft,
                 borderRadius: BorderRadius.circular(22),
               ),
               child: const Icon(
                 Icons.image_outlined,
-                color: Color(0xFF163A72),
+                color: AppConstant.appColorDark,
                 size: 36,
               ),
             ),
@@ -3646,7 +3658,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
               'ยังไม่ได้เลือกรูปสินค้า',
               textAlign: TextAlign.center,
               style: theme.textTheme.titleSmall?.copyWith(
-                color: const Color(0xFF163A72),
+                color: AppConstant.appColorDark,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -3655,7 +3667,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
               'เมื่อเชื่อม backend แล้ว ส่วนนี้จะพร้อมต่ออัปโหลดไป Firebase Storage',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF6B7A95),
+                color: AppConstant.appColorMuted,
                 height: 1.5,
               ),
             ),
@@ -3785,18 +3797,18 @@ class _AddProductDialogState extends State<_AddProductDialog> {
         prefixIcon: Icon(prefixIcon),
         alignLabelWithHint: maxLines > 1,
         filled: true,
-        fillColor: const Color(0xFFF8FAFD),
+        fillColor: AppConstant.appColorSurface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+          borderSide: const BorderSide(color: AppConstant.appColorBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFFD7E3F2)),
+          borderSide: const BorderSide(color: AppConstant.appColorBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: const BorderSide(color: Color(0xFF3C69C8), width: 1.3),
+          borderSide: const BorderSide(color: AppConstant.appColor, width: 1.3),
         ),
       ),
     );
@@ -3808,13 +3820,13 @@ Color _orderColor(AdminOrderStatus status) {
     case AdminOrderStatus.pending:
       return const Color(0xFFDA7A12);
     case AdminOrderStatus.accepted:
-      return const Color(0xFF2667D8);
+      return AppConstant.appColor;
     case AdminOrderStatus.preparing:
       return const Color(0xFF9254DE);
     case AdminOrderStatus.ready:
       return const Color(0xFF16805A);
     case AdminOrderStatus.completed:
-      return const Color(0xFF6B7A95);
+      return AppConstant.appColorMuted;
     case AdminOrderStatus.cancelled:
       return const Color(0xFFD05A2D);
   }
@@ -3825,7 +3837,7 @@ Color _paymentStatusColor(String status) {
     'paid' => const Color(0xFF16805A),
     'waiting_verify' => const Color(0xFFDA7A12),
     'rejected' => const Color(0xFFD05A2D),
-    _ => const Color(0xFF6B7A95),
+    _ => AppConstant.appColorMuted,
   };
 }
 

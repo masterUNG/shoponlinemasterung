@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 
 import '../controllers/mall_controller.dart';
@@ -11,7 +12,7 @@ class MallView extends GetView<MallController> {
     final ThemeData theme = Theme.of(context);
 
     return ColoredBox(
-      color: const Color(0xFFF5F7FF),
+      color: AppConstant.appColorSurface,
       child: SafeArea(
         top: false,
         child: RefreshIndicator(
@@ -98,7 +99,7 @@ class _MallHeader extends GetView<MallController> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFF172B7A),
+          color: AppConstant.appColorDark,
           borderRadius: BorderRadius.circular(26),
         ),
         child: Row(
@@ -135,7 +136,7 @@ class _MallHeader extends GetView<MallController> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFFDCE5FF),
+                        color: AppConstant.appColorLight,
                       ),
                     ),
                   ),
@@ -175,10 +176,10 @@ class _ProductCard extends GetView<MallController> {
                 children: [
                   if (imageBytes == null)
                     Container(
-                      color: const Color(0xFFE8ECFA),
+                      color: AppConstant.appColorSoft,
                       child: const Icon(
                         Icons.image_not_supported_rounded,
-                        color: Color(0xFF7D87A8),
+                        color: AppConstant.appColorMuted,
                         size: 42,
                       ),
                     )
@@ -199,7 +200,7 @@ class _ProductCard extends GetView<MallController> {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: const Color(0xFF17224D),
+                      color: AppConstant.appColorDeep,
                     ),
                   ),
                   const SizedBox(height: 5),
@@ -211,7 +212,7 @@ class _ProductCard extends GetView<MallController> {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
                       height: 1.35,
-                      color: const Color(0xFF687191),
+                      color: AppConstant.appColorMuted,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -223,7 +224,7 @@ class _ProductCard extends GetView<MallController> {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall?.copyWith(
-                            color: const Color(0xFF25388F),
+                            color: AppConstant.appColor,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -274,10 +275,10 @@ class _ProductCard extends GetView<MallController> {
                     aspectRatio: 16 / 10,
                     child: imageBytes == null
                         ? Container(
-                            color: const Color(0xFFE8ECFA),
+                            color: AppConstant.appColorSoft,
                             child: const Icon(
                               Icons.image_not_supported_rounded,
-                              color: Color(0xFF7D87A8),
+                              color: AppConstant.appColorMuted,
                               size: 46,
                             ),
                           )
@@ -288,7 +289,7 @@ class _ProductCard extends GetView<MallController> {
                 Text(
                   '${controller.formatCurrency(item.product.price)}/${item.product.unit}',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF25388F),
+                    color: AppConstant.appColor,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -296,7 +297,7 @@ class _ProductCard extends GetView<MallController> {
                 Text(
                   'คงเหลือ $maxQuantity ${item.product.unit}',
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF687191),
+                    color: AppConstant.appColorMuted,
                   ),
                 ),
                 const SizedBox(height: 18),
@@ -306,7 +307,7 @@ class _ProductCard extends GetView<MallController> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF1F4FF),
+                    color: AppConstant.appColorSurface,
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Row(
@@ -325,7 +326,7 @@ class _ProductCard extends GetView<MallController> {
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineSmall
                               ?.copyWith(
-                                color: const Color(0xFF17224D),
+                                color: AppConstant.appColorDeep,
                                 fontWeight: FontWeight.w900,
                               ),
                         ),
@@ -445,14 +446,14 @@ class _MallState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 56, color: const Color(0xFF7D87A8)),
+          Icon(icon, size: 56, color: AppConstant.appColorMuted),
           const SizedBox(height: 14),
           Text(
             title,
             textAlign: TextAlign.center,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
-              color: const Color(0xFF17224D),
+              color: AppConstant.appColorDeep,
             ),
           ),
           const SizedBox(height: 6),
@@ -460,7 +461,7 @@ class _MallState extends StatelessWidget {
             subtitle,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: const Color(0xFF687191),
+              color: AppConstant.appColorMuted,
             ),
           ),
         ],

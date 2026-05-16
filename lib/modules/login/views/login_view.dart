@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 import 'package:ms_undraw/ms_undraw.dart';
 
@@ -17,7 +18,11 @@ class LoginView extends GetView<LoginController> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Color(0xFF243B8F), Color(0xFF4C63D2), Color(0xFFF3F5FF)],
+            colors: [
+              AppConstant.appColorDark,
+              AppConstant.appColor,
+              AppConstant.appColorSurface,
+            ],
             stops: [0.0, 0.42, 1.0],
           ),
         ),
@@ -104,9 +109,9 @@ class LoginView extends GetView<LoginController> {
                             borderRadius: BorderRadius.circular(28),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(
-                                  0xFF1E2A78,
-                                ).withValues(alpha: 0.18),
+                                color: AppConstant.appColorDark.withValues(
+                                  alpha: 0.18,
+                                ),
                                 blurRadius: 28,
                                 offset: const Offset(0, 16),
                               ),
@@ -120,7 +125,7 @@ class LoginView extends GetView<LoginController> {
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.titleLarge?.copyWith(
                                   fontWeight: FontWeight.w800,
-                                  color: const Color(0xFF1F2F78),
+                                  color: AppConstant.appColorDark,
                                 ),
                               ),
                               const SizedBox(height: 8),
@@ -142,7 +147,7 @@ class LoginView extends GetView<LoginController> {
                                         : controller.loginWithGoogle,
                                     style: FilledButton.styleFrom(
                                       backgroundColor: Colors.white,
-                                      foregroundColor: const Color(0xFF1F2F78),
+                                      foregroundColor: AppConstant.appColorDark,
                                       elevation: 0,
                                       side: BorderSide(
                                         color: theme.colorScheme.outlineVariant,
@@ -214,7 +219,7 @@ class _HeroIllustrationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF101B5B).withValues(alpha: 0.16),
+            color: AppConstant.appColorDeep.withValues(alpha: 0.16),
             blurRadius: 34,
             offset: const Offset(0, 18),
           ),
@@ -228,7 +233,7 @@ class _HeroIllustrationCard extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: const Color(0xFFE2E8FF),
+                color: AppConstant.appColorLight,
                 borderRadius: BorderRadius.circular(22),
               ),
             ),
@@ -249,12 +254,12 @@ class _HeroIllustrationCard extends StatelessWidget {
               padding: EdgeInsets.all(8),
               child: UnDraw(
                 illustration: UnDrawIllustration.shopping_app,
-                color: Color(0xFF3F51B5),
+                color: AppConstant.appColor,
                 placeholder: Center(child: CircularProgressIndicator()),
                 errorWidget: Icon(
                   Icons.storefront_rounded,
                   size: 96,
-                  color: Color(0xFF3F51B5),
+                  color: AppConstant.appColor,
                 ),
               ),
             ),

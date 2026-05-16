@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 import 'package:ms_undraw/ms_undraw.dart';
 
@@ -17,7 +18,11 @@ class LoginAdminWebView extends GetView<LoginAdminWebController> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF243B8F), Color(0xFF4C63D2), Color(0xFFF3F5FF)],
+            colors: [
+              AppConstant.appColorDark,
+              AppConstant.appColor,
+              AppConstant.appColorSurface,
+            ],
             stops: [0.0, 0.45, 1.0],
           ),
         ),
@@ -111,7 +116,7 @@ class _LeftPanel extends StatelessWidget {
               borderRadius: BorderRadius.circular(32),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF101B5B).withValues(alpha: 0.16),
+                  color: AppConstant.appColorDeep.withValues(alpha: 0.16),
                   blurRadius: 34,
                   offset: const Offset(0, 18),
                 ),
@@ -125,7 +130,7 @@ class _LeftPanel extends StatelessWidget {
                     width: 82,
                     height: 82,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFE2E8FF),
+                      color: AppConstant.appColorLight,
                       borderRadius: BorderRadius.circular(24),
                     ),
                   ),
@@ -146,12 +151,12 @@ class _LeftPanel extends StatelessWidget {
                     padding: EdgeInsets.all(8),
                     child: UnDraw(
                       illustration: UnDrawIllustration.shopping_app,
-                      color: Color(0xFF3F51B5),
+                      color: AppConstant.appColor,
                       placeholder: Center(child: CircularProgressIndicator()),
                       errorWidget: Icon(
                         Icons.admin_panel_settings_rounded,
                         size: 96,
-                        color: Color(0xFF3F51B5),
+                        color: AppConstant.appColor,
                       ),
                     ),
                   ),
@@ -210,7 +215,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
           borderRadius: BorderRadius.circular(36),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1E2A78).withValues(alpha: 0.15),
+              color: AppConstant.appColorDark.withValues(alpha: 0.15),
               blurRadius: 28,
               offset: const Offset(0, 16),
             ),
@@ -225,7 +230,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
               Text(
                 'เข้าสู่ระบบแอดมิน',
                 style: theme.textTheme.headlineSmall?.copyWith(
-                  color: const Color(0xFF1F2F78),
+                  color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -242,7 +247,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
                 'Email',
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF22317C),
+                  color: AppConstant.appColorDark,
                 ),
               ),
               const SizedBox(height: 10),
@@ -255,7 +260,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
                   hintText: 'admin@shoponline.com',
                   prefixIcon: Icon(Icons.mail_outline_rounded),
                   filled: true,
-                  fillColor: Color(0xFFF8FAFF),
+                  fillColor: AppConstant.appColorSurface,
                 ),
               ),
               const SizedBox(height: 18),
@@ -263,7 +268,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
                 'Password',
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: const Color(0xFF22317C),
+                  color: AppConstant.appColorDark,
                 ),
               ),
               const SizedBox(height: 10),
@@ -285,7 +290,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
                     ),
                   ),
                   filled: true,
-                  fillColor: const Color(0xFFF8FAFF),
+                  fillColor: AppConstant.appColorSurface,
                 ),
               ),
               const SizedBox(height: 26),
@@ -318,7 +323,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF6F8FF),
+                  color: AppConstant.appColorSurface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: theme.colorScheme.outlineVariant.withValues(
@@ -332,12 +337,12 @@ class _RightPanel extends GetView<LoginAdminWebController> {
                       width: 40,
                       height: 40,
                       decoration: const BoxDecoration(
-                        color: Color(0xFFE2E8FF),
+                        color: AppConstant.appColorLight,
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
                         Icons.verified_user_rounded,
-                        color: Color(0xFF3147A8),
+                        color: AppConstant.appColor,
                       ),
                     ),
                     const SizedBox(width: 12),

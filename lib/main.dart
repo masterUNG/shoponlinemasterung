@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 import 'package:shoponlinemasterung/firebase_options.dart';
 
@@ -22,7 +23,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final String initialRoute = kIsWeb ? Routes.loginAdminWeb : Routes.login;
     final ColorScheme colorScheme = ColorScheme.fromSeed(
-      seedColor: const Color(0xFF3246A8),
+      seedColor: AppConstant.appColor,
       brightness: Brightness.light,
     );
 
@@ -34,7 +35,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: colorScheme,
         useMaterial3: true,
-        scaffoldBackgroundColor: const Color(0xFFF5F7FF),
+        scaffoldBackgroundColor: AppConstant.appColorSurface,
         appBarTheme: AppBarTheme(
           backgroundColor: colorScheme.surface,
           foregroundColor: colorScheme.onSurface,
@@ -55,7 +56,7 @@ class MyApp extends StatelessWidget {
         ),
         snackBarTheme: SnackBarThemeData(
           behavior: SnackBarBehavior.floating,
-          backgroundColor: const Color(0xFF25388F),
+          backgroundColor: AppConstant.appColor,
           contentTextStyle: const TextStyle(
             color: Colors.white,
             fontSize: 14,

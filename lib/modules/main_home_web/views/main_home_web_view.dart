@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 
 import '../controllers/main_home_web_controller.dart';
@@ -12,7 +13,7 @@ class MainHomeWebView extends GetView<MainHomeWebController> {
     final ThemeData theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7FB),
+      backgroundColor: AppConstant.appColorSurface,
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
@@ -105,7 +106,7 @@ class _SideBar extends GetView<MainHomeWebController> {
     final ThemeData theme = Theme.of(context);
 
     return Container(
-      color: const Color(0xFF123B7A),
+      color: AppConstant.appColorDark,
       child: LayoutBuilder(
         builder: (context, constraints) => SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
@@ -241,7 +242,7 @@ class _SideBar extends GetView<MainHomeWebController> {
                       Text(
                         'ระบบวันนี้',
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: const Color(0xFF153A77),
+                          color: AppConstant.appColorDark,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -249,7 +250,7 @@ class _SideBar extends GetView<MainHomeWebController> {
                       Text(
                         'มี ${controller.openOrders.length} ออเดอร์ที่ต้องติดตาม และ ${controller.lowStockCount} สินค้าที่ควรเติมสต๊อก',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF5A6689),
+                          color: AppConstant.appColorMuted,
                           height: 1.5,
                         ),
                       ),
@@ -259,7 +260,7 @@ class _SideBar extends GetView<MainHomeWebController> {
                         child: FilledButton.icon(
                           onPressed: controller.signOut,
                           style: FilledButton.styleFrom(
-                            backgroundColor: const Color(0xFF123B7A),
+                            backgroundColor: AppConstant.appColorDark,
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
@@ -287,7 +288,7 @@ class _CompactHeader extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: const Color(0xFF123B7A),
+        color: AppConstant.appColorDark,
         borderRadius: BorderRadius.circular(24),
       ),
       child: const Row(
@@ -309,7 +310,10 @@ class _CompactHeader extends StatelessWidget {
                 SizedBox(height: 4),
                 Text(
                   'แดชบอร์ดจัดการร้านค้า',
-                  style: TextStyle(color: Color(0xFFD7E3FF), fontSize: 13),
+                  style: TextStyle(
+                    color: AppConstant.appColorLight,
+                    fontSize: 13,
+                  ),
                 ),
               ],
             ),
@@ -361,7 +365,7 @@ class _TopBar extends GetView<MainHomeWebController> {
             Text(
               section.title,
               style: theme.textTheme.headlineSmall?.copyWith(
-                color: const Color(0xFF163A72),
+                color: AppConstant.appColorDark,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -369,7 +373,7 @@ class _TopBar extends GetView<MainHomeWebController> {
             Text(
               section.subtitle,
               style: theme.textTheme.bodyLarge?.copyWith(
-                color: const Color(0xFF61708E),
+                color: AppConstant.appColorMuted,
               ),
             ),
           ],
@@ -380,17 +384,20 @@ class _TopBar extends GetView<MainHomeWebController> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFFD9E2F1)),
+            border: Border.all(color: AppConstant.appColorBorder),
           ),
           child: Row(
             children: [
-              const Icon(Icons.search_rounded, color: Color(0xFF70819E)),
+              const Icon(
+                Icons.search_rounded,
+                color: AppConstant.appColorMuted,
+              ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   'ค้นหาสินค้า รหัสสินค้า หรือเลขออเดอร์',
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: const Color(0xFF7C8BA7),
+                    color: AppConstant.appColorMuted,
                   ),
                 ),
               ),
@@ -400,13 +407,13 @@ class _TopBar extends GetView<MainHomeWebController> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF2F6FF),
+                  color: AppConstant.appColorSurface,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Text(
                   controller.platformLabel,
                   style: theme.textTheme.labelMedium?.copyWith(
-                    color: const Color(0xFF163A72),
+                    color: AppConstant.appColorDark,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -440,12 +447,12 @@ class _SectionSwitcher extends GetView<MainHomeWebController> {
               duration: const Duration(milliseconds: 180),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFF163A72) : Colors.white,
+                color: selected ? AppConstant.appColorDark : Colors.white,
                 borderRadius: BorderRadius.circular(999),
                 border: Border.all(
                   color: selected
-                      ? const Color(0xFF163A72)
-                      : const Color(0xFFD8E2F0),
+                      ? AppConstant.appColorDark
+                      : AppConstant.appColorBorder,
                 ),
               ),
               child: Row(
@@ -454,13 +461,13 @@ class _SectionSwitcher extends GetView<MainHomeWebController> {
                   Icon(
                     _sectionIcon(section),
                     size: 18,
-                    color: selected ? Colors.white : const Color(0xFF163A72),
+                    color: selected ? Colors.white : AppConstant.appColorDark,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     section.title,
                     style: theme.textTheme.labelLarge?.copyWith(
-                      color: selected ? Colors.white : const Color(0xFF163A72),
+                      color: selected ? Colors.white : AppConstant.appColorDark,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -494,7 +501,7 @@ class _MenuTile extends StatelessWidget {
     final Color background = selected
         ? Colors.white
         : Colors.white.withValues(alpha: 0.06);
-    final Color foreground = selected ? const Color(0xFF14386F) : Colors.white;
+    final Color foreground = selected ? AppConstant.appColorDark : Colors.white;
 
     return InkWell(
       onTap: onTap,
@@ -512,7 +519,7 @@ class _MenuTile extends StatelessWidget {
               height: 46,
               decoration: BoxDecoration(
                 color: selected
-                    ? const Color(0xFFEAF1FF)
+                    ? AppConstant.appColorSoft
                     : Colors.white.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(16),
               ),
@@ -536,7 +543,7 @@ class _MenuTile extends StatelessWidget {
                     subtitle,
                     style: TextStyle(
                       color: selected
-                          ? const Color(0xFF61708E)
+                          ? AppConstant.appColorMuted
                           : Colors.white.withValues(alpha: 0.72),
                       fontSize: 12,
                       height: 1.4,

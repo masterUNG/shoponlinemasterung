@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 
 import '../controllers/cart_controller.dart';
@@ -9,7 +10,7 @@ class CartView extends GetView<CartController> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: const Color(0xFFF5F7FF),
+      color: AppConstant.appColorSurface,
       child: SafeArea(
         top: false,
         child: Column(
@@ -94,7 +95,7 @@ class _CartHeader extends GetView<CartController> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFF172B7A),
+          color: AppConstant.appColorDark,
           borderRadius: BorderRadius.circular(26),
         ),
         child: Row(
@@ -131,7 +132,7 @@ class _CartHeader extends GetView<CartController> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFFDCE5FF),
+                        color: AppConstant.appColorLight,
                       ),
                     ),
                   ),
@@ -170,10 +171,10 @@ class _CartItemTile extends GetView<CartController> {
                 height: 92,
                 child: imageBytes == null
                     ? Container(
-                        color: const Color(0xFFE8ECFA),
+                        color: AppConstant.appColorSoft,
                         child: const Icon(
                           Icons.image_not_supported_rounded,
-                          color: Color(0xFF7D87A8),
+                          color: AppConstant.appColorMuted,
                           size: 34,
                         ),
                       )
@@ -190,7 +191,7 @@ class _CartItemTile extends GetView<CartController> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleMedium?.copyWith(
-                      color: const Color(0xFF17224D),
+                      color: AppConstant.appColorDeep,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -203,7 +204,7 @@ class _CartItemTile extends GetView<CartController> {
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
                       height: 1.35,
-                      color: const Color(0xFF687191),
+                      color: AppConstant.appColorMuted,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -212,7 +213,7 @@ class _CartItemTile extends GetView<CartController> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: const Color(0xFF25388F),
+                      color: AppConstant.appColor,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -230,7 +231,7 @@ class _CartItemTile extends GetView<CartController> {
                           '${item.quantity}',
                           textAlign: TextAlign.center,
                           style: theme.textTheme.titleMedium?.copyWith(
-                            color: const Color(0xFF17224D),
+                            color: AppConstant.appColorDeep,
                             fontWeight: FontWeight.w900,
                           ),
                         ),
@@ -246,7 +247,7 @@ class _CartItemTile extends GetView<CartController> {
                       Text(
                         controller.formatCurrency(item.totalPrice),
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: const Color(0xFF17224D),
+                          color: AppConstant.appColorDeep,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -385,7 +386,7 @@ class _CartSummary extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF687191),
+                          color: AppConstant.appColorMuted,
                         ),
                       ),
                       const SizedBox(height: 3),
@@ -394,7 +395,7 @@ class _CartSummary extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.titleLarge?.copyWith(
-                          color: const Color(0xFF17224D),
+                          color: AppConstant.appColorDeep,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -479,7 +480,7 @@ class _FulfillmentSelector extends StatelessWidget {
               child: Text(
                 statusText,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF687191),
+                  color: AppConstant.appColorMuted,
                   height: 1.35,
                 ),
               ),
@@ -491,7 +492,7 @@ class _FulfillmentSelector extends StatelessWidget {
           Text(
             'ร้านจะใช้พิกัดนี้เป็นจุดส่งสินค้า กรุณาตรวจสอบว่าตรงบ้าน/จุดรับของในหมู่บ้าน',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: const Color(0xFF687191),
+              color: AppConstant.appColorMuted,
               height: 1.35,
             ),
           ),
@@ -522,13 +523,13 @@ class _CartState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 58, color: const Color(0xFF7D87A8)),
+            Icon(icon, size: 58, color: AppConstant.appColorMuted),
             const SizedBox(height: 14),
             Text(
               title,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF17224D),
+                color: AppConstant.appColorDeep,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -537,7 +538,7 @@ class _CartState extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF687191),
+                color: AppConstant.appColorMuted,
               ),
             ),
           ],

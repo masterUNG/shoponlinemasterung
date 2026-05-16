@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
@@ -14,7 +15,7 @@ class OrderView extends GetView<OrderController> {
     return DefaultTabController(
       length: 2,
       child: ColoredBox(
-        color: const Color(0xFFF5F7FF),
+        color: AppConstant.appColorSurface,
         child: SafeArea(
           top: false,
           child: Column(
@@ -102,7 +103,7 @@ class _OrderHeader extends GetView<OrderController> {
       child: Container(
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color: const Color(0xFF172B7A),
+          color: AppConstant.appColorDark,
           borderRadius: BorderRadius.circular(26),
         ),
         child: Row(
@@ -139,7 +140,7 @@ class _OrderHeader extends GetView<OrderController> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: const Color(0xFFDCE5FF),
+                        color: AppConstant.appColorLight,
                       ),
                     ),
                   ),
@@ -231,10 +232,10 @@ class _OrderTile extends GetView<OrderController> {
                     height: 72,
                     child: imageBytes == null
                         ? Container(
-                            color: const Color(0xFFE8ECFA),
+                            color: AppConstant.appColorSoft,
                             child: const Icon(
                               Icons.image_not_supported_rounded,
-                              color: Color(0xFF7D87A8),
+                              color: AppConstant.appColorMuted,
                               size: 30,
                             ),
                           )
@@ -254,7 +255,7 @@ class _OrderTile extends GetView<OrderController> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.titleMedium?.copyWith(
-                                color: const Color(0xFF17224D),
+                                color: AppConstant.appColorDeep,
                                 fontWeight: FontWeight.w900,
                               ),
                             ),
@@ -269,7 +270,7 @@ class _OrderTile extends GetView<OrderController> {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: const Color(0xFF687191),
+                          color: AppConstant.appColorMuted,
                         ),
                       ),
                       const SizedBox(height: 8),
@@ -278,7 +279,7 @@ class _OrderTile extends GetView<OrderController> {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                          color: const Color(0xFF17224D),
+                          color: AppConstant.appColorDeep,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -318,14 +319,14 @@ class _OrderTile extends GetView<OrderController> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: const Color(0xFF687191),
+                      color: AppConstant.appColorMuted,
                     ),
                   ),
                 ),
                 Text(
                   controller.formatCurrency(order.grandTotal),
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: const Color(0xFF25388F),
+                    color: AppConstant.appColor,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -436,7 +437,7 @@ class _PaymentSlipAction extends GetView<OrderController> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: const Color(0xFF687191),
+                  color: AppConstant.appColorMuted,
                   height: 1.35,
                 ),
               ),
@@ -493,9 +494,9 @@ class _PromptPayPaymentCard extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFD),
+        color: AppConstant.appColorSurface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFDDE6F2)),
+        border: Border.all(color: AppConstant.appColorBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +523,7 @@ class _PromptPayPaymentCard extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: const Color(0xFF17224D),
+                        color: AppConstant.appColorDeep,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -558,7 +559,7 @@ class _PromptPayPaymentCard extends StatelessWidget {
           Text(
             'สแกน QR แล้วอัปโหลดสลิปในออเดอร์นี้ ร้านจะตรวจสอบยอดก่อนจัดเตรียมสินค้า',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: const Color(0xFF687191),
+              color: AppConstant.appColorMuted,
               height: 1.35,
             ),
           ),
@@ -588,7 +589,7 @@ class _PaymentInfoLine extends StatelessWidget {
             child: Text(
               label,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF7D87A8),
+                color: AppConstant.appColorMuted,
               ),
             ),
           ),
@@ -598,7 +599,7 @@ class _PaymentInfoLine extends StatelessWidget {
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: const Color(0xFF17224D),
+                color: AppConstant.appColorDeep,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -655,7 +656,7 @@ Future<void> _showPromptPayDialog(
               Text(
                 amount,
                 style: theme.textTheme.titleLarge?.copyWith(
-                  color: const Color(0xFF25388F),
+                  color: AppConstant.appColor,
                   fontWeight: FontWeight.w900,
                 ),
               ),
@@ -664,7 +665,7 @@ Future<void> _showPromptPayDialog(
                 '$accountName • $accountNumber',
                 textAlign: TextAlign.center,
                 style: theme.textTheme.bodyMedium?.copyWith(
-                  color: const Color(0xFF687191),
+                  color: AppConstant.appColorMuted,
                 ),
               ),
             ],
@@ -841,7 +842,7 @@ class _StatusPill extends GetView<OrderController> {
     final Color color = switch (status) {
       'completed' => const Color(0xFF12805C),
       'cancelled' => const Color(0xFFC0392B),
-      'ready' => const Color(0xFF2F66D0),
+      'ready' => AppConstant.appColor,
       _ => const Color(0xFFB36B00),
     };
 
@@ -883,7 +884,7 @@ class _OrderMeta extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
-            color: const Color(0xFF7D87A8),
+            color: AppConstant.appColorMuted,
           ),
         ),
         const SizedBox(height: 3),
@@ -892,7 +893,7 @@ class _OrderMeta extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyMedium?.copyWith(
-            color: const Color(0xFF17224D),
+            color: AppConstant.appColorDeep,
             fontWeight: FontWeight.w800,
           ),
         ),
@@ -922,13 +923,13 @@ class _OrderState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 58, color: const Color(0xFF7D87A8)),
+            Icon(icon, size: 58, color: AppConstant.appColorMuted),
             const SizedBox(height: 14),
             Text(
               title,
               textAlign: TextAlign.center,
               style: theme.textTheme.titleMedium?.copyWith(
-                color: const Color(0xFF17224D),
+                color: AppConstant.appColorDeep,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -937,7 +938,7 @@ class _OrderState extends StatelessWidget {
               subtitle,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: const Color(0xFF687191),
+                color: AppConstant.appColorMuted,
               ),
             ),
           ],
