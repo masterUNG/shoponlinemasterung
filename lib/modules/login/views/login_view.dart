@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
-import 'package:ms_undraw/ms_undraw.dart';
 
 import '../controllers/login_controller.dart';
 
@@ -52,7 +51,7 @@ class LoginView extends GetView<LoginController> {
                               ),
                             ),
                             child: const Text(
-                              'ช้อปออนไลน์',
+                              'UNG SHOP',
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -63,10 +62,10 @@ class LoginView extends GetView<LoginController> {
                           ),
                         ),
                         const SizedBox(height: 18),
-                        const _HeroIllustrationCard(),
+                        const _LogoHeroCard(),
                         const SizedBox(height: 24),
                         Text(
-                          'ช้อปง่าย ขายคล่อง ในแอพเดียว',
+                          'Ung Shop',
                           style: theme.textTheme.headlineMedium?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w800,
@@ -75,7 +74,7 @@ class LoginView extends GetView<LoginController> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'เข้าสู่ระบบด้วย Google เพื่อดูสินค้าใหม่ ๆ จัดการคำสั่งซื้อ และเริ่มซื้อขายออนไลน์ได้ทันที',
+                          'ช้อปง่าย ส่งไว ครบจบในที่เดียว',
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: Colors.white.withValues(alpha: 0.88),
                             height: 1.5,
@@ -130,7 +129,7 @@ class LoginView extends GetView<LoginController> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'ระบบเดิมของคุณยังทำงานเหมือนเดิม เราปรับเฉพาะหน้าตาให้ใช้งานง่ายและดูเป็นมิตรมากขึ้น',
+                                'เข้าสู่ระบบด้วย Google เพื่อเลือกซื้อสินค้า ติดตามคำสั่งซื้อ และรับประสบการณ์ร้านค้าออนไลน์ที่สะดวกขึ้น',
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -206,8 +205,8 @@ class LoginView extends GetView<LoginController> {
   }
 }
 
-class _HeroIllustrationCard extends StatelessWidget {
-  const _HeroIllustrationCard();
+class _LogoHeroCard extends StatelessWidget {
+  const _LogoHeroCard();
 
   @override
   Widget build(BuildContext context) {
@@ -250,17 +249,52 @@ class _HeroIllustrationCard extends StatelessWidget {
             ),
           ),
           Align(
+            alignment: Alignment.topRight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppConstant.appColorSurface,
+                borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: AppConstant.appColorBorder),
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.verified_rounded,
+                    size: 16,
+                    color: AppConstant.appColor,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Official Store',
+                    style: TextStyle(
+                      color: AppConstant.appColorDark,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Align(
             child: Padding(
-              padding: EdgeInsets.all(8),
-              child: UnDraw(
-                illustration: UnDrawIllustration.shopping_app,
-                color: AppConstant.appColor,
-                placeholder: Center(child: CircularProgressIndicator()),
-                errorWidget: Icon(
-                  Icons.storefront_rounded,
-                  size: 96,
-                  color: AppConstant.appColor,
+              padding: const EdgeInsets.all(32),
+              child: Container(
+                padding: const EdgeInsets.all(22),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppConstant.appColorDeep.withValues(alpha: 0.12),
+                      blurRadius: 28,
+                      offset: const Offset(0, 16),
+                    ),
+                  ],
                 ),
+                child: Image.asset('images/logo.png', fit: BoxFit.contain),
               ),
             ),
           ),

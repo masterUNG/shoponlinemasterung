@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
-import 'package:ms_undraw/ms_undraw.dart';
 
 import '../controllers/login_admin_web_controller.dart';
 
@@ -98,7 +97,7 @@ class _LeftPanel extends StatelessWidget {
               border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
             ),
             child: const Text(
-              'ADMIN PORTAL',
+              'UNG SHOP ADMIN',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 12,
@@ -146,17 +145,60 @@ class _LeftPanel extends StatelessWidget {
                     ),
                   ),
                 ),
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppConstant.appColorSurface,
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(color: AppConstant.appColorBorder),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.admin_panel_settings_rounded,
+                          size: 16,
+                          color: AppConstant.appColor,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Admin',
+                          style: TextStyle(
+                            color: AppConstant.appColorDark,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
                 Center(
                   child: Padding(
-                    padding: EdgeInsets.all(8),
-                    child: UnDraw(
-                      illustration: UnDrawIllustration.shopping_app,
-                      color: AppConstant.appColor,
-                      placeholder: Center(child: CircularProgressIndicator()),
-                      errorWidget: Icon(
-                        Icons.admin_panel_settings_rounded,
-                        size: 96,
-                        color: AppConstant.appColor,
+                    padding: const EdgeInsets.all(42),
+                    child: Container(
+                      padding: const EdgeInsets.all(26),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppConstant.appColorDeep.withValues(
+                              alpha: 0.12,
+                            ),
+                            blurRadius: 30,
+                            offset: const Offset(0, 18),
+                          ),
+                        ],
+                      ),
+                      child: Image.asset(
+                        'images/logo.png',
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
@@ -166,7 +208,7 @@ class _LeftPanel extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           Text(
-            'พื้นที่จัดการระบบสำหรับผู้ดูแลร้าน',
+            'Ung Shop',
             style: theme.textTheme.headlineMedium?.copyWith(
               color: Colors.white,
               fontWeight: FontWeight.w800,
@@ -175,7 +217,7 @@ class _LeftPanel extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            'เข้าสู่ระบบด้วยอีเมลและรหัสผ่านเพื่อจัดการสินค้า คำสั่งซื้อ และข้อมูลหน้าร้านในมุมมองสำหรับผู้ดูแลโดยเฉพาะ',
+            'ระบบจัดการร้านค้าออนไลน์สำหรับผู้ดูแล',
             style: theme.textTheme.bodyLarge?.copyWith(
               color: Colors.white.withValues(alpha: 0.88),
               height: 1.5,
@@ -228,7 +270,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'เข้าสู่ระบบแอดมิน',
+                'เข้าสู่ระบบผู้ดูแล',
                 style: theme.textTheme.headlineSmall?.copyWith(
                   color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w800,
@@ -236,7 +278,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
               ),
               const SizedBox(height: 8),
               Text(
-                'กรอกอีเมลและรหัสผ่านเพื่อเข้าใช้งานระบบจัดการร้านค้า',
+                'กรอกอีเมลและรหัสผ่านเพื่อจัดการสินค้า คำสั่งซื้อ และข้อมูลร้าน Ung Shop',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                   height: 1.5,
@@ -311,7 +353,9 @@ class _RightPanel extends GetView<LoginAdminWebController> {
                         )
                       : const Icon(Icons.login_rounded),
                   label: Text(
-                    controller.isLoading.value ? 'Signing in...' : 'Login',
+                    controller.isLoading.value
+                        ? 'กำลังเข้าสู่ระบบ...'
+                        : 'เข้าสู่ระบบ',
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -348,7 +392,7 @@ class _RightPanel extends GetView<LoginAdminWebController> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'ตรวจสอบความว่าง รูปแบบอีเมล และรหัสผ่านขั้นต่ำ 6 ตัวอักษรก่อนเชื่อม Firebase Auth',
+                        'พื้นที่นี้สำหรับผู้ดูแลร้านเท่านั้น ระบบจะตรวจสอบบัญชีก่อนพาเข้าสู่หน้าจัดการร้านค้า',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                           height: 1.45,
