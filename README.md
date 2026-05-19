@@ -15,6 +15,8 @@ phrombutr@gmail.com
 
 Mobile 0818595309
 
+https://app-privacy-policy-generator.firebaseapp.com/
+
 ## Firebase Security Rules และ Admin Role
 
 โปรเจกต์นี้ใช้ Firestore role ที่ `users/{uid}.role`
