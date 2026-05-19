@@ -9,10 +9,12 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../../model/app_user_model.dart';
+import '../../../services/reviewer_mode_service.dart';
 
 class ProfileController extends GetxController {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  ReviewerModeService get _reviewerMode => Get.find<ReviewerModeService>();
 
   final isLoading = true.obs;
   final errorMessage = ''.obs;
@@ -54,16 +56,37 @@ class ProfileController extends GetxController {
   }
 
   Future<void> reloadProfile() async {
+    if (_reviewerMode.isGuest) {
+      _listenToCurrentUserProfile();
+      return;
+    }
+
     _userSubscription?.cancel();
     _listenToCurrentUserProfile();
   }
 
   void onProfileOpened() {
+    if (_reviewerMode.isGuest) {
+      _reviewerMode.showLoginRequiredDialog(
+        title: 'ต้องเข้าสู่ระบบก่อนดู Profile',
+        message:
+            'Guest reviewer mode สามารถดูสินค้าและทดลองตะกร้าด้วยข้อมูลตัวอย่างได้ แต่ Profile เป็นข้อมูลบัญชีส่วนตัว กรุณาเข้าสู่ระบบเพื่อดูโปรไฟล์',
+      );
+      return;
+    }
+
     _askedLocationForCurrentProfileVisit = false;
     _askLocationIfNeeded();
   }
 
   void _listenToCurrentUserProfile() {
+    if (_reviewerMode.isGuest) {
+      isLoading.value = false;
+      errorMessage.value = 'ต้องเข้าสู่ระบบก่อนดูโปรไฟล์';
+      userData.value = null;
+      return;
+    }
+
     final User? user = currentUser;
     if (user == null) {
       isLoading.value = false;

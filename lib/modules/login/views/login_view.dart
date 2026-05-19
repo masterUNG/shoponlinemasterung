@@ -181,6 +181,11 @@ class LoginView extends GetView<LoginController> {
                                   ),
                                 ),
                               ),
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: controller.enterGuestReviewerMode,
+                                child: const Text('Guest reviewer mode'),
+                              ),
                               const SizedBox(height: 12),
                               Text(
                                 'เมื่อเข้าสู่ระบบสำเร็จ แอพจะพาไปหน้าหลักอัตโนมัติ',

@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../../core/app_constant.dart';
+import '../../../services/reviewer_mode_service.dart';
 import '../../main_home/controllers/main_home_controller.dart';
 
 enum FulfillmentType { pickup, delivery }
@@ -46,6 +47,7 @@ class CartItem {
 class CartController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  ReviewerModeService get _reviewerMode => Get.find<ReviewerModeService>();
 
   final RxList<CartItem> cartItems = <CartItem>[].obs;
   final RxBool isLoading = true.obs;
@@ -57,6 +59,7 @@ class CartController extends GetxController {
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _cartSubscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
+  Worker? _demoCartWorker;
 
   static const double freeDeliveryRadiusMeters = 1000;
 
@@ -75,6 +78,10 @@ class CartController extends GetxController {
   }
 
   String get deliveryStatusText {
+    if (_reviewerMode.isGuest) {
+      return 'Guest reviewer mode ใช้ตะกร้าตัวอย่างเท่านั้น การจัดส่งและออเดอร์จริงต้องเข้าสู่ระบบก่อน';
+    }
+
     final double? distance = distanceFromShopMeters.value;
     if (customerLocation.value == null || distance == null) {
       return 'ส่งฟรีเฉพาะลูกค้าในหมู่บ้าน/รัศมี 1 กม. จากร้าน กรุณาบันทึกพิกัดก่อนเลือกให้ไปส่งฟรี';
@@ -91,6 +98,14 @@ class CartController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    _demoCartWorker = ever<List<Map<String, dynamic>>>(
+      _reviewerMode.demoCartItems,
+      (_) {
+        if (_reviewerMode.isGuest) {
+          cartItems.assignAll(_buildDemoCartItems());
+        }
+      },
+    );
     listenCartFeed();
     listenUserProfile();
   }
@@ -99,15 +114,29 @@ class CartController extends GetxController {
   void onClose() {
     _cartSubscription?.cancel();
     _userSubscription?.cancel();
+    _demoCartWorker?.dispose();
     super.onClose();
   }
 
   Future<void> refreshCart() async {
+    if (_reviewerMode.isGuest) {
+      listenCartFeed();
+      return;
+    }
+
     await _cartSubscription?.cancel();
     listenCartFeed();
   }
 
   void listenCartFeed() {
+    if (_reviewerMode.isGuest) {
+      _cartSubscription?.cancel();
+      cartItems.assignAll(_buildDemoCartItems());
+      isLoading.value = false;
+      errorMessage.value = '';
+      return;
+    }
+
     final User? user = _firebaseAuth.currentUser;
     if (user == null) {
       cartItems.clear();
@@ -144,6 +173,13 @@ class CartController extends GetxController {
   }
 
   void listenUserProfile() {
+    if (_reviewerMode.isGuest) {
+      customerLocation.value = null;
+      distanceFromShopMeters.value = null;
+      fulfillmentType.value = FulfillmentType.pickup;
+      return;
+    }
+
     final User? user = _firebaseAuth.currentUser;
     if (user == null) {
       customerLocation.value = null;
@@ -178,6 +214,16 @@ class CartController extends GetxController {
   }
 
   void selectFulfillment(FulfillmentType type) {
+    if (_reviewerMode.isGuest && type == FulfillmentType.delivery) {
+      Get.snackbar(
+        'Guest reviewer mode',
+        'โหมดรีวิวใช้ตะกร้าตัวอย่างและไม่บันทึกพิกัดจัดส่งจริง',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      fulfillmentType.value = FulfillmentType.pickup;
+      return;
+    }
+
     if (type == FulfillmentType.delivery && !canUseDelivery) {
       Get.snackbar(
         'ยังใช้บริการส่งไม่ได้',
@@ -228,6 +274,12 @@ class CartController extends GetxController {
       return;
     }
 
+    if (_reviewerMode.isGuest) {
+      _reviewerMode.updateDemoCartQuantity(item.id, item.quantity + 1);
+      cartItems.assignAll(_buildDemoCartItems());
+      return;
+    }
+
     await _updateQuantity(item, item.quantity + 1);
   }
 
@@ -236,14 +288,32 @@ class CartController extends GetxController {
       return;
     }
 
+    if (_reviewerMode.isGuest) {
+      _reviewerMode.updateDemoCartQuantity(item.id, item.quantity - 1);
+      cartItems.assignAll(_buildDemoCartItems());
+      return;
+    }
+
     await _updateQuantity(item, item.quantity - 1);
   }
 
   Future<void> setQuantityToOne(CartItem item) async {
+    if (_reviewerMode.isGuest) {
+      _reviewerMode.updateDemoCartQuantity(item.id, 1);
+      cartItems.assignAll(_buildDemoCartItems());
+      return;
+    }
+
     await _updateQuantity(item, 1);
   }
 
   Future<void> deleteItem(CartItem item) async {
+    if (_reviewerMode.isGuest) {
+      _reviewerMode.deleteDemoCartItem(item.id);
+      cartItems.assignAll(_buildDemoCartItems());
+      return;
+    }
+
     final User? user = _firebaseAuth.currentUser;
     if (user == null) {
       return;
@@ -267,6 +337,15 @@ class CartController extends GetxController {
 
   Future<void> createOrderFromCart() async {
     if (isOrdering.value || cartItems.isEmpty) {
+      return;
+    }
+
+    if (_reviewerMode.isGuest) {
+      await _reviewerMode.showLoginRequiredDialog(
+        title: 'ต้องเข้าสู่ระบบก่อนสั่งซื้อ',
+        message:
+            'Guest reviewer mode ให้ทดลองเลือกสินค้าและใส่ตะกร้าด้วยข้อมูลตัวอย่างได้ แต่การสร้างออเดอร์ ชำระเงินจริง และบันทึกคำสั่งซื้อต้องเข้าสู่ระบบก่อน',
+      );
       return;
     }
 
@@ -452,4 +531,11 @@ class CartController extends GetxController {
   }
 
   String _twoDigits(int value) => value.toString().padLeft(2, '0');
+
+  List<CartItem> _buildDemoCartItems() {
+    return _reviewerMode.demoCartItems.map((data) {
+      final String productId = (data['productId'] ?? '') as String;
+      return CartItem(id: productId, data: data);
+    }).toList();
+  }
 }

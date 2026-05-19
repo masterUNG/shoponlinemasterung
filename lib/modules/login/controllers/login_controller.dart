@@ -9,6 +9,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../model/app_user_model.dart';
+import '../../../services/reviewer_mode_service.dart';
 
 class LoginController extends GetxController {
   static const _serverClientId =
@@ -20,6 +21,7 @@ class LoginController extends GetxController {
 
   final isLoading = false.obs;
   late final Future<void> _googleInitialization;
+  ReviewerModeService get _reviewerMode => Get.find<ReviewerModeService>();
 
   @override
   void onInit() {
@@ -73,6 +75,7 @@ class LoginController extends GetxController {
       }
 
       await _createUserDocumentIfMissing(user);
+      _reviewerMode.leaveGuestReviewerMode();
 
       final String displayName =
           user.displayName ?? user.email ?? 'Google User';
@@ -110,6 +113,34 @@ class LoginController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+  }
+
+  Future<void> enterGuestReviewerMode() async {
+    final bool? accepted = await Get.dialog<bool>(
+      AlertDialog(
+        title: const Text('Guest reviewer mode'),
+        content: const Text(
+          'โหมดนี้เปิดให้ทีมรีวิวดูสินค้า ดูรายละเอียดสินค้า และทดลองใส่ตะกร้าด้วยข้อมูลตัวอย่าง โดยไม่สร้างออเดอร์จริง ไม่ชำระเงินจริง และไม่บันทึกข้อมูลลงบัญชีผู้ใช้',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('เข้าโหมดรีวิว'),
+          ),
+        ],
+      ),
+    );
+
+    if (accepted != true) {
+      return;
+    }
+
+    _reviewerMode.enterGuestReviewerMode();
+    Get.offAllNamed(Routes.mainHome);
   }
 
   Future<void> _createUserDocumentIfMissing(User user) async {

@@ -22,7 +22,9 @@ class MainHomeView extends GetView<MainHomeController> {
     return Obx(
       () => Scaffold(
         appBar: AppBar(
-          title: const Text('Main Home'),
+          title: Text(
+            controller.isGuestReviewer ? 'Guest reviewer mode' : 'Main Home',
+          ),
           actions: [
             IconButton(
               onPressed: controller.signOut,

@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 
 import '../../../model/product_model.dart';
+import '../../../services/reviewer_mode_service.dart';
 
 class MallProductItem {
   const MallProductItem({required this.id, required this.product});
@@ -19,6 +20,7 @@ class MallProductItem {
 class MallController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  ReviewerModeService get _reviewerMode => Get.find<ReviewerModeService>();
 
   final RxList<MallProductItem> products = <MallProductItem>[].obs;
   final RxBool isLoading = true.obs;
@@ -90,21 +92,37 @@ class MallController extends GetxController {
       return false;
     }
 
-    final User? user = _firebaseAuth.currentUser;
-    if (user == null) {
-      Get.snackbar(
-        'ยังไม่ได้เข้าสู่ระบบ',
-        'กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
-
     final int availableStock = item.product.stock.toInt();
     if (quantity <= 0 || quantity > availableStock) {
       Get.snackbar(
         'จำนวนสินค้าไม่ถูกต้อง',
         'เลือกจำนวนได้ไม่เกิน $availableStock ${item.product.unit}',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
+    if (_reviewerMode.isGuest) {
+      _reviewerMode.addDemoCartItem(
+        productId: item.id,
+        productData: <String, dynamic>{
+          'name': item.product.name,
+          'description': item.product.description,
+          'base64Image': item.product.base64Image,
+          'unit': item.product.unit,
+          'price': item.product.price,
+          'stock': item.product.stock,
+        },
+        quantity: quantity,
+      );
+      return true;
+    }
+
+    final User? user = _firebaseAuth.currentUser;
+    if (user == null) {
+      Get.snackbar(
+        'ยังไม่ได้เข้าสู่ระบบ',
+        'กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า',
         snackPosition: SnackPosition.BOTTOM,
       );
       return false;

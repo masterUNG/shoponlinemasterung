@@ -7,10 +7,12 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../model/order_model.dart';
+import '../../../services/reviewer_mode_service.dart';
 
 class OrderController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  ReviewerModeService get _reviewerMode => Get.find<ReviewerModeService>();
 
   final RxList<OrderModel> orders = <OrderModel>[].obs;
   final RxBool isLoading = true.obs;
@@ -41,11 +43,23 @@ class OrderController extends GetxController {
   }
 
   Future<void> refreshOrders() async {
+    if (_reviewerMode.isGuest) {
+      listenOrders();
+      return;
+    }
+
     await _orderSubscription?.cancel();
     listenOrders();
   }
 
   void listenOrders() {
+    if (_reviewerMode.isGuest) {
+      orders.clear();
+      isLoading.value = false;
+      errorMessage.value = 'ต้องเข้าสู่ระบบก่อนดูออเดอร์';
+      return;
+    }
+
     final User? user = _firebaseAuth.currentUser;
     if (user == null) {
       orders.clear();
@@ -131,6 +145,15 @@ class OrderController extends GetxController {
   }
 
   Future<void> uploadPaymentSlip(OrderModel order) async {
+    if (_reviewerMode.isGuest) {
+      await _reviewerMode.showLoginRequiredDialog(
+        title: 'ต้องเข้าสู่ระบบก่อนชำระเงิน',
+        message:
+            'Guest reviewer mode ไม่รองรับการชำระเงินจริงหรืออัปโหลดสลิป กรุณาเข้าสู่ระบบเพื่อจัดการออเดอร์และการชำระเงิน',
+      );
+      return;
+    }
+
     if (uploadingPaymentOrderId.value.isNotEmpty ||
         !canUploadPaymentSlip(order)) {
       return;

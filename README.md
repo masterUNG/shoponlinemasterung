@@ -9,13 +9,13 @@ https://bit.ly/32yar4n
 
 http://line.me/ti/p/XI-Ksj7Jzq
 
-https://www.androidthai.in.th
-
 phrombutr@gmail.com
 
 Mobile 0818595309
 
 https://app-privacy-policy-generator.firebaseapp.com/
+
+https://www.papayashotgo.com/policy/ungShopPolicy.html
 
 ## Firebase Security Rules และ Admin Role
 
