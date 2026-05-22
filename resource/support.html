@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ung Shop Support</title>
+  <meta name="description" content="Support page for Ung Shop, an online shopping app for browsing products, placing orders, tracking status, and choosing pickup or free delivery in supported areas.">
+  <style>
+    :root {
+      color-scheme: light;
+      --green: #548011;
+      --green-dark: #203205;
+      --green-soft: #edf4e3;
+      --ink: #1f2937;
+      --muted: #63724f;
+      --line: #d5e4bf;
+      --surface: #f5f8ef;
+      --white: #ffffff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--surface);
+      color: var(--ink);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    a {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    .wrap {
+      margin: 0 auto;
+      max-width: 1080px;
+      padding: 24px;
+    }
+
+    .hero {
+      background: var(--green-dark);
+      border-radius: 8px;
+      color: var(--white);
+      padding: 36px;
+    }
+
+    .hero p {
+      color: #dceac4;
+      font-size: 18px;
+      margin: 12px 0 0;
+      max-width: 780px;
+    }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.25;
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 800;
+    }
+
+    h2 {
+      color: var(--green-dark);
+      font-size: 24px;
+      margin-bottom: 14px;
+    }
+
+    h3 {
+      color: var(--green-dark);
+      font-size: 18px;
+      margin-bottom: 6px;
+    }
+
+    section {
+      margin-top: 28px;
+    }
+
+    .panel {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 24px;
+    }
+
+    .grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .item {
+      background: var(--green-soft);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .contact {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .contact-card {
+      background: var(--green-soft);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .contact-card p,
+    .item p {
+      margin: 0;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .gallery {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    figure {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin: 0;
+      overflow: hidden;
+    }
+
+    figure img {
+      display: block;
+      height: auto;
+      width: 100%;
+    }
+
+    figcaption {
+      color: var(--muted);
+      font-size: 14px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+
+    ul {
+      margin: 0;
+      padding-left: 22px;
+    }
+
+    footer {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 28px;
+      text-align: center;
+    }
+
+    @media (max-width: 760px) {
+      .wrap {
+        padding: 16px;
+      }
+
+      .hero {
+        padding: 26px 22px;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+
+      .grid,
+      .contact,
+      .gallery {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <h1>Ung Shop Support</h1>
+      <p>
+        Shop with Ung Shop: browse products, add to cart, place orders, track status,
+        and choose pickup or free delivery in supported areas.
+      </p>
+    </header>
+
+    <section class="panel">
+      <h2>Description</h2>
+      <p>
+        Ung Shop makes online shopping simple and convenient. Browse available products,
+        view details and prices, add items to your cart, and place orders directly from
+        the app.
+      </p>
+      <p>
+        You can manage item quantities, review your total before ordering, and track your
+        order status from pending to completed or canceled. The app also supports customer
+        profiles and delivery location setup, so eligible customers can choose free delivery
+        within supported service areas or pick up items at the shop.
+      </p>
+    </section>
+
+    <section>
+      <h2>How Ung Shop Helps</h2>
+      <div class="grid">
+        <div class="item">
+          <h3>Browse Products</h3>
+          <p>View product photos, descriptions, prices, units, and stock availability.</p>
+        </div>
+        <div class="item">
+          <h3>Order Easily</h3>
+          <p>Add products to your cart, adjust quantities, and confirm orders in the app.</p>
+        </div>
+        <div class="item">
+          <h3>Track Status</h3>
+          <p>Follow your order history and see active, completed, or canceled orders.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Support Contact</h2>
+      <div class="contact">
+        <div class="contact-card">
+          <h3>Email</h3>
+          <p><a href="mailto:phormbutr@gmail.com">phormbutr@gmail.com</a></p>
+        </div>
+        <div class="contact-card">
+          <h3>Developer</h3>
+          <p>Chaiwoot Phrombutr</p>
+        </div>
+        <div class="contact-card">
+          <h3>Phone</h3>
+          <p><a href="tel:+66818595309">0818595309</a></p>
+        </div>
+      </div>
+      <p class="muted">
+        For app support, order questions, account assistance, or feedback, please contact us by email or phone.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2>Frequently Asked Questions</h2>
+      <ul>
+        <li><strong>How do I place an order?</strong> Open the Mall page, select products, add them to your cart, then confirm your order.</li>
+        <li><strong>Can I choose delivery?</strong> Delivery is available only in supported service areas. You can also choose pickup at the shop.</li>
+        <li><strong>Where can I see my order status?</strong> Open the Order page to review active orders and order history.</li>
+        <li><strong>How do I get help?</strong> Email <a href="mailto:phormbutr@gmail.com">phormbutr@gmail.com</a> or call <a href="tel:+66818595309">0818595309</a>.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>App Screenshots</h2>
+      <div class="gallery">
+        <figure>
+          <img src="https://www.papayashotgo.com/shopOnlineMasterUng/images/iphone1.png" alt="Ung Shop iPhone screenshot 1">
+          <figcaption>iPhone Screenshot 1</figcaption>
+        </figure>
+        <figure>
+          <img src="https://www.papayashotgo.com/shopOnlineMasterUng/images/iphone2.png" alt="Ung Shop iPhone screenshot 2">
+          <figcaption>iPhone Screenshot 2</figcaption>
+        </figure>
+        <figure>
+          <img src="https://www.papayashotgo.com/shopOnlineMasterUng/images/iphone3.png" alt="Ung Shop iPhone screenshot 3">
+          <figcaption>iPhone Screenshot 3</figcaption>
+        </figure>
+        <figure>
+          <img src="https://www.papayashotgo.com/shopOnlineMasterUng/images/ipad1.png" alt="Ung Shop iPad screenshot 1">
+          <figcaption>iPad Screenshot 1</figcaption>
+        </figure>
+        <figure>
+          <img src="https://www.papayashotgo.com/shopOnlineMasterUng/images/ipad2.png" alt="Ung Shop iPad screenshot 2">
+          <figcaption>iPad Screenshot 2</figcaption>
+        </figure>
+        <figure>
+          <img src="https://www.papayashotgo.com/shopOnlineMasterUng/images/ipad3.png" alt="Ung Shop iPad screenshot 3">
+          <figcaption>iPad Screenshot 3</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <footer>
+      <p>© 2026 Ung Shop. All rights reserved.</p>
+    </footer>
+  </main>
+</body>
+</html>

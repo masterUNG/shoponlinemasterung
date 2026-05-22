@@ -17,6 +17,8 @@ https://app-privacy-policy-generator.firebaseapp.com/
 
 https://www.papayashotgo.com/policy/ungShopPolicy.html
 
+https://www.papayashotgo.com/shopOnlineMasterUng/support.html
+
 ## Firebase Security Rules และ Admin Role
 
 โปรเจกต์นี้ใช้ Firestore role ที่ `users/{uid}.role`
