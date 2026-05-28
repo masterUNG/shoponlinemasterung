@@ -1,6 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../services/reviewer_mode_service.dart';
@@ -8,7 +7,6 @@ import '../../profile/controllers/profile_controller.dart';
 
 class MainHomeController extends GetxController {
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   final RxInt indexBody = 0.obs;
   ReviewerModeService get _reviewerMode => Get.find<ReviewerModeService>();
 
@@ -37,7 +35,6 @@ class MainHomeController extends GetxController {
   Future<void> signOut() async {
     _reviewerMode.leaveGuestReviewerMode();
     await _firebaseAuth.signOut();
-    await _googleSignIn.signOut();
     Get.offAllNamed(Routes.login);
   }
 }

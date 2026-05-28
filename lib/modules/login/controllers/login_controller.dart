@@ -3,33 +3,26 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:google_sign_in/google_sign_in.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../model/app_user_model.dart';
 import '../../../services/reviewer_mode_service.dart';
 
 class LoginController extends GetxController {
-  static const _serverClientId =
-      '247194165705-2rdt0j6gkrsrpl3jr2huraknltu1gjk4.apps.googleusercontent.com';
-
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final ImagePicker _imagePicker = ImagePicker();
 
   final isLoading = false.obs;
-  late final Future<void> _googleInitialization;
+  final registerBase64Avatar = ''.obs;
+  final loginEmailController = TextEditingController();
+  final loginPasswordController = TextEditingController();
+  final registerDisplayNameController = TextEditingController();
+  final registerEmailController = TextEditingController();
+  final registerPasswordController = TextEditingController();
   ReviewerModeService get _reviewerMode => Get.find<ReviewerModeService>();
-
-  @override
-  void onInit() {
-    super.onInit();
-    _googleInitialization = _googleSignIn.initialize(
-      serverClientId: _serverClientId,
-    );
-  }
 
   @override
   void onReady() {
@@ -39,32 +32,39 @@ class LoginController extends GetxController {
     }
   }
 
-  Future<void> loginWithGoogle() async {
+  @override
+  void onClose() {
+    loginEmailController.dispose();
+    loginPasswordController.dispose();
+    registerDisplayNameController.dispose();
+    registerEmailController.dispose();
+    registerPasswordController.dispose();
+    super.onClose();
+  }
+
+  Future<void> loginWithEmailPassword() async {
     if (isLoading.value) {
+      return;
+    }
+
+    final String email = loginEmailController.text.trim();
+    final String password = loginPasswordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      Get.snackbar(
+        'กรอกข้อมูลไม่ครบ',
+        'กรุณากรอก email และ password ให้ครบถ้วน',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
       return;
     }
 
     isLoading.value = true;
 
     try {
-      await _googleInitialization;
-
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-      final String? idToken = googleUser.authentication.idToken;
-
-      if (idToken == null || idToken.isEmpty) {
-        throw FirebaseAuthException(
-          code: 'missing-google-id-token',
-          message: 'Google Sign-In did not return an ID token.',
-        );
-      }
-
-      final AuthCredential credential = GoogleAuthProvider.credential(
-        idToken: idToken,
-      );
-
       final UserCredential userCredential = await _firebaseAuth
-          .signInWithCredential(credential);
+          .signInWithEmailAndPassword(email: email, password: password);
       final User? user = userCredential.user;
 
       if (user == null) {
@@ -77,8 +77,7 @@ class LoginController extends GetxController {
       await _createUserDocumentIfMissing(user);
       _reviewerMode.leaveGuestReviewerMode();
 
-      final String displayName =
-          user.displayName ?? user.email ?? 'Google User';
+      final String displayName = user.displayName ?? user.email ?? 'Customer';
 
       Get.offAllNamed(Routes.mainHome);
       Get.snackbar(
@@ -87,25 +86,109 @@ class LoginController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
       );
-    } on GoogleSignInException catch (error) {
-      if (error.code != GoogleSignInExceptionCode.canceled) {
-        Get.snackbar(
-          'เข้าสู่ระบบด้วย Google ไม่สำเร็จ',
-          error.description ?? 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้ในขณะนี้',
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
-        );
-      }
     } on FirebaseAuthException catch (error) {
       Get.snackbar(
-        'เชื่อมต่อระบบเข้าสู่ระบบไม่สำเร็จ',
-        error.message ?? 'ไม่สามารถเชื่อมต่อบัญชี Google ของคุณได้',
+        'เข้าสู่ระบบไม่สำเร็จ',
+        _firebaseAuthMessage(error),
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
       );
     } catch (_) {
       Get.snackbar(
         'เข้าสู่ระบบไม่สำเร็จ',
+        'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> pickRegisterAvatar() async {
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 72,
+      maxWidth: 600,
+    );
+
+    if (image == null) {
+      return;
+    }
+
+    final bytes = await image.readAsBytes();
+    registerBase64Avatar.value = base64Encode(bytes);
+  }
+
+  void clearRegisterForm() {
+    registerDisplayNameController.clear();
+    registerEmailController.clear();
+    registerPasswordController.clear();
+    registerBase64Avatar.value = '';
+  }
+
+  Future<void> registerWithEmailPassword() async {
+    if (isLoading.value) {
+      return;
+    }
+
+    final String displayName = registerDisplayNameController.text.trim();
+    final String email = registerEmailController.text.trim();
+    final String password = registerPasswordController.text;
+
+    if (displayName.isEmpty ||
+        registerBase64Avatar.value.isEmpty ||
+        email.isEmpty ||
+        password.isEmpty) {
+      Get.snackbar(
+        'กรอกข้อมูลไม่ครบ',
+        'กรุณากรอก display name, avatar, email และ password ให้ครบถ้วน',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    isLoading.value = true;
+
+    try {
+      final UserCredential userCredential = await _firebaseAuth
+          .createUserWithEmailAndPassword(email: email, password: password);
+      final User? user = userCredential.user;
+
+      if (user == null) {
+        throw FirebaseAuthException(
+          code: 'missing-firebase-user',
+          message: 'Firebase did not return the registered user.',
+        );
+      }
+
+      await user.updateDisplayName(displayName);
+      await _createUserDocumentIfMissing(
+        user,
+        displayName: displayName,
+        base64Avatar: registerBase64Avatar.value,
+      );
+      _reviewerMode.leaveGuestReviewerMode();
+
+      Get.back();
+      Get.offAllNamed(Routes.mainHome);
+      Get.snackbar(
+        'สมัครสมาชิกสำเร็จ',
+        'ยินดีต้อนรับ, $displayName',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } on FirebaseAuthException catch (error) {
+      Get.snackbar(
+        'สมัครสมาชิกไม่สำเร็จ',
+        _firebaseAuthMessage(error),
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } catch (_) {
+      Get.snackbar(
+        'สมัครสมาชิกไม่สำเร็จ',
         'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
@@ -143,7 +226,11 @@ class LoginController extends GetxController {
     Get.offAllNamed(Routes.mainHome);
   }
 
-  Future<void> _createUserDocumentIfMissing(User user) async {
+  Future<void> _createUserDocumentIfMissing(
+    User user, {
+    String? displayName,
+    String? base64Avatar,
+  }) async {
     final DocumentReference<Map<String, dynamic>> userDocument = _firestore
         .collection('users')
         .doc(user.uid);
@@ -155,27 +242,32 @@ class LoginController extends GetxController {
     }
 
     final AppUserModel appUser = AppUserModel(
-      displayName: user.displayName ?? user.email ?? 'Google User',
-      base64Avatar: await _getBase64Avatar(user.photoURL),
+      displayName: displayName ?? user.displayName ?? user.email ?? 'Customer',
+      base64Avatar: base64Avatar ?? '',
       uid: user.uid,
     );
 
     await userDocument.set(appUser.toMap());
   }
 
-  Future<String> _getBase64Avatar(String? photoUrl) async {
-    if (photoUrl == null || photoUrl.isEmpty) {
-      return '';
-    }
-
-    try {
-      final NetworkAssetBundle bundle = NetworkAssetBundle(Uri.parse(photoUrl));
-      final ByteData byteData = await bundle.load(photoUrl);
-      final Uint8List bytes = byteData.buffer.asUint8List();
-
-      return base64Encode(bytes);
-    } catch (_) {
-      return '';
+  String _firebaseAuthMessage(FirebaseAuthException error) {
+    switch (error.code) {
+      case 'invalid-email':
+        return 'รูปแบบ email ไม่ถูกต้อง';
+      case 'user-disabled':
+        return 'บัญชีนี้ถูกระงับการใช้งาน';
+      case 'user-not-found':
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'email หรือ password ไม่ถูกต้อง';
+      case 'email-already-in-use':
+        return 'email นี้ถูกใช้งานแล้ว';
+      case 'weak-password':
+        return 'password ต้องมีความปลอดภัยมากกว่านี้';
+      case 'operation-not-allowed':
+        return 'ระบบยังไม่ได้เปิดใช้งาน email/password sign-in';
+      default:
+        return error.message ?? 'กรุณาลองใหม่อีกครั้ง';
     }
   }
 }

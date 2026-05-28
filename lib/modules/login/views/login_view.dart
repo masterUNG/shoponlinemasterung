@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
@@ -6,6 +8,16 @@ import '../controllers/login_controller.dart';
 
 class LoginView extends GetView<LoginController> {
   const LoginView({super.key});
+
+  void _showRegisterSheet(BuildContext context) {
+    controller.clearRegisterForm();
+
+    Get.bottomSheet(
+      _RegisterBottomSheet(controller: controller),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +141,7 @@ class LoginView extends GetView<LoginController> {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                'เข้าสู่ระบบด้วย Google เพื่อเลือกซื้อสินค้า ติดตามคำสั่งซื้อ และรับประสบการณ์ร้านค้าออนไลน์ที่สะดวกขึ้น',
+                                'เข้าสู่ระบบด้วย email และ password เพื่อเลือกซื้อสินค้า ติดตามคำสั่งซื้อ และรับประสบการณ์ร้านค้าออนไลน์ที่สะดวกขึ้น',
                                 textAlign: TextAlign.center,
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: theme.colorScheme.onSurfaceVariant,
@@ -137,20 +149,31 @@ class LoginView extends GetView<LoginController> {
                                 ),
                               ),
                               const SizedBox(height: 18),
+                              _AuthTextField(
+                                controller: controller.loginEmailController,
+                                label: 'Email',
+                                icon: Icons.alternate_email_rounded,
+                                keyboardType: TextInputType.emailAddress,
+                              ),
+                              const SizedBox(height: 12),
+                              _AuthTextField(
+                                controller: controller.loginPasswordController,
+                                label: 'Password',
+                                icon: Icons.lock_rounded,
+                                obscureText: true,
+                              ),
+                              const SizedBox(height: 16),
                               Obx(
                                 () => SizedBox(
                                   height: 58,
                                   child: FilledButton(
                                     onPressed: controller.isLoading.value
                                         ? null
-                                        : controller.loginWithGoogle,
+                                        : controller.loginWithEmailPassword,
                                     style: FilledButton.styleFrom(
-                                      backgroundColor: Colors.white,
-                                      foregroundColor: AppConstant.appColorDark,
+                                      backgroundColor: AppConstant.appColorDark,
+                                      foregroundColor: Colors.white,
                                       elevation: 0,
-                                      side: BorderSide(
-                                        color: theme.colorScheme.outlineVariant,
-                                      ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(18),
                                       ),
@@ -167,10 +190,10 @@ class LoginView extends GetView<LoginController> {
                                             mainAxisAlignment:
                                                 MainAxisAlignment.center,
                                             children: [
-                                              _GoogleBadge(),
-                                              SizedBox(width: 12),
+                                              Icon(Icons.login_rounded),
+                                              SizedBox(width: 10),
                                               Text(
-                                                'เข้าสู่ระบบด้วย Google',
+                                                'เข้าสู่ระบบ',
                                                 style: TextStyle(
                                                   fontSize: 16,
                                                   fontWeight: FontWeight.w700,
@@ -180,6 +203,10 @@ class LoginView extends GetView<LoginController> {
                                           ),
                                   ),
                                 ),
+                              ),
+                              TextButton(
+                                onPressed: () => _showRegisterSheet(context),
+                                child: const Text('ยังไม่มีบัญชี? สมัครสมาชิก'),
                               ),
                               const SizedBox(height: 8),
                               TextButton(
@@ -342,27 +369,183 @@ class _InfoChip extends StatelessWidget {
   }
 }
 
-class _GoogleBadge extends StatelessWidget {
-  const _GoogleBadge();
+class _AuthTextField extends StatelessWidget {
+  const _AuthTextField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+    this.keyboardType,
+    this.obscureText = false,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+  final TextInputType? keyboardType;
+  final bool obscureText;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      width: 30,
-      height: 30,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        shape: BoxShape.circle,
-        border: Border.all(color: theme.colorScheme.outlineVariant),
+    return TextField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: obscureText,
+      textInputAction: obscureText
+          ? TextInputAction.done
+          : TextInputAction.next,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: theme.colorScheme.surface,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
       ),
-      child: Text(
-        'G',
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w800,
-          color: Colors.red.shade700,
+    );
+  }
+}
+
+class _RegisterBottomSheet extends StatelessWidget {
+  const _RegisterBottomSheet({required this.controller});
+
+  final LoginController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.9,
+        ),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'สมัครสมาชิกใหม่',
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: AppConstant.appColorDark,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Center(
+                  child: Obx(() {
+                    final String base64Avatar =
+                        controller.registerBase64Avatar.value;
+                    return InkWell(
+                      onTap: controller.pickRegisterAvatar,
+                      borderRadius: BorderRadius.circular(52),
+                      child: CircleAvatar(
+                        radius: 48,
+                        backgroundColor: AppConstant.appColorSurface,
+                        backgroundImage: base64Avatar.isEmpty
+                            ? null
+                            : MemoryImage(base64Decode(base64Avatar)),
+                        child: base64Avatar.isEmpty
+                            ? const Icon(
+                                Icons.add_a_photo_rounded,
+                                color: AppConstant.appColorDark,
+                                size: 32,
+                              )
+                            : null,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 8),
+                TextButton.icon(
+                  onPressed: controller.pickRegisterAvatar,
+                  icon: const Icon(Icons.image_rounded),
+                  label: const Text('เลือก image Avatar'),
+                ),
+                const SizedBox(height: 12),
+                _AuthTextField(
+                  controller: controller.registerDisplayNameController,
+                  label: 'Display Name',
+                  icon: Icons.badge_rounded,
+                ),
+                const SizedBox(height: 12),
+                _AuthTextField(
+                  controller: controller.registerEmailController,
+                  label: 'Email',
+                  icon: Icons.alternate_email_rounded,
+                  keyboardType: TextInputType.emailAddress,
+                ),
+                const SizedBox(height: 12),
+                _AuthTextField(
+                  controller: controller.registerPasswordController,
+                  label: 'Password',
+                  icon: Icons.lock_rounded,
+                  obscureText: true,
+                ),
+                const SizedBox(height: 18),
+                Obx(
+                  () => SizedBox(
+                    height: 54,
+                    child: FilledButton.icon(
+                      onPressed: controller.isLoading.value
+                          ? null
+                          : controller.registerWithEmailPassword,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppConstant.appColorDark,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                      ),
+                      icon: controller.isLoading.value
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.4,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.person_add_rounded),
+                      label: const Text(
+                        'สมัครสมาชิก',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
