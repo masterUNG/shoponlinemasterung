@@ -313,21 +313,7 @@ class _LogoHeroCard extends StatelessWidget {
           Align(
             child: Padding(
               padding: const EdgeInsets.all(32),
-              child: Container(
-                padding: const EdgeInsets.all(22),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppConstant.appColorDeep.withValues(alpha: 0.12),
-                      blurRadius: 28,
-                      offset: const Offset(0, 16),
-                    ),
-                  ],
-                ),
-                child: Image.asset('images/logo.png', fit: BoxFit.contain),
-              ),
+              child: Image.asset('images/logo.png', fit: BoxFit.contain),
             ),
           ),
         ],
