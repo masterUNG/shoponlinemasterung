@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
+import '../../../app/routes/app_routes.dart';
 import '../../../model/app_user_model.dart';
 import '../../../services/reviewer_mode_service.dart';
 
@@ -19,6 +20,7 @@ class ProfileController extends GetxController {
   final isLoading = true.obs;
   final errorMessage = ''.obs;
   final isSavingLocation = false.obs;
+  final isDeletingAccount = false.obs;
   final userData = Rxn<AppUserModel>();
 
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
@@ -225,6 +227,118 @@ class ProfileController extends GetxController {
       );
     } finally {
       isSavingLocation.value = false;
+    }
+  }
+
+  Future<void> confirmDeleteAccount() async {
+    if (isDeletingAccount.value) {
+      return;
+    }
+
+    final bool confirmed =
+        await Get.dialog<bool>(
+          AlertDialog(
+            title: const Text('Delete Account'),
+            content: const Text(
+              'คุณต้องการลบ account นี้จริงหรือไม่? หลังจากยืนยันแล้ว บัญชีและข้อมูลโปรไฟล์จะถูกลบออกจากระบบ',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: const Text('ยกเลิก'),
+              ),
+              TextButton(
+                onPressed: () => Get.back(result: true),
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('ยืนยันลบ'),
+              ),
+            ],
+          ),
+          barrierDismissible: false,
+        ) ??
+        false;
+
+    if (!confirmed) {
+      return;
+    }
+
+    await _deleteAccount();
+  }
+
+  Future<void> _deleteAccount() async {
+    final User? user = currentUser;
+    if (user == null) {
+      Get.snackbar(
+        'ลบบัญชีไม่สำเร็จ',
+        'กรุณาเข้าสู่ระบบอีกครั้งก่อนลบบัญชี',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    try {
+      isDeletingAccount.value = true;
+      await _userSubscription?.cancel();
+
+      final CollectionReference<Map<String, dynamic>> cartCollection =
+          _firestore.collection('users').doc(user.uid).collection('cart');
+      final QuerySnapshot<Map<String, dynamic>> cartSnapshot =
+          await cartCollection.get();
+
+      WriteBatch batch = _firestore.batch();
+      int batchOperations = 0;
+      for (final QueryDocumentSnapshot<Map<String, dynamic>> cartDocument
+          in cartSnapshot.docs) {
+        batch.delete(cartDocument.reference);
+        batchOperations += 1;
+
+        if (batchOperations == 450) {
+          await batch.commit();
+          batch = _firestore.batch();
+          batchOperations = 0;
+        }
+      }
+
+      batch.delete(_firestore.collection('users').doc(user.uid));
+      await batch.commit();
+
+      await user.delete();
+
+      Get.offAllNamed(Routes.login);
+      Get.snackbar(
+        'ลบบัญชีสำเร็จ',
+        'บัญชีของคุณถูกลบออกจากระบบแล้ว',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } on FirebaseAuthException catch (error) {
+      if (error.code == 'requires-recent-login') {
+        Get.snackbar(
+          'กรุณาเข้าสู่ระบบใหม่',
+          'เพื่อความปลอดภัย กรุณา logout แล้ว login ใหม่ก่อนลบบัญชี',
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+      } else {
+        Get.snackbar(
+          'ลบบัญชีไม่สำเร็จ',
+          error.message ?? 'กรุณาลองใหม่อีกครั้ง',
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+      }
+      _listenToCurrentUserProfile();
+    } catch (_) {
+      Get.snackbar(
+        'ลบบัญชีไม่สำเร็จ',
+        'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      _listenToCurrentUserProfile();
+    } finally {
+      isDeletingAccount.value = false;
     }
   }
 }

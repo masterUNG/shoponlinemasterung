@@ -77,6 +77,20 @@ class ProfileView extends GetView<ProfileController> {
               ),
               const SizedBox(height: 24),
               _LocationStatus(controller: controller),
+              const SizedBox(height: 32),
+              TextButton(
+                onPressed: controller.isDeletingAccount.value
+                    ? null
+                    : controller.confirmDeleteAccount,
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: controller.isDeletingAccount.value
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Delete Account'),
+              ),
             ],
           ),
         ),

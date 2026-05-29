@@ -130,7 +130,7 @@ service cloud.firestore {
             || request.resource.data.geopoint is latlng)
           && (!('uid' in request.resource.data)
             || request.resource.data.uid == userId));
-      allow delete: if isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
 
       match /cart/{cartId} {
         allow get, list: if isOwner(userId) || isAdmin();
