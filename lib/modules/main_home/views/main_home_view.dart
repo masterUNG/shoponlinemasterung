@@ -10,6 +10,45 @@ import '../controllers/main_home_controller.dart';
 class MainHomeView extends GetView<MainHomeController> {
   const MainHomeView({super.key});
 
+  Future<void> _confirmSignOut() async {
+    final bool? confirmed = await Get.dialog<bool>(
+      AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('images/logo.png', width: 96, height: 96),
+            const SizedBox(height: 16),
+            const Text(
+              'ยืนยันการออกจากระบบ',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'คุณต้องการออกจากระบบใช่หรือไม่?',
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(result: false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Get.back(result: true),
+            child: const Text('ออกจากระบบ'),
+          ),
+        ],
+      ),
+      barrierDismissible: true,
+    );
+
+    if (confirmed == true) {
+      await controller.signOut();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bodyList = [
@@ -27,7 +66,7 @@ class MainHomeView extends GetView<MainHomeController> {
           ),
           actions: [
             IconButton(
-              onPressed: controller.signOut,
+              onPressed: _confirmSignOut,
               tooltip: 'Sign out',
               icon: const Icon(Icons.logout_rounded),
             ),
