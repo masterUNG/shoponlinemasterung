@@ -444,7 +444,7 @@ class _StatsSection extends StatelessWidget {
             AdminStatCard(
               title: 'ยอดขายวันนี้',
               value: controller.todaySalesLabel,
-              subtitle: '+18% จากเมื่อวาน',
+              subtitle: controller.salesComparisonLabel,
               icon: Icons.paid_rounded,
               accent: const Color(0xFF0F8A66),
               surface: const Color(0xFFE8FBF3),

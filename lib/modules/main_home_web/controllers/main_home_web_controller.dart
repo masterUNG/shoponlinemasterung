@@ -76,9 +76,25 @@ class MainHomeWebController extends GetxController {
       _products.where((product) => product.isSellable).length;
   int get lowStockCount => lowStockProducts.length;
   int get newOrdersCount => openOrders.length;
-  String get todaySalesLabel => formatCurrency(
-    _orders.fold<double>(0, (totalAmount, order) => totalAmount + order.total),
-  );
+  double get todaySales => _salesForDay(DateTime.now());
+  double get yesterdaySales =>
+      _salesForDay(DateTime.now().subtract(const Duration(days: 1)));
+  String get todaySalesLabel => formatCurrency(todaySales);
+  String get salesComparisonLabel {
+    final double previousSales = yesterdaySales;
+    final double currentSales = todaySales;
+
+    if (previousSales == 0) {
+      return currentSales == 0
+          ? 'ยอดขายเท่ากับเมื่อวาน'
+          : 'เพิ่มขึ้นจากเมื่อวาน';
+    }
+
+    final double percentage = ((currentSales - previousSales) / previousSales) *
+        100;
+    final String direction = percentage >= 0 ? '+' : '';
+    return '$direction${percentage.toStringAsFixed(1)}% จากเมื่อวาน';
+  }
   String get totalProductsLabel => '$totalProducts';
   String get newOrdersLabel => '$newOrdersCount';
   String get lowStockLabel => '$lowStockCount';
@@ -240,6 +256,24 @@ class MainHomeWebController extends GetxController {
 
   String formatOrderCount(int count) {
     return '$count รายการ';
+  }
+
+  double _salesForDay(DateTime day) {
+    final DateTime start = DateTime(day.year, day.month, day.day);
+    final DateTime end = start.add(const Duration(days: 1));
+
+    return _orders
+        .where(
+          (order) =>
+              !order.createdAt.isBefore(start) &&
+              order.createdAt.isBefore(end) &&
+              order.paymentStatus == 'paid' &&
+              order.status != AdminOrderStatus.cancelled,
+        )
+        .fold<double>(
+          0,
+          (totalAmount, order) => totalAmount + order.total,
+        );
   }
 
   String formatDateTime(DateTime dateTime) {
