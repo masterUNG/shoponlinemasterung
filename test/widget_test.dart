@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shoponlinemasterung/model/order_model.dart';
 import 'package:shoponlinemasterung/model/product_model.dart';
 
 void main() {
@@ -27,4 +28,47 @@ void main() {
     expect(product.timestamp, timestamp);
     expect(product.imageBytes, <int>[1, 2, 3, 4]);
   });
+
+  test('buildStockRestoreQuantities combines duplicate product quantities', () {
+    final Map<String, int> quantities =
+        buildStockRestoreQuantities(<OrderItemModel>[
+          _orderItem(productId: 'product-a', quantity: 2),
+          _orderItem(productId: 'product-b', quantity: 1),
+          _orderItem(productId: 'product-a', quantity: 3),
+        ]);
+
+    expect(quantities, <String, int>{'product-a': 5, 'product-b': 1});
+  });
+
+  test('buildStockRestoreQuantities rejects invalid order items', () {
+    expect(
+      () => buildStockRestoreQuantities(<OrderItemModel>[
+        _orderItem(productId: '', quantity: 1),
+      ]),
+      throwsFormatException,
+    );
+    expect(
+      () => buildStockRestoreQuantities(<OrderItemModel>[
+        _orderItem(productId: 'product-a', quantity: 0),
+      ]),
+      throwsFormatException,
+    );
+    expect(
+      () => buildStockRestoreQuantities(const <OrderItemModel>[]),
+      throwsFormatException,
+    );
+  });
+}
+
+OrderItemModel _orderItem({required String productId, required int quantity}) {
+  return OrderItemModel(
+    productId: productId,
+    productName: 'Product',
+    description: '',
+    base64Image: '',
+    unit: 'piece',
+    price: 10,
+    quantity: quantity,
+    total: 10 * quantity,
+  );
 }

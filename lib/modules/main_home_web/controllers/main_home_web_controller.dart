@@ -90,11 +90,12 @@ class MainHomeWebController extends GetxController {
           : 'เพิ่มขึ้นจากเมื่อวาน';
     }
 
-    final double percentage = ((currentSales - previousSales) / previousSales) *
-        100;
+    final double percentage =
+        ((currentSales - previousSales) / previousSales) * 100;
     final String direction = percentage >= 0 ? '+' : '';
     return '$direction${percentage.toStringAsFixed(1)}% จากเมื่อวาน';
   }
+
   String get totalProductsLabel => '$totalProducts';
   String get newOrdersLabel => '$newOrdersCount';
   String get lowStockLabel => '$lowStockCount';
@@ -139,10 +140,82 @@ class MainHomeWebController extends GetxController {
     _replaceOrder(order.copyWith(status: status));
 
     try {
-      await _firestore.collection('orders').doc(order.id).update({
-        'status': status.firestoreValue,
-        'updatedAt': FieldValue.serverTimestamp(),
+      await _firestore.runTransaction((transaction) async {
+        final DocumentReference<Map<String, dynamic>> orderRef = _firestore
+            .collection('orders')
+            .doc(order.id);
+        final DocumentSnapshot<Map<String, dynamic>> orderSnapshot =
+            await transaction.get(orderRef);
+
+        if (!orderSnapshot.exists) {
+          throw StateError('order-not-found');
+        }
+
+        final OrderModel latestOrder = OrderModel.fromDocument(orderSnapshot);
+        final AdminOrderStatus currentStatus = _orderStatusFromText(
+          latestOrder.status,
+        );
+        if (!nextOrderStatuses(currentStatus).contains(status)) {
+          throw StateError('invalid-order-transition');
+        }
+
+        if (status != AdminOrderStatus.cancelled) {
+          transaction.update(orderRef, <String, dynamic>{
+            'status': status.firestoreValue,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+          return;
+        }
+
+        if (latestOrder.stockRestoredAt != null) {
+          throw StateError('stock-already-restored');
+        }
+
+        final Map<String, int> restoreQuantities = buildStockRestoreQuantities(
+          latestOrder.items,
+        );
+        final Map<String, DocumentReference<Map<String, dynamic>>> productRefs =
+            <String, DocumentReference<Map<String, dynamic>>>{
+              for (final String productId in restoreQuantities.keys)
+                productId: _firestore.collection('product').doc(productId),
+            };
+
+        for (final MapEntry<String, DocumentReference<Map<String, dynamic>>>
+            entry
+            in productRefs.entries) {
+          final DocumentSnapshot<Map<String, dynamic>> productSnapshot =
+              await transaction.get(entry.value);
+          if (!productSnapshot.exists) {
+            throw StateError('product-not-found:${entry.key}');
+          }
+        }
+
+        for (final MapEntry<String, int> entry in restoreQuantities.entries) {
+          transaction.update(productRefs[entry.key]!, <String, dynamic>{
+            'stock': FieldValue.increment(entry.value),
+          });
+        }
+
+        transaction.update(orderRef, <String, dynamic>{
+          'status': AdminOrderStatus.cancelled.firestoreValue,
+          'stockRestoredAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       });
+    } on StateError catch (error) {
+      _replaceOrder(order);
+      Get.snackbar(
+        'อัปเดตออเดอร์ไม่สำเร็จ',
+        _orderUpdateErrorMessage(error),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } on FormatException {
+      _replaceOrder(order);
+      Get.snackbar(
+        'ยกเลิกออเดอร์ไม่สำเร็จ',
+        'รายการสินค้าในออเดอร์ไม่สมบูรณ์ กรุณาตรวจสอบข้อมูล',
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (_) {
       _replaceOrder(order);
       Get.snackbar(
@@ -165,11 +238,27 @@ class MainHomeWebController extends GetxController {
     _replaceOrder(order.copyWith(paymentStatus: 'paid'));
 
     try {
-      await _firestore.collection('orders').doc(order.id).update({
-        'paymentStatus': 'paid',
-        'paymentVerifiedAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+      await _firestore.runTransaction((transaction) async {
+        final DocumentReference<Map<String, dynamic>> orderRef = _firestore
+            .collection('orders')
+            .doc(order.id);
+        final DocumentSnapshot<Map<String, dynamic>> snapshot =
+            await transaction.get(orderRef);
+        _validatePaymentReview(snapshot);
+
+        transaction.update(orderRef, <String, dynamic>{
+          'paymentStatus': 'paid',
+          'paymentVerifiedAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       });
+    } on StateError catch (error) {
+      _replaceOrder(order);
+      Get.snackbar(
+        'ยืนยันสลิปไม่สำเร็จ',
+        _paymentUpdateErrorMessage(error),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (_) {
       _replaceOrder(order);
       Get.snackbar(
@@ -192,11 +281,27 @@ class MainHomeWebController extends GetxController {
     _replaceOrder(order.copyWith(paymentStatus: 'rejected'));
 
     try {
-      await _firestore.collection('orders').doc(order.id).update({
-        'paymentStatus': 'rejected',
-        'paymentRejectedAt': FieldValue.serverTimestamp(),
-        'updatedAt': FieldValue.serverTimestamp(),
+      await _firestore.runTransaction((transaction) async {
+        final DocumentReference<Map<String, dynamic>> orderRef = _firestore
+            .collection('orders')
+            .doc(order.id);
+        final DocumentSnapshot<Map<String, dynamic>> snapshot =
+            await transaction.get(orderRef);
+        _validatePaymentReview(snapshot);
+
+        transaction.update(orderRef, <String, dynamic>{
+          'paymentStatus': 'rejected',
+          'paymentRejectedAt': FieldValue.serverTimestamp(),
+          'updatedAt': FieldValue.serverTimestamp(),
+        });
       });
+    } on StateError catch (error) {
+      _replaceOrder(order);
+      Get.snackbar(
+        'ปฏิเสธสลิปไม่สำเร็จ',
+        _paymentUpdateErrorMessage(error),
+        snackPosition: SnackPosition.BOTTOM,
+      );
     } catch (_) {
       _replaceOrder(order);
       Get.snackbar(
@@ -270,10 +375,7 @@ class MainHomeWebController extends GetxController {
               order.paymentStatus == 'paid' &&
               order.status != AdminOrderStatus.cancelled,
         )
-        .fold<double>(
-          0,
-          (totalAmount, order) => totalAmount + order.total,
-        );
+        .fold<double>(0, (totalAmount, order) => totalAmount + order.total);
   }
 
   String formatDateTime(DateTime dateTime) {
@@ -447,6 +549,47 @@ class MainHomeWebController extends GetxController {
       'paid' => 'ชำระเงินแล้ว',
       'rejected' => 'สลิปไม่ผ่าน',
       _ => status,
+    };
+  }
+
+  String _orderUpdateErrorMessage(StateError error) {
+    final String message = error.message.toString();
+    if (message == 'order-not-found') {
+      return 'ไม่พบออเดอร์นี้ในระบบ';
+    }
+    if (message == 'invalid-order-transition') {
+      return 'สถานะออเดอร์ถูกเปลี่ยนจากอุปกรณ์อื่น กรุณาลองใหม่';
+    }
+    if (message == 'stock-already-restored') {
+      return 'ออเดอร์นี้คืนสต๊อกไปแล้ว';
+    }
+    if (message.startsWith('product-not-found:')) {
+      return 'ไม่สามารถคืนสต๊อกได้ เนื่องจากมีสินค้าบางรายการถูกลบ';
+    }
+    return 'กรุณาลองใหม่อีกครั้ง';
+  }
+
+  void _validatePaymentReview(DocumentSnapshot<Map<String, dynamic>> snapshot) {
+    if (!snapshot.exists) {
+      throw StateError('order-not-found');
+    }
+
+    final OrderModel latestOrder = OrderModel.fromDocument(snapshot);
+    if (latestOrder.isCompleteOrCancelled) {
+      throw StateError('order-closed');
+    }
+    if (latestOrder.paymentStatus != 'waiting_verify') {
+      throw StateError('payment-already-reviewed');
+    }
+  }
+
+  String _paymentUpdateErrorMessage(StateError error) {
+    return switch (error.message.toString()) {
+      'order-not-found' => 'ไม่พบออเดอร์นี้ในระบบ',
+      'order-closed' => 'ออเดอร์ถูกปิดหรือยกเลิกแล้ว',
+      'payment-already-reviewed' =>
+        'สลิปนี้ถูกตรวจจากอุปกรณ์อื่นแล้ว กรุณาตรวจสอบสถานะล่าสุด',
+      _ => 'กรุณาลองใหม่อีกครั้ง',
     };
   }
 

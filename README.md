@@ -44,7 +44,7 @@ Admin Web โดยงานที่เหลือเน้น Dashboard, ร�
 | Dashboard ยอดขายรายวันและสถิติย้อนหลัง | ยังไม่สมบูรณ์ |
 | Payment gateway อัตโนมัติ | ยังไม่มี |
 | Push notification | ยังไม่มี |
-| Automated tests | เริ่มต้นแล้ว (มี 1 model test) |
+| Automated tests | เริ่มต้นแล้ว (มี 3 tests) |
 
 ### ความคืบหน้าล่าสุด
 
@@ -57,6 +57,8 @@ Admin Web โดยงานที่เหลือเน้น Dashboard, ร�
 - ปรับ Bottom navigation ฝั่งลูกค้าให้รองรับ SafeArea และพื้นที่ด้านล่างของอุปกรณ์
 - แก้ Dashboard ให้คำนวณยอดขายวันนี้จากออเดอร์ที่ชำระแล้วและไม่ถูกยกเลิก
 - คำนวณเปอร์เซ็นต์ยอดขายเทียบกับเมื่อวานจากข้อมูลจริง
+- คืนสต๊อกอัตโนมัติเมื่อ Admin ยกเลิกออเดอร์ด้วย Firestore transaction
+- ป้องกันการคืนสต๊อกซ้ำด้วย field `stockRestoredAt`
 
 ### ผลตรวจคุณภาพล่าสุด
 
@@ -64,7 +66,7 @@ Admin Web โดยงานที่เหลือเน้น Dashboard, ร�
 
 ```text
 flutter analyze -> No issues found
-flutter test    -> All tests passed (1 test)
+flutter test    -> All tests passed (3 tests)
 ```
 
 ข้อควรติดตาม: package `image_gallery_saver_plus` ยังไม่รองรับ Swift Package
@@ -227,6 +229,7 @@ lib/
 - `deliveryLocation` และ `deliveryDistanceMeters` เมื่อเลือกจัดส่ง
 - `status` และ `paymentStatus`
 - `paymentSlipBase64`
+- `stockRestoredAt` เมื่อยกเลิกออเดอร์และคืนสต๊อกสำเร็จ
 - `pickupInfo`
 - `createdAt` และ `updatedAt`
 
@@ -321,8 +324,6 @@ firebase deploy --only firestore:rules
 - ยอดขายวันนี้กรองออเดอร์ที่ `paid` และไม่ `cancelled` แล้ว แต่ยังอิง
   `createdAt` หรือวันที่สร้างออเดอร์ ไม่ใช่วันที่ยืนยันการชำระเงินจริง
   ออเดอร์ที่สร้างเมื่อวานแต่ชำระวันนี้จึงยังถูกนับเป็นยอดของเมื่อวาน
-- สต๊อกถูกตัดทันทีเมื่อสร้างออเดอร์ แต่เมื่อ Admin ยกเลิกออเดอร์
-  ระบบยังไม่คืนสต๊อกอัตโนมัติ
 - ข้อมูลเบอร์โทรมาจาก `FirebaseAuth.currentUser.phoneNumber`
   แต่ระบบสมัครสมาชิกใช้ Email/Password จึงอาจไม่มีเบอร์โทรในออเดอร์
 - ฟิลด์ `discount` มีอยู่ในข้อมูลออเดอร์ แต่ปัจจุบันกำหนดเป็น `0`
@@ -357,7 +358,8 @@ firebase deploy --only firestore:rules
 
 ### คุณภาพและการนำขึ้นระบบ
 
-- ชุดทดสอบปัจจุบันมีเพียง model test หนึ่งรายการ
+- ชุดทดสอบปัจจุบันมี 3 รายการ ครอบคลุม Product model
+  และการเตรียมจำนวนสินค้าสำหรับคืนสต๊อก
   ควรเพิ่ม unit, widget, integration และ Firestore Rules tests
   สำหรับ transaction, การตัดและคืนสต๊อก, การชำระเงิน และเส้นทางสั่งซื้อ
 - เวอร์ชันใน `pubspec.yaml`, Android และ iOS ยังไม่ตรงกัน

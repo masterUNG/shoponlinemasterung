@@ -66,6 +66,29 @@ class OrderItemModel {
   }
 }
 
+Map<String, int> buildStockRestoreQuantities(Iterable<OrderItemModel> items) {
+  final Map<String, int> quantities = <String, int>{};
+
+  for (final OrderItemModel item in items) {
+    final String productId = item.productId.trim();
+    if (productId.isEmpty || item.quantity <= 0) {
+      throw const FormatException('Invalid order item for stock restoration');
+    }
+
+    quantities.update(
+      productId,
+      (quantity) => quantity + item.quantity,
+      ifAbsent: () => item.quantity,
+    );
+  }
+
+  if (quantities.isEmpty) {
+    throw const FormatException('Order has no items to restore');
+  }
+
+  return quantities;
+}
+
 class PickupInfoModel {
   const PickupInfoModel({
     required this.pickupName,
@@ -117,6 +140,7 @@ class OrderModel {
     this.paymentSlipUploadedAt,
     this.paymentVerifiedAt,
     this.paymentRejectedAt,
+    this.stockRestoredAt,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -142,6 +166,7 @@ class OrderModel {
   final Timestamp? paymentSlipUploadedAt;
   final Timestamp? paymentVerifiedAt;
   final Timestamp? paymentRejectedAt;
+  final Timestamp? stockRestoredAt;
   final Timestamp? createdAt;
   final Timestamp? updatedAt;
 
@@ -191,6 +216,7 @@ class OrderModel {
         'paymentSlipUploadedAt': paymentSlipUploadedAt,
       if (paymentVerifiedAt != null) 'paymentVerifiedAt': paymentVerifiedAt,
       if (paymentRejectedAt != null) 'paymentRejectedAt': paymentRejectedAt,
+      if (stockRestoredAt != null) 'stockRestoredAt': stockRestoredAt,
       'pickupInfo': pickupInfo.toMap(),
       'createdAt': createdAt,
       'updatedAt': updatedAt,
@@ -244,6 +270,9 @@ class OrderModel {
           : null,
       paymentRejectedAt: map['paymentRejectedAt'] is Timestamp
           ? map['paymentRejectedAt'] as Timestamp
+          : null,
+      stockRestoredAt: map['stockRestoredAt'] is Timestamp
+          ? map['stockRestoredAt'] as Timestamp
           : null,
       createdAt: map['createdAt'] is Timestamp
           ? map['createdAt'] as Timestamp

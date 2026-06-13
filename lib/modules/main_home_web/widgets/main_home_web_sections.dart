@@ -1431,16 +1431,28 @@ class _OrderActionRow extends StatelessWidget {
     }
 
     if (order.paymentStatus == 'waiting_verify') {
-      return _PaymentVerifyActions(controller: controller, order: order);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _PaymentVerifyActions(controller: controller, order: order),
+          const SizedBox(height: 8),
+          _CancelOrderButton(controller: controller, order: order),
+        ],
+      );
     }
 
     if (order.paymentStatus != 'paid') {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: _StatusBadge(
-          label: 'รอลูกค้าอัปโหลดสลิป',
-          color: _paymentStatusColor(order.paymentStatus),
-        ),
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          _StatusBadge(
+            label: 'รอลูกค้าอัปโหลดสลิป',
+            color: _paymentStatusColor(order.paymentStatus),
+          ),
+          _CancelOrderButton(controller: controller, order: order),
+        ],
       );
     }
 
@@ -1455,20 +1467,10 @@ class _OrderActionRow extends StatelessWidget {
         children: nextStatuses.map((status) {
           final bool isCancel = status == AdminOrderStatus.cancelled;
           return isCancel
-              ? OutlinedButton.icon(
-                  onPressed: isUpdating || anotherOrderIsUpdating
-                      ? null
-                      : () => controller.updateOrderStatus(
-                          order: order,
-                          status: status,
-                        ),
-                  icon: isUpdating
-                      ? const SizedBox.square(
-                          dimension: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : Icon(_orderIcon(status), size: 18),
-                  label: Text(_orderActionLabel(status)),
+              ? _CancelOrderButton(
+                  controller: controller,
+                  order: order,
+                  disabled: isUpdating || anotherOrderIsUpdating,
                 )
               : FilledButton.icon(
                   onPressed: isUpdating || anotherOrderIsUpdating
@@ -1498,6 +1500,50 @@ class _OrderActionRow extends StatelessWidget {
   }
 }
 
+class _CancelOrderButton extends StatelessWidget {
+  const _CancelOrderButton({
+    required this.controller,
+    required this.order,
+    this.disabled = false,
+  });
+
+  final MainHomeWebController controller;
+  final AdminOrderModel order;
+  final bool disabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final bool isUpdating = controller.updatingOrderId.value == order.id;
+      final bool anotherOrderIsUpdating =
+          controller.updatingOrderId.value.isNotEmpty && !isUpdating;
+      final bool paymentIsUpdating =
+          controller.updatingPaymentOrderId.value.isNotEmpty;
+
+      return OutlinedButton.icon(
+        onPressed:
+            disabled ||
+                isUpdating ||
+                anotherOrderIsUpdating ||
+                paymentIsUpdating
+            ? null
+            : () => _confirmCancelOrder(
+                context,
+                controller: controller,
+                order: order,
+              ),
+        icon: isUpdating
+            ? const SizedBox.square(
+                dimension: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.cancel_rounded, size: 18),
+        label: const Text('ยกเลิกออเดอร์'),
+      );
+    });
+  }
+}
+
 class _PaymentVerifyActions extends StatelessWidget {
   const _PaymentVerifyActions({required this.controller, required this.order});
 
@@ -1511,6 +1557,7 @@ class _PaymentVerifyActions extends StatelessWidget {
           controller.updatingPaymentOrderId.value == order.id;
       final bool anotherOrderIsUpdating =
           controller.updatingPaymentOrderId.value.isNotEmpty && !isUpdating;
+      final bool orderIsUpdating = controller.updatingOrderId.value.isNotEmpty;
 
       return Wrap(
         spacing: 8,
@@ -1528,7 +1575,7 @@ class _PaymentVerifyActions extends StatelessWidget {
             label: const Text('ดูสลิป'),
           ),
           FilledButton.icon(
-            onPressed: isUpdating || anotherOrderIsUpdating
+            onPressed: isUpdating || anotherOrderIsUpdating || orderIsUpdating
                 ? null
                 : () => controller.verifyOrderPayment(order),
             style: FilledButton.styleFrom(
@@ -1547,7 +1594,7 @@ class _PaymentVerifyActions extends StatelessWidget {
             label: const Text('ยืนยันสลิป'),
           ),
           OutlinedButton.icon(
-            onPressed: isUpdating || anotherOrderIsUpdating
+            onPressed: isUpdating || anotherOrderIsUpdating || orderIsUpdating
                 ? null
                 : () => controller.rejectOrderPayment(order),
             icon: const Icon(Icons.close_rounded, size: 18),
@@ -1557,6 +1604,48 @@ class _PaymentVerifyActions extends StatelessWidget {
       );
     });
   }
+}
+
+Future<void> _confirmCancelOrder(
+  BuildContext context, {
+  required MainHomeWebController controller,
+  required AdminOrderModel order,
+}) async {
+  final bool confirmed =
+      await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ยกเลิกออเดอร์?'),
+          content: Text(
+            'ระบบจะยกเลิก ${order.orderNo} และคืนสินค้าทั้งหมดเข้าสต๊อก '
+            'การดำเนินการนี้ย้อนกลับไม่ได้',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('กลับ'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFC0392B),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('ยืนยันยกเลิก'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
+  if (!confirmed) {
+    return;
+  }
+
+  await controller.updateOrderStatus(
+    order: order,
+    status: AdminOrderStatus.cancelled,
+  );
 }
 
 Future<void> _showOrderDetailDialog(

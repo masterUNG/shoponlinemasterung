@@ -164,6 +164,7 @@ service cloud.firestore {
               'paymentStatus',
               'paymentVerifiedAt',
               'paymentRejectedAt',
+              'stockRestoredAt',
               'updatedAt'
             ]));
       allow delete: if isAdmin();
