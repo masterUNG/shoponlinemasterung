@@ -485,6 +485,13 @@ class _RegisterBottomSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 _AuthTextField(
+                  controller: controller.registerPhoneController,
+                  label: 'เบอร์โทร',
+                  icon: Icons.phone_rounded,
+                  keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 12),
+                _AuthTextField(
                   controller: controller.registerEmailController,
                   label: 'Email',
                   icon: Icons.alternate_email_rounded,

@@ -58,6 +58,7 @@ Admin Web โดย flow ซื้อสินค้า ตัดสต๊อก
 - อัปเดต Android เป็นเวอร์ชัน `1.0.8` build `8`
 - อัปเดต iOS เป็นเวอร์ชัน `1.0.4` build `4`
 - เพิ่มการลบบัญชีผู้ใช้ พร้อมลบโปรไฟล์และข้อมูลตะกร้า
+- เพิ่มเบอร์โทรในโปรไฟล์ลูกค้าและบันทึกลงออเดอร์เพื่อให้ร้านติดต่อได้
 - เพิ่ม Guest reviewer mode สำหรับทดลองดูสินค้าและใช้งานตะกร้า
 - ปรับหน้า Login, Branding, App icon และ Launch screen
 - เพิ่มหน้า Support และอัปเดต Privacy Policy
@@ -195,6 +196,7 @@ lib/
 {
   "uid": "firebase-auth-uid",
   "displayname": "Customer Name",
+  "phone": "0812345678",
   "base64avatar": "BASE64_IMAGE",
   "role": "customer",
   "geopoint": "GeoPoint (optional)"
@@ -314,6 +316,7 @@ firebase deploy --only firestore:rules
 {
   "uid": "AUTH_UID_HERE",
   "displayname": "Admin",
+  "phone": "0812345678",
   "base64avatar": "",
   "role": "admin"
 }
@@ -342,8 +345,6 @@ firebase deploy --only firestore:rules
 - หากสินค้าถูกลบออกจาก collection `product` ก่อนยกเลิกออเดอร์
   ระบบจะไม่ยกเลิกออเดอร์นั้น เพื่อป้องกันการคืนสต๊อกไม่ครบ
   ควรเปลี่ยนจากการลบสินค้าเป็นการ archive หรือปิดขาย
-- ข้อมูลเบอร์โทรมาจาก `FirebaseAuth.currentUser.phoneNumber`
-  แต่ระบบสมัครสมาชิกใช้ Email/Password จึงอาจไม่มีเบอร์โทรในออเดอร์
 - ฟิลด์ `discount` มีอยู่ในข้อมูลออเดอร์ แต่ปัจจุบันกำหนดเป็น `0`
   และยังไม่มีระบบคูปองหรือส่วนลด
 - การจัดส่งรองรับเฉพาะรับเองหรือส่งฟรีภายใน 1 กม.

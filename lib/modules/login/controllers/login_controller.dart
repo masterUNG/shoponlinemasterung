@@ -20,6 +20,7 @@ class LoginController extends GetxController {
   final loginEmailController = TextEditingController();
   final loginPasswordController = TextEditingController();
   final registerDisplayNameController = TextEditingController();
+  final registerPhoneController = TextEditingController();
   final registerEmailController = TextEditingController();
   final registerPasswordController = TextEditingController();
   ReviewerModeService get _reviewerMode => Get.find<ReviewerModeService>();
@@ -37,6 +38,7 @@ class LoginController extends GetxController {
     loginEmailController.dispose();
     loginPasswordController.dispose();
     registerDisplayNameController.dispose();
+    registerPhoneController.dispose();
     registerEmailController.dispose();
     registerPasswordController.dispose();
     super.onClose();
@@ -122,6 +124,7 @@ class LoginController extends GetxController {
 
   void clearRegisterForm() {
     registerDisplayNameController.clear();
+    registerPhoneController.clear();
     registerEmailController.clear();
     registerPasswordController.clear();
     registerBase64Avatar.value = '';
@@ -133,16 +136,28 @@ class LoginController extends GetxController {
     }
 
     final String displayName = registerDisplayNameController.text.trim();
+    final String phone = registerPhoneController.text.trim();
     final String email = registerEmailController.text.trim();
     final String password = registerPasswordController.text;
 
     if (displayName.isEmpty ||
+        phone.isEmpty ||
         registerBase64Avatar.value.isEmpty ||
         email.isEmpty ||
         password.isEmpty) {
       Get.snackbar(
         'กรอกข้อมูลไม่ครบ',
-        'กรุณากรอก display name, avatar, email และ password ให้ครบถ้วน',
+        'กรุณากรอก display name, เบอร์โทร, avatar, email และ password ให้ครบถ้วน',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    if (!_isValidPhone(phone)) {
+      Get.snackbar(
+        'เบอร์โทรไม่ถูกต้อง',
+        'กรุณากรอกเบอร์โทรอย่างน้อย 8 หลัก เพื่อให้ร้านติดต่อเรื่องออเดอร์ได้',
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
       );
@@ -168,6 +183,7 @@ class LoginController extends GetxController {
         user,
         displayName: displayName,
         base64Avatar: registerBase64Avatar.value,
+        phone: phone,
       );
       _reviewerMode.leaveGuestReviewerMode();
 
@@ -230,6 +246,7 @@ class LoginController extends GetxController {
     User user, {
     String? displayName,
     String? base64Avatar,
+    String? phone,
   }) async {
     final DocumentReference<Map<String, dynamic>> userDocument = _firestore
         .collection('users')
@@ -245,9 +262,15 @@ class LoginController extends GetxController {
       displayName: displayName ?? user.displayName ?? user.email ?? 'Customer',
       base64Avatar: base64Avatar ?? '',
       uid: user.uid,
+      phone: phone ?? '',
     );
 
     await userDocument.set(appUser.toMap());
+  }
+
+  bool _isValidPhone(String phone) {
+    final String digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    return digits.length >= 8 && digits.length <= 15;
   }
 
   String _firebaseAuthMessage(FirebaseAuthException error) {

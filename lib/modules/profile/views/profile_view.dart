@@ -76,6 +76,8 @@ class ProfileView extends GetView<ProfileController> {
                 ).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
               ),
               const SizedBox(height: 24),
+              _PhoneStatus(controller: controller),
+              const SizedBox(height: 12),
               _LocationStatus(controller: controller),
               const SizedBox(height: 32),
               TextButton(
@@ -94,6 +96,44 @@ class ProfileView extends GetView<ProfileController> {
             ],
           ),
         ),
+      );
+    });
+  }
+}
+
+class _PhoneStatus extends StatelessWidget {
+  const _PhoneStatus({required this.controller});
+
+  final ProfileController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final String phone = controller.userData.value?.phone.trim() ?? '';
+      final bool hasPhone = phone.isNotEmpty;
+
+      return ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+        leading: Icon(
+          hasPhone ? Icons.phone_rounded : Icons.phone_disabled_rounded,
+          color: hasPhone ? Colors.green : Colors.orange,
+        ),
+        title: Text(hasPhone ? phone : 'ยังไม่ได้บันทึกเบอร์โทร'),
+        subtitle: Text(
+          hasPhone
+              ? 'ร้านจะใช้เบอร์นี้ติดต่อเรื่องออเดอร์และการจัดส่ง'
+              : 'กรุณาเพิ่มเบอร์โทรก่อนสั่งซื้อ เพื่อให้ร้านติดต่อได้',
+        ),
+        trailing: controller.isSavingPhone.value
+            ? const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : TextButton(
+                onPressed: controller.showEditPhoneDialog,
+                child: Text(hasPhone ? 'แก้ไข' : 'เพิ่ม'),
+              ),
       );
     });
   }

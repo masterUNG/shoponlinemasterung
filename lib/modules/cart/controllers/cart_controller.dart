@@ -56,6 +56,7 @@ class CartController extends GetxController {
   final Rx<FulfillmentType> fulfillmentType = FulfillmentType.pickup.obs;
   final Rxn<GeoPoint> customerLocation = Rxn<GeoPoint>();
   final RxnDouble distanceFromShopMeters = RxnDouble();
+  final RxString customerPhone = ''.obs;
 
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _cartSubscription;
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
@@ -176,6 +177,7 @@ class CartController extends GetxController {
     if (_reviewerMode.isGuest) {
       customerLocation.value = null;
       distanceFromShopMeters.value = null;
+      customerPhone.value = '';
       fulfillmentType.value = FulfillmentType.pickup;
       return;
     }
@@ -184,6 +186,7 @@ class CartController extends GetxController {
     if (user == null) {
       customerLocation.value = null;
       distanceFromShopMeters.value = null;
+      customerPhone.value = '';
       fulfillmentType.value = FulfillmentType.pickup;
       return;
     }
@@ -193,7 +196,9 @@ class CartController extends GetxController {
         .doc(user.uid)
         .snapshots()
         .listen((DocumentSnapshot<Map<String, dynamic>> snapshot) {
-          final Object? geopoint = snapshot.data()?['geopoint'];
+          final Map<String, dynamic>? userData = snapshot.data();
+          customerPhone.value = (userData?['phone'] ?? '').toString();
+          final Object? geopoint = userData?['geopoint'];
           if (geopoint is GeoPoint) {
             customerLocation.value = geopoint;
             distanceFromShopMeters.value = Geolocator.distanceBetween(
@@ -362,6 +367,16 @@ class CartController extends GetxController {
     isOrdering.value = true;
 
     try {
+      final String orderPhone = customerPhone.value.trim();
+      if (!_isValidPhone(orderPhone)) {
+        Get.snackbar(
+          'กรุณาเพิ่มเบอร์โทร',
+          'ร้านต้องใช้เบอร์โทรเพื่อติดต่อเรื่องออเดอร์และการจัดส่ง กรุณาเพิ่มในหน้า Profile ก่อนสั่งซื้อ',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+        return;
+      }
+
       final FulfillmentType selectedFulfillment = canUseDelivery
           ? fulfillmentType.value
           : FulfillmentType.pickup;
@@ -425,7 +440,7 @@ class CartController extends GetxController {
           'orderNo': orderNo,
           'userId': user.uid,
           'userName': _resolveUserName(user),
-          'userPhone': user.phoneNumber ?? '',
+          'userPhone': orderPhone,
           'orderType': selectedFulfillment.name,
           'items': orderItems,
           'subtotal': orderingTotal,
@@ -437,7 +452,7 @@ class CartController extends GetxController {
           'paymentStatus': 'unpaid',
           'pickupInfo': <String, dynamic>{
             'pickupName': _resolveUserName(user),
-            'pickupPhone': user.phoneNumber ?? '',
+            'pickupPhone': orderPhone,
             'note': '',
           },
           'createdAt': serverTimestamp,
@@ -528,6 +543,11 @@ class CartController extends GetxController {
     }
 
     return user.uid;
+  }
+
+  bool _isValidPhone(String phone) {
+    final String digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    return digits.length >= 8 && digits.length <= 15;
   }
 
   String _twoDigits(int value) => value.toString().padLeft(2, '0');

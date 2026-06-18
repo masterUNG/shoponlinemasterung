@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shoponlinemasterung/model/app_user_model.dart';
 import 'package:shoponlinemasterung/model/order_model.dart';
 import 'package:shoponlinemasterung/model/product_model.dart';
 
@@ -27,6 +28,21 @@ void main() {
     expect(product.stock, 8);
     expect(product.timestamp, timestamp);
     expect(product.imageBytes, <int>[1, 2, 3, 4]);
+  });
+
+  test('AppUserModel maps customer phone for order contact', () {
+    const AppUserModel user = AppUserModel(
+      displayName: 'Village Customer',
+      base64Avatar: '',
+      uid: 'uid-1',
+      phone: '0812345678',
+    );
+
+    final Map<String, dynamic> map = user.toMap();
+    final AppUserModel parsed = AppUserModel.fromMap(map);
+
+    expect(map['phone'], '0812345678');
+    expect(parsed.phone, '0812345678');
   });
 
   test('buildStockRestoreQuantities combines duplicate product quantities', () {

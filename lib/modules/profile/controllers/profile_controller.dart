@@ -20,8 +20,10 @@ class ProfileController extends GetxController {
   final isLoading = true.obs;
   final errorMessage = ''.obs;
   final isSavingLocation = false.obs;
+  final isSavingPhone = false.obs;
   final isDeletingAccount = false.obs;
   final userData = Rxn<AppUserModel>();
+  final phoneController = TextEditingController();
 
   StreamSubscription<DocumentSnapshot<Map<String, dynamic>>>? _userSubscription;
   bool _isLocationDialogOpen = false;
@@ -36,6 +38,7 @@ class ProfileController extends GetxController {
   @override
   void onClose() {
     _userSubscription?.cancel();
+    phoneController.dispose();
     super.onClose();
   }
 
@@ -111,6 +114,7 @@ class ProfileController extends GetxController {
               errorMessage.value = 'ไม่พบข้อมูลผู้ใช้ในระบบ';
             } else {
               userData.value = AppUserModel.fromMap(snapshot.data()!);
+              phoneController.text = userData.value?.phone ?? '';
               errorMessage.value = '';
             }
 
@@ -228,6 +232,96 @@ class ProfileController extends GetxController {
     } finally {
       isSavingLocation.value = false;
     }
+  }
+
+  Future<void> showEditPhoneDialog() async {
+    if (_reviewerMode.isGuest) {
+      await _reviewerMode.showLoginRequiredDialog(
+        title: 'ต้องเข้าสู่ระบบก่อนแก้เบอร์โทร',
+        message:
+            'Guest reviewer mode ไม่สามารถบันทึกข้อมูลส่วนตัวได้ กรุณาเข้าสู่ระบบเพื่อเพิ่มเบอร์โทรสำหรับออเดอร์',
+      );
+      return;
+    }
+
+    phoneController.text = userData.value?.phone ?? '';
+    final bool shouldSave =
+        await Get.dialog<bool>(
+          AlertDialog(
+            title: const Text('เบอร์โทรติดต่อ'),
+            content: TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'เบอร์โทร',
+                prefixIcon: Icon(Icons.phone_rounded),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Get.back(result: false),
+                child: const Text('ยกเลิก'),
+              ),
+              FilledButton(
+                onPressed: () => Get.back(result: true),
+                child: const Text('บันทึก'),
+              ),
+            ],
+          ),
+          barrierDismissible: false,
+        ) ??
+        false;
+
+    if (!shouldSave) {
+      return;
+    }
+
+    await savePhoneNumber(phoneController.text);
+  }
+
+  Future<void> savePhoneNumber(String phone) async {
+    final User? user = currentUser;
+    if (user == null || isSavingPhone.value) {
+      return;
+    }
+
+    final String normalizedPhone = phone.trim();
+    if (!_isValidPhone(normalizedPhone)) {
+      Get.snackbar(
+        'เบอร์โทรไม่ถูกต้อง',
+        'กรุณากรอกเบอร์โทรอย่างน้อย 8 หลัก เพื่อให้ร้านติดต่อเรื่องออเดอร์ได้',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+      return;
+    }
+
+    try {
+      isSavingPhone.value = true;
+      await _firestore.collection('users').doc(user.uid).update(
+        <String, dynamic>{'phone': normalizedPhone},
+      );
+      Get.snackbar(
+        'บันทึกเบอร์โทรแล้ว',
+        'ร้านจะใช้เบอร์นี้สำหรับติดต่อเรื่องออเดอร์และการจัดส่ง',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } catch (_) {
+      Get.snackbar(
+        'บันทึกเบอร์โทรไม่สำเร็จ',
+        'กรุณาลองใหม่อีกครั้ง',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } finally {
+      isSavingPhone.value = false;
+    }
+  }
+
+  bool _isValidPhone(String phone) {
+    final String digits = phone.replaceAll(RegExp(r'[^0-9]'), '');
+    return digits.length >= 8 && digits.length <= 15;
   }
 
   Future<void> confirmDeleteAccount() async {

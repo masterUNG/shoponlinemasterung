@@ -5,6 +5,7 @@ class AppUserModel {
     required this.displayName,
     required this.base64Avatar,
     required this.uid,
+    required this.phone,
     this.role = 'customer',
     this.geopoint,
   });
@@ -12,6 +13,7 @@ class AppUserModel {
   final String displayName;
   final String base64Avatar;
   final String uid;
+  final String phone;
   final String role;
   final GeoPoint? geopoint;
 
@@ -20,6 +22,7 @@ class AppUserModel {
       'displayname': displayName,
       'base64avatar': base64Avatar,
       'uid': uid,
+      'phone': phone,
       'role': role,
       if (geopoint != null) 'geopoint': geopoint,
     };
@@ -30,6 +33,7 @@ class AppUserModel {
       displayName: (map['displayname'] ?? '') as String,
       base64Avatar: (map['base64avatar'] ?? '') as String,
       uid: (map['uid'] ?? '') as String,
+      phone: (map['phone'] ?? '') as String,
       role: (map['role'] ?? 'customer') as String,
       geopoint: map['geopoint'] is GeoPoint
           ? map['geopoint'] as GeoPoint
