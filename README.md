@@ -9,7 +9,7 @@
 
 ## สถานะโปรเจกต์ปัจจุบัน
 
-อัปเดตล่าสุด: **13 มิถุนายน 2026**
+อัปเดตล่าสุด: **18 มิถุนายน 2026**
 
 สถานะโดยรวม: **ระบบหลักพร้อมใช้งานจริงในระดับ MVP** ทั้งแอปลูกค้าและ
 Admin Web โดย flow ซื้อสินค้า ตัดสต๊อก ตรวจสลิป ยกเลิกออเดอร์
@@ -50,7 +50,7 @@ Admin Web โดย flow ซื้อสินค้า ตัดสต๊อก
 | กราฟและรายงานยอดขายย้อนหลัง | ยังไม่มี |
 | Payment gateway อัตโนมัติ | ยังไม่มี |
 | Push notification | ยังไม่มี |
-| Automated tests | เริ่มต้นแล้ว (มี 3 tests) |
+| Automated tests | เริ่มต้นแล้ว (มี 4 tests) |
 | Firebase Hosting และ Firestore Rules | Deploy แล้ว |
 
 ### ความคืบหน้าล่าสุด
@@ -59,6 +59,10 @@ Admin Web โดย flow ซื้อสินค้า ตัดสต๊อก
 - อัปเดต iOS เป็นเวอร์ชัน `1.0.4` build `4`
 - เพิ่มการลบบัญชีผู้ใช้ พร้อมลบโปรไฟล์และข้อมูลตะกร้า
 - เพิ่มเบอร์โทรในโปรไฟล์ลูกค้าและบันทึกลงออเดอร์เพื่อให้ร้านติดต่อได้
+- บังคับให้ออเดอร์ใหม่มีเบอร์โทรก่อนสร้างออเดอร์
+- Deploy Firestore Rules และ Admin Web ไปที่ Firebase Hosting วันที่ 18 มิถุนายน 2026
+- อัปเดต Web favicon และ PWA icons ให้สร้างจาก `images/icon.png`
+- Build Web release และ deploy Firebase Hosting หลังอัปเดตไอคอนเว็บแล้ว
 - เพิ่ม Guest reviewer mode สำหรับทดลองดูสินค้าและใช้งานตะกร้า
 - ปรับหน้า Login, Branding, App icon และ Launch screen
 - เพิ่มหน้า Support และอัปเดต Privacy Policy
@@ -74,11 +78,11 @@ Admin Web โดย flow ซื้อสินค้า ตัดสต๊อก
 
 ### ผลตรวจคุณภาพล่าสุด
 
-ตรวจเมื่อวันที่ **13 มิถุนายน 2026**:
+ตรวจเมื่อวันที่ **18 มิถุนายน 2026**:
 
 ```text
 flutter analyze -> No issues found
-flutter test    -> All tests passed (3 tests)
+flutter test    -> All tests passed (4 tests)
 ```
 
 ข้อควรติดตาม: package `image_gallery_saver_plus` ยังไม่รองรับ Swift Package
@@ -88,9 +92,10 @@ Manager สำหรับ iOS และ Flutter แจ้งว่าอาจ�
 
 ### บัญชีผู้ใช้
 
-- สมัครสมาชิกด้วยชื่อ รูป Avatar อีเมล และรหัสผ่าน
+- สมัครสมาชิกด้วยชื่อ เบอร์โทร รูป Avatar อีเมล และรหัสผ่าน
 - เข้าสู่ระบบและออกจากระบบด้วย Firebase Authentication
 - เก็บโปรไฟล์และ role ที่ `users/{uid}`
+- เก็บและแก้ไขเบอร์โทรสำหรับติดต่อเรื่องออเดอร์
 - ขอสิทธิ์ Location และบันทึกพิกัดลูกค้าใน Firestore
 - ลบบัญชี โปรไฟล์ และข้อมูลในตะกร้า
 - Guest reviewer mode เปิดดูสินค้าและทดลองตะกร้าได้โดยไม่บันทึกข้อมูลจริง
@@ -110,6 +115,7 @@ Manager สำหรับ iOS และ Flutter แจ้งว่าอาจ�
 - คำนวณจำนวนสินค้าและยอดรวม
 - เลือกรับสินค้าเองที่ร้าน
 - เลือกส่งฟรีได้เมื่อพิกัดลูกค้าอยู่ไม่เกิน 1 กม. จากพิกัดร้าน
+- ตรวจว่าลูกค้ามีเบอร์โทรก่อนสร้างออเดอร์ เพื่อให้ร้านติดต่อได้
 - ตรวจสต๊อกอีกครั้งก่อนสั่งซื้อ
 - สร้างออเดอร์ ตัดสต๊อก และล้างตะกร้าใน Firestore transaction เดียว
 - สร้างเลขออเดอร์รูปแบบ `ORD-YYYYMMDD-XXXXXX`
@@ -329,6 +335,7 @@ firebase deploy --only firestore:rules
 - พิกัดร้านอยู่ที่ `AppConstant.shopLocation` ใน `lib/core/app_constant.dart`
 - รัศมีส่งฟรีอยู่ที่ `CartController.freeDeliveryRadiusMeters` ปัจจุบันเท่ากับ 1,000 เมตร
 - QR PromptPay อยู่ที่ `images/promptpay.JPG`
+- ไอคอนแอปและไอคอนเว็บใช้ต้นฉบับจาก `images/icon.png`
 - ชื่อบัญชีและเลขบัญชี PromptPay ยังเขียนไว้ใน UI ของหน้า Order
 - อีเมลที่มีสิทธิ์ลบสินค้าอยู่ใน `AdminRoleService` และ `firestore.rules`
 - Firebase configuration อยู่ใน `lib/firebase_options.dart` และไฟล์ config ของแต่ละ platform
@@ -393,7 +400,7 @@ firebase deploy --only firestore:rules
 3. ใช้ `paymentVerifiedAt` เป็นวันที่รับรู้ยอดขาย และเพิ่มรายงานตามช่วงวันที่
 4. ย้ายรูปสินค้า Avatar และสลิปจาก Base64 ไป Firebase Storage
 5. เพิ่ม pagination และระบบค้นหาจริงใน Admin Web
-6. เพิ่มช่องเบอร์โทร หมวดหมู่สินค้า ส่วนลด และค่าจัดส่ง
+6. เพิ่มหมวดหมู่สินค้า ส่วนลด และค่าจัดส่ง
 7. เพิ่ม push notification และ payment gateway เมื่อ flow หลักนิ่งแล้ว
 8. เพิ่ม integration tests และ Firestore Rules tests สำหรับ flow สั่งซื้อ
    ตรวจสลิป ยกเลิก คืนสต๊อก และคืนเงิน
