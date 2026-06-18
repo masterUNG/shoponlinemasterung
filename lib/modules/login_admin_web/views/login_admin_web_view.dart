@@ -181,21 +181,9 @@ class _LeftPanel extends StatelessWidget {
                 Center(
                   child: Padding(
                     padding: const EdgeInsets.all(42),
-                    child: Container(
-                      padding: const EdgeInsets.all(26),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppConstant.appColorDeep.withValues(
-                              alpha: 0.12,
-                            ),
-                            blurRadius: 30,
-                            offset: const Offset(0, 18),
-                          ),
-                        ],
-                      ),
+                    child: SizedBox(
+                      width: 220,
+                      height: 220,
                       child: Image.asset(
                         'images/logo.png',
                         fit: BoxFit.contain,
