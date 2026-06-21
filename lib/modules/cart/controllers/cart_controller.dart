@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../../core/app_constant.dart';
+import '../../../model/order_model.dart';
 import '../../../services/reviewer_mode_service.dart';
 import '../../main_home/controllers/main_home_controller.dart';
 
@@ -54,6 +55,7 @@ class CartController extends GetxController {
   final RxBool isOrdering = false.obs;
   final RxString errorMessage = ''.obs;
   final Rx<FulfillmentType> fulfillmentType = FulfillmentType.pickup.obs;
+  final RxString paymentMethod = OrderPaymentMethod.promptPay.obs;
   final Rxn<GeoPoint> customerLocation = Rxn<GeoPoint>();
   final RxnDouble distanceFromShopMeters = RxnDouble();
   final RxString customerPhone = ''.obs;
@@ -240,6 +242,13 @@ class CartController extends GetxController {
     }
 
     fulfillmentType.value = type;
+  }
+
+  void selectPaymentMethod(String method) {
+    if (method == OrderPaymentMethod.promptPay ||
+        method == OrderPaymentMethod.cash) {
+      paymentMethod.value = method;
+    }
   }
 
   String formatCurrency(num amount) {
@@ -449,6 +458,7 @@ class CartController extends GetxController {
           'deliveryLocation': ?deliveryLocation,
           'grandTotal': orderingTotal,
           'status': 'pending',
+          'paymentMethod': paymentMethod.value,
           'paymentStatus': 'unpaid',
           'pickupInfo': <String, dynamic>{
             'pickupName': _resolveUserName(user),

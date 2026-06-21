@@ -159,6 +159,11 @@ class MainHomeWebController extends GetxController {
           throw StateError('invalid-order-transition');
         }
 
+        if (status == AdminOrderStatus.completed &&
+            latestOrder.paymentStatus != 'paid') {
+          throw StateError('payment-required');
+        }
+
         if (status != AdminOrderStatus.cancelled) {
           transaction.update(orderRef, <String, dynamic>{
             'status': status.firestoreValue,
@@ -249,6 +254,7 @@ class MainHomeWebController extends GetxController {
         transaction.update(orderRef, <String, dynamic>{
           'paymentStatus': 'paid',
           'paymentVerifiedAt': FieldValue.serverTimestamp(),
+          'paidAt': FieldValue.serverTimestamp(),
           'updatedAt': FieldValue.serverTimestamp(),
         });
       });
@@ -314,6 +320,66 @@ class MainHomeWebController extends GetxController {
     }
   }
 
+  Future<void> confirmCashPayment(AdminOrderModel order) async {
+    if (updatingPaymentOrderId.value.isNotEmpty ||
+        !order.isCashPayment ||
+        order.paymentStatus != 'unpaid' ||
+        order.status.isClosed) {
+      return;
+    }
+
+    updatingPaymentOrderId.value = order.id;
+    _replaceOrder(order.copyWith(paymentStatus: 'paid'));
+
+    try {
+      await _firestore.runTransaction((transaction) async {
+        final DocumentReference<Map<String, dynamic>> orderRef = _firestore
+            .collection('orders')
+            .doc(order.id);
+        final DocumentSnapshot<Map<String, dynamic>> snapshot =
+            await transaction.get(orderRef);
+
+        if (!snapshot.exists) {
+          throw StateError('order-not-found');
+        }
+
+        final OrderModel latestOrder = OrderModel.fromDocument(snapshot);
+        if (latestOrder.isCompleteOrCancelled) {
+          throw StateError('order-closed');
+        }
+        if (!latestOrder.isCashPayment ||
+            latestOrder.paymentStatus != 'unpaid') {
+          throw StateError('cash-payment-already-recorded');
+        }
+
+        final FieldValue paidTimestamp = FieldValue.serverTimestamp();
+        transaction.update(orderRef, <String, dynamic>{
+          'paymentStatus': 'paid',
+          'cashCollectedAt': paidTimestamp,
+          'cashCollectedBy': currentUser?.uid ?? '',
+          'paidAt': paidTimestamp,
+          'updatedAt': paidTimestamp,
+        });
+      });
+    } on StateError catch (error) {
+      _replaceOrder(order);
+      Get.snackbar(
+        'บันทึกรับเงินสดไม่สำเร็จ',
+        _cashPaymentErrorMessage(error),
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (_) {
+      _replaceOrder(order);
+      Get.snackbar(
+        'บันทึกรับเงินสดไม่สำเร็จ',
+        'กรุณาลองใหม่อีกครั้ง',
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } finally {
+      updatingPaymentOrderId.value = '';
+    }
+  }
+
   List<AdminOrderStatus> nextOrderStatuses(AdminOrderStatus status) {
     return switch (status) {
       AdminOrderStatus.pending => <AdminOrderStatus>[
@@ -368,13 +434,13 @@ class MainHomeWebController extends GetxController {
     final DateTime end = start.add(const Duration(days: 1));
 
     return _orders
-        .where(
-          (order) =>
-              !order.createdAt.isBefore(start) &&
-              order.createdAt.isBefore(end) &&
+        .where((order) {
+          final DateTime recognizedAt = order.paidAt ?? order.createdAt;
+          return !recognizedAt.isBefore(start) &&
+              recognizedAt.isBefore(end) &&
               order.paymentStatus == 'paid' &&
-              order.status != AdminOrderStatus.cancelled,
-        )
+              order.status != AdminOrderStatus.cancelled;
+        })
         .fold<double>(0, (totalAmount, order) => totalAmount + order.total);
   }
 
@@ -451,6 +517,7 @@ class MainHomeWebController extends GetxController {
       createdAt:
           order.createdAt?.toDate() ?? DateTime.fromMillisecondsSinceEpoch(0),
       note: _buildOrderNote(order),
+      paymentMethod: order.paymentMethod,
       paymentStatus: order.paymentStatus,
       paymentSlipBase64: order.paymentSlipBase64,
       paymentSlipUploadedAt: order.paymentSlipUploadedAt?.toDate(),
@@ -462,6 +529,7 @@ class MainHomeWebController extends GetxController {
       deliveryLongitude: order.deliveryLocation?.longitude,
       subtotal: order.subtotal.toDouble(),
       discount: order.discount.toDouble(),
+      paidAt: order.paidAt?.toDate(),
     );
   }
 
@@ -506,7 +574,10 @@ class MainHomeWebController extends GetxController {
   }
 
   String _buildOrderNote(OrderModel order) {
-    final String payment = paymentStatusLabel(order.paymentStatus);
+    final String payment = paymentStatusLabel(
+      order.paymentStatus,
+      paymentMethod: order.paymentMethod,
+    );
     final String pickupName = order.pickupInfo.pickupName.trim();
     final String pickupPhone = order.pickupInfo.pickupPhone.trim();
     final String note = order.pickupInfo.note.trim();
@@ -542,13 +613,32 @@ class MainHomeWebController extends GetxController {
     return '${(meters / 1000).toStringAsFixed(2)} กม.';
   }
 
-  String paymentStatusLabel(String status) {
+  String paymentMethodLabel(String method) {
+    return method == OrderPaymentMethod.cash ? 'เงินสด' : 'PromptPay';
+  }
+
+  String paymentStatusLabel(
+    String status, {
+    String paymentMethod = OrderPaymentMethod.promptPay,
+  }) {
     return switch (status) {
+      'unpaid' when paymentMethod == OrderPaymentMethod.cash => 'รอรับเงินสด',
       'unpaid' => 'ยังไม่ชำระเงิน',
       'waiting_verify' => 'รอตรวจสลิป',
+      'paid' when paymentMethod == OrderPaymentMethod.cash => 'รับเงินสดแล้ว',
       'paid' => 'ชำระเงินแล้ว',
       'rejected' => 'สลิปไม่ผ่าน',
       _ => status,
+    };
+  }
+
+  String _cashPaymentErrorMessage(StateError error) {
+    return switch (error.message.toString()) {
+      'order-not-found' => 'ไม่พบออเดอร์นี้ในระบบ',
+      'order-closed' => 'ออเดอร์ถูกปิดหรือยกเลิกแล้ว',
+      'cash-payment-already-recorded' =>
+        'ออเดอร์นี้ถูกบันทึกการชำระเงินจากอุปกรณ์อื่นแล้ว',
+      _ => 'กรุณาลองใหม่อีกครั้ง',
     };
   }
 
@@ -559,6 +649,9 @@ class MainHomeWebController extends GetxController {
     }
     if (message == 'invalid-order-transition') {
       return 'สถานะออเดอร์ถูกเปลี่ยนจากอุปกรณ์อื่น กรุณาลองใหม่';
+    }
+    if (message == 'payment-required') {
+      return 'ต้องยืนยันการรับชำระเงินก่อนปิดออเดอร์';
     }
     if (message == 'stock-already-restored') {
       return 'ออเดอร์นี้คืนสต๊อกไปแล้ว';

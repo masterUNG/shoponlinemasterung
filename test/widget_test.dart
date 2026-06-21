@@ -74,6 +74,43 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('OrderModel keeps legacy orders compatible with PromptPay', () {
+    final OrderModel order = OrderModel.fromMap('order-legacy', {
+      'orderNo': 'ORD-LEGACY',
+      'userId': 'uid-1',
+      'userName': 'Customer',
+      'userPhone': '0812345678',
+      'items': <Map<String, dynamic>>[],
+      'pickupInfo': <String, dynamic>{},
+    });
+
+    expect(order.paymentMethod, OrderPaymentMethod.promptPay);
+    expect(order.isCashPayment, isFalse);
+    expect(order.paymentStatus, 'unpaid');
+  });
+
+  test('OrderModel maps cash payment audit fields', () {
+    final Timestamp paidAt = Timestamp.fromDate(DateTime(2026, 6, 21, 10));
+    final OrderModel order = OrderModel.fromMap('order-cash', {
+      'orderNo': 'ORD-CASH',
+      'userId': 'uid-1',
+      'userName': 'Customer',
+      'userPhone': '0812345678',
+      'items': <Map<String, dynamic>>[],
+      'pickupInfo': <String, dynamic>{},
+      'paymentMethod': OrderPaymentMethod.cash,
+      'paymentStatus': 'paid',
+      'cashCollectedAt': paidAt,
+      'cashCollectedBy': 'admin-uid',
+      'paidAt': paidAt,
+    });
+
+    expect(order.isCashPayment, isTrue);
+    expect(order.cashCollectedAt, paidAt);
+    expect(order.cashCollectedBy, 'admin-uid');
+    expect(order.paidAt, paidAt);
+  });
 }
 
 OrderItemModel _orderItem({required String productId, required int quantity}) {

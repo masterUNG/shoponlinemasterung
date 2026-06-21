@@ -3,6 +3,11 @@ import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+abstract final class OrderPaymentMethod {
+  static const String promptPay = 'promptpay';
+  static const String cash = 'cash';
+}
+
 class OrderItemModel {
   const OrderItemModel({
     required this.productId,
@@ -131,6 +136,7 @@ class OrderModel {
     required this.deliveryFee,
     required this.grandTotal,
     required this.status,
+    required this.paymentMethod,
     required this.paymentStatus,
     required this.paymentSlipBase64,
     required this.pickupInfo,
@@ -140,6 +146,9 @@ class OrderModel {
     this.paymentSlipUploadedAt,
     this.paymentVerifiedAt,
     this.paymentRejectedAt,
+    this.cashCollectedAt,
+    this.cashCollectedBy,
+    this.paidAt,
     this.stockRestoredAt,
     required this.createdAt,
     required this.updatedAt,
@@ -157,6 +166,7 @@ class OrderModel {
   final num deliveryFee;
   final num grandTotal;
   final String status;
+  final String paymentMethod;
   final String paymentStatus;
   final String paymentSlipBase64;
   final PickupInfoModel pickupInfo;
@@ -166,6 +176,9 @@ class OrderModel {
   final Timestamp? paymentSlipUploadedAt;
   final Timestamp? paymentVerifiedAt;
   final Timestamp? paymentRejectedAt;
+  final Timestamp? cashCollectedAt;
+  final String? cashCollectedBy;
+  final Timestamp? paidAt;
   final Timestamp? stockRestoredAt;
   final Timestamp? createdAt;
   final Timestamp? updatedAt;
@@ -189,6 +202,8 @@ class OrderModel {
     return status == 'completed' || status == 'cancelled';
   }
 
+  bool get isCashPayment => paymentMethod == OrderPaymentMethod.cash;
+
   int get totalQuantity {
     return items.fold<int>(0, (total, item) => total + item.quantity);
   }
@@ -210,12 +225,16 @@ class OrderModel {
       if (shopLocation != null) 'shopLocation': shopLocation,
       'grandTotal': grandTotal,
       'status': status,
+      'paymentMethod': paymentMethod,
       'paymentStatus': paymentStatus,
       'paymentSlipBase64': paymentSlipBase64,
       if (paymentSlipUploadedAt != null)
         'paymentSlipUploadedAt': paymentSlipUploadedAt,
       if (paymentVerifiedAt != null) 'paymentVerifiedAt': paymentVerifiedAt,
       if (paymentRejectedAt != null) 'paymentRejectedAt': paymentRejectedAt,
+      if (cashCollectedAt != null) 'cashCollectedAt': cashCollectedAt,
+      if (cashCollectedBy != null) 'cashCollectedBy': cashCollectedBy,
+      if (paidAt != null) 'paidAt': paidAt,
       if (stockRestoredAt != null) 'stockRestoredAt': stockRestoredAt,
       'pickupInfo': pickupInfo.toMap(),
       'createdAt': createdAt,
@@ -250,6 +269,8 @@ class OrderModel {
       deliveryFee: (map['deliveryFee'] ?? 0) as num,
       grandTotal: (map['grandTotal'] ?? 0) as num,
       status: (map['status'] ?? 'pending') as String,
+      paymentMethod:
+          (map['paymentMethod'] ?? OrderPaymentMethod.promptPay) as String,
       paymentStatus: (map['paymentStatus'] ?? 'unpaid') as String,
       paymentSlipBase64: (map['paymentSlipBase64'] ?? '') as String,
       pickupInfo: PickupInfoModel.fromMap(
@@ -271,6 +292,11 @@ class OrderModel {
       paymentRejectedAt: map['paymentRejectedAt'] is Timestamp
           ? map['paymentRejectedAt'] as Timestamp
           : null,
+      cashCollectedAt: map['cashCollectedAt'] is Timestamp
+          ? map['cashCollectedAt'] as Timestamp
+          : null,
+      cashCollectedBy: map['cashCollectedBy'] as String?,
+      paidAt: map['paidAt'] is Timestamp ? map['paidAt'] as Timestamp : null,
       stockRestoredAt: map['stockRestoredAt'] is Timestamp
           ? map['stockRestoredAt'] as Timestamp
           : null,

@@ -1365,7 +1365,10 @@ class _OrderCard extends StatelessWidget {
                       color: color,
                     ),
                     _StatusBadge(
-                      label: controller.paymentStatusLabel(order.paymentStatus),
+                      label: controller.paymentStatusLabel(
+                        order.paymentStatus,
+                        paymentMethod: order.paymentMethod,
+                      ),
                       color: _paymentStatusColor(order.paymentStatus),
                     ),
                   ],
@@ -1441,7 +1444,7 @@ class _OrderActionRow extends StatelessWidget {
       );
     }
 
-    if (order.paymentStatus != 'paid') {
+    if (!order.isCashPayment && order.paymentStatus != 'paid') {
       return Wrap(
         spacing: 8,
         runSpacing: 8,
@@ -1461,42 +1464,109 @@ class _OrderActionRow extends StatelessWidget {
       final bool anotherOrderIsUpdating =
           controller.updatingOrderId.value.isNotEmpty && !isUpdating;
 
-      return Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: nextStatuses.map((status) {
-          final bool isCancel = status == AdminOrderStatus.cancelled;
-          return isCancel
-              ? _CancelOrderButton(
-                  controller: controller,
-                  order: order,
-                  disabled: isUpdating || anotherOrderIsUpdating,
-                )
-              : FilledButton.icon(
-                  onPressed: isUpdating || anotherOrderIsUpdating
-                      ? null
-                      : () => controller.updateOrderStatus(
-                          order: order,
-                          status: status,
-                        ),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _orderColor(status),
-                    foregroundColor: Colors.white,
-                  ),
-                  icon: isUpdating
-                      ? const SizedBox.square(
-                          dimension: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : Icon(_orderIcon(status), size: 18),
-                  label: Text(_orderActionLabel(status)),
-                );
-        }).toList(),
+      final List<AdminOrderStatus> allowedStatuses = nextStatuses
+          .where(
+            (status) =>
+                status != AdminOrderStatus.completed ||
+                order.paymentStatus == 'paid',
+          )
+          .toList();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (order.isCashPayment && order.paymentStatus == 'unpaid') ...[
+            _CashPaymentActions(controller: controller, order: order),
+            const SizedBox(height: 8),
+          ],
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: allowedStatuses.map((status) {
+              final bool isCancel = status == AdminOrderStatus.cancelled;
+              return isCancel
+                  ? _CancelOrderButton(
+                      controller: controller,
+                      order: order,
+                      disabled: isUpdating || anotherOrderIsUpdating,
+                    )
+                  : FilledButton.icon(
+                      onPressed: isUpdating || anotherOrderIsUpdating
+                          ? null
+                          : () => controller.updateOrderStatus(
+                              order: order,
+                              status: status,
+                            ),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: _orderColor(status),
+                        foregroundColor: Colors.white,
+                      ),
+                      icon: isUpdating
+                          ? const SizedBox.square(
+                              dimension: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Icon(_orderIcon(status), size: 18),
+                      label: Text(_orderActionLabel(status)),
+                    );
+            }).toList(),
+          ),
+        ],
       );
     });
+  }
+}
+
+class _CashPaymentActions extends StatelessWidget {
+  const _CashPaymentActions({required this.controller, required this.order});
+
+  final MainHomeWebController controller;
+  final AdminOrderModel order;
+
+  @override
+  Widget build(BuildContext context) {
+    final bool isUpdating = controller.updatingPaymentOrderId.value == order.id;
+    final bool anotherPaymentIsUpdating =
+        controller.updatingPaymentOrderId.value.isNotEmpty && !isUpdating;
+    final bool orderIsUpdating = controller.updatingOrderId.value.isNotEmpty;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _StatusBadge(
+          label: 'รอรับเงินสด ${controller.formatCurrency(order.total)}',
+          color: const Color(0xFFB36B00),
+        ),
+        FilledButton.icon(
+          onPressed: isUpdating || anotherPaymentIsUpdating || orderIsUpdating
+              ? null
+              : () => _confirmCashPayment(
+                  context,
+                  controller: controller,
+                  order: order,
+                ),
+          style: FilledButton.styleFrom(
+            backgroundColor: const Color(0xFF16805A),
+            foregroundColor: Colors.white,
+          ),
+          icon: isUpdating
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Icon(Icons.payments_rounded, size: 18),
+          label: const Text('ได้รับเงินสดแล้ว'),
+        ),
+      ],
+    );
   }
 }
 
@@ -1648,6 +1718,39 @@ Future<void> _confirmCancelOrder(
   );
 }
 
+Future<void> _confirmCashPayment(
+  BuildContext context, {
+  required MainHomeWebController controller,
+  required AdminOrderModel order,
+}) async {
+  final bool confirmed =
+      await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ยืนยันการรับเงินสด?'),
+          content: Text(
+            'ยืนยันว่าได้รับเงินสด ${controller.formatCurrency(order.total)} '
+            'สำหรับออเดอร์ ${order.orderNo} แล้ว',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('ยังไม่ได้รับ'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('ยืนยันรับเงิน'),
+            ),
+          ],
+        ),
+      ) ??
+      false;
+
+  if (confirmed) {
+    await controller.confirmCashPayment(order);
+  }
+}
+
 Future<void> _showOrderDetailDialog(
   BuildContext context, {
   required MainHomeWebController controller,
@@ -1731,8 +1834,18 @@ class _OrderDetailDialog extends StatelessWidget {
                     icon: Icons.schedule_rounded,
                   ),
                   _OrderDetailInfo(
+                    label: 'วิธีชำระ',
+                    value: controller.paymentMethodLabel(order.paymentMethod),
+                    icon: order.isCashPayment
+                        ? Icons.payments_rounded
+                        : Icons.qr_code_2_rounded,
+                  ),
+                  _OrderDetailInfo(
                     label: 'ชำระเงิน',
-                    value: controller.paymentStatusLabel(order.paymentStatus),
+                    value: controller.paymentStatusLabel(
+                      order.paymentStatus,
+                      paymentMethod: order.paymentMethod,
+                    ),
                     icon: Icons.payments_rounded,
                   ),
                 ],
@@ -1765,14 +1878,24 @@ class _OrderDetailDialog extends StatelessWidget {
               ],
               const SizedBox(height: 18),
               Text(
-                'สลิปชำระเงิน',
+                order.isCashPayment ? 'การชำระเงินสด' : 'สลิปชำระเงิน',
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: AppConstant.appColorDark,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               const SizedBox(height: 10),
-              _PaymentSlipPreview(order: order),
+              if (order.isCashPayment)
+                _StatusBadge(
+                  label: order.paymentStatus == 'paid'
+                      ? 'บันทึกรับเงินสดแล้ว'
+                      : 'รอรับเงินสด ${controller.formatCurrency(order.total)}',
+                  color: order.paymentStatus == 'paid'
+                      ? const Color(0xFF16805A)
+                      : const Color(0xFFB36B00),
+                )
+              else
+                _PaymentSlipPreview(order: order),
               const SizedBox(height: 18),
               Text(
                 'สินค้าในออเดอร์',
@@ -1815,6 +1938,17 @@ class _OrderDetailDialog extends StatelessWidget {
         ),
       ),
       actions: [
+        if (order.isCashPayment && order.paymentStatus == 'unpaid')
+          FilledButton(
+            onPressed: () {
+              _confirmCashPayment(
+                context,
+                controller: controller,
+                order: order,
+              );
+            },
+            child: const Text('ได้รับเงินสดแล้ว'),
+          ),
         if (order.paymentStatus == 'waiting_verify') ...[
           TextButton(
             onPressed: () {

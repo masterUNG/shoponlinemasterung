@@ -303,7 +303,7 @@ class _OrderTile extends GetView<OrderController> {
                 Expanded(
                   child: _OrderMeta(
                     label: 'ชำระเงิน',
-                    value: controller.paymentStatusLabel(order.paymentStatus),
+                    value: controller.paymentStatusLabel(order),
                   ),
                 ),
               ],
@@ -386,7 +386,9 @@ class _PaymentSlipAction extends GetView<OrderController> {
         children: [
           _PaymentHint(
             icon: Icons.verified_rounded,
-            text: 'ร้านยืนยันการชำระเงินแล้ว',
+            text: order.isCashPayment
+                ? 'ร้านยืนยันว่าได้รับเงินสดแล้ว'
+                : 'ร้านยืนยันการชำระเงินแล้ว',
             color: const Color(0xFF12805C),
           ),
           if (order.paymentSlipBytes != null) ...[
@@ -394,6 +396,13 @@ class _PaymentSlipAction extends GetView<OrderController> {
             _SlipPreviewButton(order: order),
           ],
         ],
+      );
+    }
+
+    if (order.isCashPayment) {
+      return _CashPaymentCard(
+        amount: controller.formatCurrency(order.grandTotal),
+        isDelivery: order.orderType == 'delivery',
       );
     }
 
@@ -469,6 +478,59 @@ class _PaymentSlipAction extends GetView<OrderController> {
           ],
         ),
       ],
+    );
+  }
+}
+
+class _CashPaymentCard extends StatelessWidget {
+  const _CashPaymentCard({required this.amount, required this.isDelivery});
+
+  final String amount;
+  final bool isDelivery;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF7E8),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: const Color(0xFFE7B85B)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.payments_rounded, color: Color(0xFF9A6200)),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'ชำระด้วยเงินสด $amount',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppConstant.appColorDeep,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isDelivery
+                      ? 'กรุณาเตรียมเงินสดเมื่อได้รับสินค้า ร้านจะยืนยันยอดหลังรับเงิน'
+                      : 'กรุณาเตรียมเงินสดและชำระตอนมารับสินค้าที่ร้าน',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppConstant.appColorMuted,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

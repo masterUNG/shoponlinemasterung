@@ -82,6 +82,7 @@ service cloud.firestore {
           'shopLocation',
           'grandTotal',
           'status',
+          'paymentMethod',
           'paymentStatus',
           'pickupInfo',
           'createdAt',
@@ -89,6 +90,7 @@ service cloud.firestore {
         ])
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.status == 'pending'
+        && request.resource.data.paymentMethod in ['promptpay', 'cash']
         && request.resource.data.paymentStatus == 'unpaid'
         && request.resource.data.userPhone is string
         && request.resource.data.userPhone.size() >= 8
@@ -113,6 +115,8 @@ service cloud.firestore {
         && resource.data.status != 'completed'
         && resource.data.status != 'cancelled'
         && resource.data.paymentStatus in ['unpaid', 'rejected']
+        && (!('paymentMethod' in resource.data)
+          || resource.data.paymentMethod == 'promptpay')
         && request.resource.data.diff(resource.data).affectedKeys()
           .hasOnly([
             'paymentSlipBase64',
@@ -177,6 +181,9 @@ service cloud.firestore {
               'paymentStatus',
               'paymentVerifiedAt',
               'paymentRejectedAt',
+              'cashCollectedAt',
+              'cashCollectedBy',
+              'paidAt',
               'stockRestoredAt',
               'updatedAt'
             ]));

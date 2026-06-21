@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 
+import '../../../model/order_model.dart';
 import '../controllers/cart_controller.dart';
 
 class CartView extends GetView<CartController> {
@@ -72,9 +73,11 @@ class CartView extends GetView<CartController> {
                 enabled: controller.cartItems.isNotEmpty,
                 isOrdering: controller.isOrdering.value,
                 selectedFulfillment: controller.fulfillmentType.value,
+                selectedPaymentMethod: controller.paymentMethod.value,
                 canUseDelivery: controller.canUseDelivery,
                 deliveryStatusText: controller.deliveryStatusText,
                 onFulfillmentChanged: controller.selectFulfillment,
+                onPaymentMethodChanged: controller.selectPaymentMethod,
                 onOrderPressed: controller.createOrderFromCart,
               ),
             ),
@@ -330,9 +333,11 @@ class _CartSummary extends StatelessWidget {
     required this.enabled,
     required this.isOrdering,
     required this.selectedFulfillment,
+    required this.selectedPaymentMethod,
     required this.canUseDelivery,
     required this.deliveryStatusText,
     required this.onFulfillmentChanged,
+    required this.onPaymentMethodChanged,
     required this.onOrderPressed,
   });
 
@@ -341,9 +346,11 @@ class _CartSummary extends StatelessWidget {
   final bool enabled;
   final bool isOrdering;
   final FulfillmentType selectedFulfillment;
+  final String selectedPaymentMethod;
   final bool canUseDelivery;
   final String deliveryStatusText;
   final ValueChanged<FulfillmentType> onFulfillmentChanged;
+  final ValueChanged<String> onPaymentMethodChanged;
   final VoidCallback onOrderPressed;
 
   @override
@@ -372,6 +379,11 @@ class _CartSummary extends StatelessWidget {
               canUseDelivery: canUseDelivery,
               statusText: deliveryStatusText,
               onChanged: onFulfillmentChanged,
+            ),
+            const SizedBox(height: 14),
+            _PaymentMethodSelector(
+              selectedPaymentMethod: selectedPaymentMethod,
+              onChanged: onPaymentMethodChanged,
             ),
             const SizedBox(height: 14),
             Row(
@@ -418,6 +430,65 @@ class _CartSummary extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PaymentMethodSelector extends StatelessWidget {
+  const _PaymentMethodSelector({
+    required this.selectedPaymentMethod,
+    required this.onChanged,
+  });
+
+  final String selectedPaymentMethod;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            'วิธีชำระเงิน',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: AppConstant.appColorDeep,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment<String>(
+              value: OrderPaymentMethod.promptPay,
+              icon: Icon(Icons.qr_code_2_rounded),
+              label: Text('PromptPay'),
+            ),
+            ButtonSegment<String>(
+              value: OrderPaymentMethod.cash,
+              icon: Icon(Icons.payments_rounded),
+              label: Text('เงินสด'),
+            ),
+          ],
+          selected: <String>{selectedPaymentMethod},
+          showSelectedIcon: false,
+          onSelectionChanged: (values) => onChanged(values.first),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          selectedPaymentMethod == OrderPaymentMethod.cash
+              ? 'ชำระเงินสดตอนรับสินค้าที่ร้านหรือเมื่อได้รับสินค้าจากผู้ส่ง'
+              : 'ชำระผ่าน QR PromptPay แล้วอัปโหลดสลิปให้ร้านตรวจสอบ',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: AppConstant.appColorMuted,
+            height: 1.35,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -37,6 +37,7 @@ class AdminOrderModel {
     required this.status,
     required this.createdAt,
     required this.note,
+    required this.paymentMethod,
     required this.paymentStatus,
     required this.paymentSlipBase64,
     required this.paymentSlipUploadedAt,
@@ -48,6 +49,7 @@ class AdminOrderModel {
     required this.deliveryLongitude,
     required this.subtotal,
     required this.discount,
+    required this.paidAt,
   });
 
   final String id;
@@ -58,6 +60,7 @@ class AdminOrderModel {
   final AdminOrderStatus status;
   final DateTime createdAt;
   final String note;
+  final String paymentMethod;
   final String paymentStatus;
   final String paymentSlipBase64;
   final DateTime? paymentSlipUploadedAt;
@@ -69,9 +72,11 @@ class AdminOrderModel {
   final double? deliveryLongitude;
   final double subtotal;
   final double discount;
+  final DateTime? paidAt;
 
   bool get isOpen => !status.isClosed;
   bool get hasPaymentSlip => paymentSlipBase64.trim().isNotEmpty;
+  bool get isCashPayment => paymentMethod == OrderPaymentMethod.cash;
   bool get isDelivery => orderType == 'delivery';
   bool get hasDeliveryLocation =>
       deliveryLatitude != null && deliveryLongitude != null;
@@ -91,6 +96,7 @@ class AdminOrderModel {
       status: status ?? this.status,
       createdAt: createdAt,
       note: note,
+      paymentMethod: paymentMethod,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       paymentSlipBase64: paymentSlipBase64 ?? this.paymentSlipBase64,
       paymentSlipUploadedAt:
@@ -103,6 +109,7 @@ class AdminOrderModel {
       deliveryLongitude: deliveryLongitude,
       subtotal: subtotal,
       discount: discount,
+      paidAt: paidAt,
     );
   }
 }

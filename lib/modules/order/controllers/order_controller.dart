@@ -130,18 +130,20 @@ class OrderController extends GetxController {
     };
   }
 
-  String paymentStatusLabel(String status) {
-    return switch (status) {
+  String paymentStatusLabel(OrderModel order) {
+    return switch (order.paymentStatus) {
+      'unpaid' when order.isCashPayment => 'รอชำระเงินสด',
       'unpaid' => 'ยังไม่ชำระเงิน',
       'waiting_verify' => 'รอร้านตรวจสลิป',
       'paid' => 'ชำระเงินแล้ว',
       'rejected' => 'สลิปไม่ผ่าน',
-      _ => status,
+      _ => order.paymentStatus,
     };
   }
 
   bool canUploadPaymentSlip(OrderModel order) {
-    return order.paymentStatus == 'unpaid' || order.paymentStatus == 'rejected';
+    return !order.isCashPayment &&
+        (order.paymentStatus == 'unpaid' || order.paymentStatus == 'rejected');
   }
 
   Future<void> uploadPaymentSlip(OrderModel order) async {

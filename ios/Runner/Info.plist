@@ -13,17 +13,17 @@
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
-	<string>5.0</string>
+	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>Ung Shop</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.5</string>
+	<string>1.0.6</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>5</string>
+	<string>6</string>
 	<key>GIDClientID</key>
 	<string>247194165705-upgoip3reo3v8lbnj564fngasdsuqcr9.apps.googleusercontent.com</string>
 	<key>GIDServerClientID</key>
