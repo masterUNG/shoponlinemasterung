@@ -50,6 +50,7 @@ service cloud.firestore {
           'productId',
           'name',
           'description',
+          'shortDescription',
           'base64Image',
           'unit',
           'price',

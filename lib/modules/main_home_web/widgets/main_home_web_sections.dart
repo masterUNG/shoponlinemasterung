@@ -2550,6 +2550,30 @@ Future<void> _showDeleteProductDialog(
   );
 }
 
+const int _maxProductImages = 4;
+const double _productImageMaxDimension = 800;
+const int _productImageQuality = 72;
+
+class _PickedProductImage {
+  const _PickedProductImage({
+    required this.bytes,
+    required this.alt,
+    required this.sortOrder,
+  });
+
+  final Uint8List bytes;
+  final String alt;
+  final int sortOrder;
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'base64Image': base64Encode(bytes),
+      'alt': alt,
+      'sortOrder': sortOrder,
+    };
+  }
+}
+
 class _DeleteProductDialog extends StatefulWidget {
   const _DeleteProductDialog({required this.product, required this.priceLabel});
 
@@ -2783,18 +2807,28 @@ class _EditProductDialogState extends State<_EditProductDialog> {
   final ImagePicker _imagePicker = ImagePicker();
   late final TextEditingController _nameController;
   late final TextEditingController _descriptionController;
+  late final TextEditingController _shortDescriptionController;
+  late final TextEditingController _detailDescriptionController;
+  late final TextEditingController _conditionController;
+  late final TextEditingController _categoryController;
+  late final TextEditingController _tagsController;
   late final TextEditingController _priceController;
   late final TextEditingController _unitController;
   late final TextEditingController _stockController;
 
   Uint8List? _selectedImageBytes;
+  late final List<_PickedProductImage> _galleryImages;
   String? _selectedImageName;
   bool _isPickingImage = false;
+  bool _isPickingGalleryImages = false;
   bool _isSaving = false;
   bool _submitted = false;
   bool _imageEditing = false;
   bool _nameEditing = false;
   bool _descriptionEditing = false;
+  bool _advancedEditing = false;
+  bool _isActive = true;
+  bool _isRecommended = false;
   bool _priceEditing = false;
   bool _unitEditing = false;
   bool _stockEditing = false;
@@ -2808,6 +2842,19 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     _descriptionController = TextEditingController(
       text: widget.product.description,
     );
+    _shortDescriptionController = TextEditingController(
+      text: widget.product.shortDescription,
+    );
+    _detailDescriptionController = TextEditingController(
+      text: widget.product.detailDescription,
+    );
+    _conditionController = TextEditingController(
+      text: widget.product.condition,
+    );
+    _categoryController = TextEditingController(text: widget.product.category);
+    _tagsController = TextEditingController(
+      text: widget.product.tags.join(', '),
+    );
     _priceController = TextEditingController(
       text: _formatNumber(widget.product.price),
     );
@@ -2816,12 +2863,31 @@ class _EditProductDialogState extends State<_EditProductDialog> {
       text: widget.product.stock.toString(),
     );
     _selectedImageBytes = widget.product.imageBytes;
+    _galleryImages =
+        widget.product.images
+            .map((image) {
+              return _PickedProductImage(
+                bytes: image.imageBytes ?? Uint8List(0),
+                alt: image.alt,
+                sortOrder: image.sortOrder,
+              );
+            })
+            .where((image) => image.bytes.isNotEmpty)
+            .toList()
+          ..sort((a, b) => a.sortOrder.compareTo(b.sortOrder));
+    _isActive = widget.product.isActive;
+    _isRecommended = widget.product.isRecommended;
   }
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _shortDescriptionController.dispose();
+    _detailDescriptionController.dispose();
+    _conditionController.dispose();
+    _categoryController.dispose();
+    _tagsController.dispose();
     _priceController.dispose();
     _unitController.dispose();
     _stockController.dispose();
@@ -2837,9 +2903,9 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     try {
       final XFile? pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 480,
-        maxHeight: 480,
-        imageQuality: 90,
+        maxWidth: _productImageMaxDimension,
+        maxHeight: _productImageMaxDimension,
+        imageQuality: _productImageQuality,
       );
 
       if (pickedFile == null) {
@@ -2870,6 +2936,69 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     }
   }
 
+  Future<void> _pickGalleryImages() async {
+    final int remainingSlots = _maxProductImages - _galleryImages.length;
+    if (remainingSlots <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('เพิ่มรูปสินค้าได้สูงสุด 4 รูป')),
+      );
+      return;
+    }
+
+    setState(() {
+      _isPickingGalleryImages = true;
+      _imageEditing = true;
+    });
+
+    try {
+      final List<XFile> pickedFiles = await _imagePicker.pickMultiImage(
+        maxWidth: _productImageMaxDimension,
+        maxHeight: _productImageMaxDimension,
+        imageQuality: _productImageQuality,
+      );
+
+      if (pickedFiles.isEmpty) {
+        return;
+      }
+
+      final List<_PickedProductImage> nextImages = <_PickedProductImage>[
+        ..._galleryImages,
+      ];
+      for (final XFile file in pickedFiles.take(remainingSlots)) {
+        final Uint8List bytes = await file.readAsBytes();
+        nextImages.add(
+          _PickedProductImage(
+            bytes: bytes,
+            alt: file.name,
+            sortOrder: nextImages.length,
+          ),
+        );
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _galleryImages
+          ..clear()
+          ..addAll(_normalizeGalleryImages(nextImages));
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingGalleryImages = false);
+      }
+    }
+  }
+
   Future<void> _validateAndSubmit() async {
     setState(() => _submitted = true);
 
@@ -2884,12 +3013,28 @@ class _EditProductDialogState extends State<_EditProductDialog> {
       await _firestore.collection('product').doc(widget.product.id).update({
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
+        'shortDescription': _shortDescriptionController.text.trim(),
+        'detailDescription': _detailDescriptionController.text.trim(),
+        'condition': _conditionController.text.trim(),
+        'category': _categoryController.text.trim().isEmpty
+            ? 'General'
+            : _categoryController.text.trim(),
+        'tags': _parseTags(_tagsController.text),
         'base64Image': _selectedImageBytes == null
             ? widget.product.base64Image
             : base64Encode(_selectedImageBytes!),
+        'images': _normalizeGalleryImages(
+          _galleryImages,
+        ).map((image) => image.toMap()).toList(),
         'unit': _unitController.text.trim(),
         'price': num.parse(_priceController.text.trim()),
         'stock': int.parse(_stockController.text.trim()),
+        'isActive': _isActive,
+        'isRecommended': _isRecommended,
+        'relatedProductIds': widget.product.relatedProductIds,
+        'soldCount': widget.product.soldCount,
+        'viewCount': widget.product.viewCount,
+        'updatedAt': FieldValue.serverTimestamp(),
         'timestamp': Timestamp.now(),
       });
 
@@ -3120,8 +3265,108 @@ class _EditProductDialogState extends State<_EditProductDialog> {
               ),
             ),
           ],
+          const SizedBox(height: 16),
+          _buildGalleryEditor(theme),
         ],
       ),
+    );
+  }
+
+  Widget _buildGalleryEditor(ThemeData theme) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'รูปเพิ่มเติม ${_galleryImages.length}/$_maxProductImages',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: AppConstant.appColorDark,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: 'เพิ่มรูป',
+              onPressed:
+                  !_imageEditing ||
+                      _isSaving ||
+                      _isPickingGalleryImages ||
+                      _galleryImages.length >= _maxProductImages
+                  ? null
+                  : _pickGalleryImages,
+              icon: _isPickingGalleryImages
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add_photo_alternate_outlined),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_galleryImages.isEmpty)
+          Text(
+            'เพิ่มได้สูงสุด 4 รูป ระบบจะย่อไม่เกิน 800 x 800 ก่อนบันทึก',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppConstant.appColorMuted,
+              height: 1.45,
+            ),
+          )
+        else
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: List<Widget>.generate(_galleryImages.length, (index) {
+              final _PickedProductImage image = _galleryImages[index];
+              return Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Image.memory(
+                      image.bytes,
+                      width: 68,
+                      height: 68,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Positioned(
+                    right: 2,
+                    top: 2,
+                    child: InkWell(
+                      onTap: !_imageEditing || _isSaving
+                          ? null
+                          : () {
+                              final List<_PickedProductImage> nextImages =
+                                  <_PickedProductImage>[..._galleryImages]
+                                    ..removeAt(index);
+                              setState(() {
+                                _galleryImages
+                                  ..clear()
+                                  ..addAll(_normalizeGalleryImages(nextImages));
+                              });
+                            },
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          color: Color(0xCC202020),
+                          shape: BoxShape.circle,
+                        ),
+                        padding: const EdgeInsets.all(3),
+                        child: const Icon(
+                          Icons.close_rounded,
+                          color: Colors.white,
+                          size: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+      ],
     );
   }
 
@@ -3158,6 +3403,85 @@ class _EditProductDialogState extends State<_EditProductDialog> {
             enabled: _descriptionEditing && !_isSaving,
             maxLines: 3,
             validator: _requiredValidator('กรุณากรอกรายละเอียดสินค้า'),
+          ),
+        ),
+        const SizedBox(height: 12),
+        _EditableSection(
+          title: 'ข้อมูลสำหรับหน้า Detail',
+          icon: Icons.article_outlined,
+          isEditing: _advancedEditing,
+          onEdit: _isSaving
+              ? null
+              : () => setState(() => _advancedEditing = true),
+          child: Column(
+            children: [
+              _buildTextField(
+                controller: _shortDescriptionController,
+                label: 'คำอธิบายสั้น',
+                hintText: 'ข้อความสั้นสำหรับการ์ดสินค้า',
+                prefixIcon: Icons.short_text_rounded,
+                enabled: _advancedEditing && !_isSaving,
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: _detailDescriptionController,
+                label: 'รายละเอียดเต็ม',
+                hintText: 'รายละเอียดสำหรับหน้า Product Detail',
+                prefixIcon: Icons.article_outlined,
+                enabled: _advancedEditing && !_isSaving,
+                maxLines: 4,
+              ),
+              const SizedBox(height: 12),
+              _buildTextField(
+                controller: _conditionController,
+                label: 'เงื่อนไขสินค้า',
+                hintText: 'เช่น เก็บในตู้เย็น ควรบริโภคภายใน 3 วัน',
+                prefixIcon: Icons.rule_rounded,
+                enabled: _advancedEditing && !_isSaving,
+                maxLines: 3,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _categoryController,
+                      label: 'หมวดหมู่',
+                      hintText: 'General',
+                      prefixIcon: Icons.category_outlined,
+                      enabled: _advancedEditing && !_isSaving,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildTextField(
+                      controller: _tagsController,
+                      label: 'Tags',
+                      hintText: 'ขายดี, โปร, สดใหม่',
+                      prefixIcon: Icons.sell_outlined,
+                      enabled: _advancedEditing && !_isSaving,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _isActive,
+                onChanged: !_advancedEditing || _isSaving
+                    ? null
+                    : (value) => setState(() => _isActive = value),
+                title: const Text('เปิดขายสินค้า'),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _isRecommended,
+                onChanged: !_advancedEditing || _isSaving
+                    ? null
+                    : (value) => setState(() => _isRecommended = value),
+                title: const Text('สินค้าแนะนำ'),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -3320,6 +3644,28 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     }
 
     return value.toString();
+  }
+
+  List<String> _parseTags(String value) {
+    return value
+        .split(',')
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+        .toSet()
+        .toList();
+  }
+
+  List<_PickedProductImage> _normalizeGalleryImages(
+    List<_PickedProductImage> images,
+  ) {
+    return List<_PickedProductImage>.generate(images.length, (index) {
+      final _PickedProductImage image = images[index];
+      return _PickedProductImage(
+        bytes: image.bytes,
+        alt: image.alt,
+        sortOrder: index,
+      );
+    });
   }
 }
 
@@ -3521,21 +3867,39 @@ class _AddProductDialogState extends State<_AddProductDialog> {
   final ImagePicker _imagePicker = ImagePicker();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _shortDescriptionController =
+      TextEditingController();
+  final TextEditingController _detailDescriptionController =
+      TextEditingController();
+  final TextEditingController _conditionController = TextEditingController();
+  final TextEditingController _categoryController = TextEditingController(
+    text: 'General',
+  );
+  final TextEditingController _tagsController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   final TextEditingController _unitController = TextEditingController();
   final TextEditingController _stockController = TextEditingController();
 
   Uint8List? _selectedImageBytes;
+  final List<_PickedProductImage> _galleryImages = <_PickedProductImage>[];
   String? _selectedImageName;
   bool _isPickingImage = false;
+  bool _isPickingGalleryImages = false;
   bool _isSaving = false;
   bool _submitted = false;
   String? _imageErrorText;
+  bool _isActive = true;
+  bool _isRecommended = false;
 
   @override
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _shortDescriptionController.dispose();
+    _detailDescriptionController.dispose();
+    _conditionController.dispose();
+    _categoryController.dispose();
+    _tagsController.dispose();
     _priceController.dispose();
     _unitController.dispose();
     _stockController.dispose();
@@ -3548,9 +3912,9 @@ class _AddProductDialogState extends State<_AddProductDialog> {
     try {
       final XFile? pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 480,
-        maxHeight: 480,
-        imageQuality: 90,
+        maxWidth: _productImageMaxDimension,
+        maxHeight: _productImageMaxDimension,
+        imageQuality: _productImageQuality,
       );
 
       if (pickedFile == null) {
@@ -3582,6 +3946,66 @@ class _AddProductDialogState extends State<_AddProductDialog> {
     }
   }
 
+  Future<void> _pickGalleryImages() async {
+    final int remainingSlots = _maxProductImages - _galleryImages.length;
+    if (remainingSlots <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('เพิ่มรูปสินค้าได้สูงสุด 4 รูป')),
+      );
+      return;
+    }
+
+    setState(() => _isPickingGalleryImages = true);
+
+    try {
+      final List<XFile> pickedFiles = await _imagePicker.pickMultiImage(
+        maxWidth: _productImageMaxDimension,
+        maxHeight: _productImageMaxDimension,
+        imageQuality: _productImageQuality,
+      );
+
+      if (pickedFiles.isEmpty) {
+        return;
+      }
+
+      final List<_PickedProductImage> nextImages = <_PickedProductImage>[
+        ..._galleryImages,
+      ];
+      for (final XFile file in pickedFiles.take(remainingSlots)) {
+        final Uint8List bytes = await file.readAsBytes();
+        nextImages.add(
+          _PickedProductImage(
+            bytes: bytes,
+            alt: file.name,
+            sortOrder: nextImages.length,
+          ),
+        );
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _galleryImages
+          ..clear()
+          ..addAll(_normalizeGalleryImages(nextImages));
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingGalleryImages = false);
+      }
+    }
+  }
+
   Future<void> _validateAndSubmit() async {
     setState(() {
       _submitted = true;
@@ -3602,10 +4026,30 @@ class _AddProductDialogState extends State<_AddProductDialog> {
       final ProductModel product = ProductModel(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
+        shortDescription: _shortDescriptionController.text.trim(),
+        detailDescription: _detailDescriptionController.text.trim(),
+        condition: _conditionController.text.trim(),
+        category: _categoryController.text.trim().isEmpty
+            ? 'General'
+            : _categoryController.text.trim(),
+        tags: _parseTags(_tagsController.text),
         base64Image: base64Encode(_selectedImageBytes!),
+        images: _normalizeGalleryImages(_galleryImages)
+            .map(
+              (image) => ProductImageModel(
+                base64Image: base64Encode(image.bytes),
+                alt: image.alt,
+                sortOrder: image.sortOrder,
+              ),
+            )
+            .toList(),
         unit: _unitController.text.trim(),
         price: num.parse(_priceController.text.trim()),
         stock: num.parse(_stockController.text.trim()),
+        isActive: _isActive,
+        isRecommended: _isRecommended,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
         timestamp: Timestamp.now(),
       );
 
@@ -3787,7 +4231,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
           ),
           const SizedBox(height: 8),
           Text(
-            'เลือกจาก Gallery ด้วย image_picker ขนาดสูงสุด 480 x 480',
+            'เลือกจาก Gallery ระบบจะย่อรูปไม่เกิน 800 x 800 ก่อนบันทึก',
             style: theme.textTheme.bodySmall?.copyWith(
               color: AppConstant.appColorMuted,
               height: 1.5,
@@ -3851,6 +4295,95 @@ class _AddProductDialogState extends State<_AddProductDialog> {
               ),
             ),
           ],
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'รูปเพิ่มเติม ${_galleryImages.length}/$_maxProductImages',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppConstant.appColorDark,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'เพิ่มรูป',
+                onPressed:
+                    _isPickingGalleryImages ||
+                        _galleryImages.length >= _maxProductImages
+                    ? null
+                    : _pickGalleryImages,
+                icon: _isPickingGalleryImages
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.add_photo_alternate_outlined),
+              ),
+            ],
+          ),
+          if (_galleryImages.isEmpty)
+            Text(
+              'เพิ่มได้สูงสุด 4 รูป',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppConstant.appColorMuted,
+              ),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List<Widget>.generate(_galleryImages.length, (index) {
+                final _PickedProductImage image = _galleryImages[index];
+                return Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.memory(
+                        image.bytes,
+                        width: 68,
+                        height: 68,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    Positioned(
+                      right: 2,
+                      top: 2,
+                      child: InkWell(
+                        onTap: _isSaving
+                            ? null
+                            : () {
+                                final List<_PickedProductImage> nextImages =
+                                    <_PickedProductImage>[..._galleryImages]
+                                      ..removeAt(index);
+                                setState(() {
+                                  _galleryImages
+                                    ..clear()
+                                    ..addAll(
+                                      _normalizeGalleryImages(nextImages),
+                                    );
+                                });
+                              },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Color(0xCC202020),
+                            shape: BoxShape.circle,
+                          ),
+                          padding: const EdgeInsets.all(3),
+                          child: const Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
         ],
       ),
     );
@@ -3887,7 +4420,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
             ),
             const SizedBox(height: 8),
             Text(
-              'เมื่อเชื่อม backend แล้ว ส่วนนี้จะพร้อมต่ออัปโหลดไป Firebase Storage',
+              'รูปจะถูกย่อไม่เกิน 800 x 800 และบันทึกเป็น Base64 ใน Firestore',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppConstant.appColorMuted,
@@ -3919,6 +4452,68 @@ class _AddProductDialogState extends State<_AddProductDialog> {
           prefixIcon: Icons.notes_rounded,
           maxLines: 4,
           validator: _requiredValidator('กรุณากรอกรายละเอียดสินค้า'),
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: _shortDescriptionController,
+          label: 'คำอธิบายสั้น',
+          hintText: 'ข้อความสั้นสำหรับการ์ดสินค้า',
+          prefixIcon: Icons.short_text_rounded,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: _detailDescriptionController,
+          label: 'รายละเอียดเต็ม',
+          hintText: 'รายละเอียดสำหรับหน้า Product Detail',
+          prefixIcon: Icons.article_outlined,
+          maxLines: 4,
+        ),
+        const SizedBox(height: 16),
+        _buildTextField(
+          controller: _conditionController,
+          label: 'เงื่อนไขสินค้า',
+          hintText: 'เช่น เก็บในตู้เย็น ควรบริโภคภายใน 3 วัน',
+          prefixIcon: Icons.rule_rounded,
+          maxLines: 3,
+        ),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _buildTextField(
+                controller: _categoryController,
+                label: 'หมวดหมู่',
+                hintText: 'General',
+                prefixIcon: Icons.category_outlined,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildTextField(
+                controller: _tagsController,
+                label: 'Tags',
+                hintText: 'ขายดี, โปร, สดใหม่',
+                prefixIcon: Icons.sell_outlined,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _isActive,
+          onChanged: _isSaving
+              ? null
+              : (value) => setState(() => _isActive = value),
+          title: const Text('เปิดขายสินค้า'),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _isRecommended,
+          onChanged: _isSaving
+              ? null
+              : (value) => setState(() => _isRecommended = value),
+          title: const Text('สินค้าแนะนำ'),
         ),
         const SizedBox(height: 16),
         Row(
@@ -4035,6 +4630,28 @@ class _AddProductDialogState extends State<_AddProductDialog> {
         ),
       ),
     );
+  }
+
+  List<String> _parseTags(String value) {
+    return value
+        .split(',')
+        .map((tag) => tag.trim())
+        .where((tag) => tag.isNotEmpty)
+        .toSet()
+        .toList();
+  }
+
+  List<_PickedProductImage> _normalizeGalleryImages(
+    List<_PickedProductImage> images,
+  ) {
+    return List<_PickedProductImage>.generate(images.length, (index) {
+      final _PickedProductImage image = images[index];
+      return _PickedProductImage(
+        bytes: image.bytes,
+        alt: image.alt,
+        sortOrder: index,
+      );
+    });
   }
 }
 

@@ -3,6 +3,7 @@ import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 
 import '../controllers/mall_controller.dart';
+import 'product_detail_view.dart';
 
 class MallView extends GetView<MallController> {
   const MallView({super.key});
@@ -166,7 +167,7 @@ class _ProductCard extends GetView<MallController> {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       child: InkWell(
-        onTap: item.isOutOfStock ? null : () => _showQuantityDialog(context),
+        onTap: () => Get.to<void>(() => ProductDetailView(item: item)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -205,9 +206,9 @@ class _ProductCard extends GetView<MallController> {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    product.description.trim().isEmpty
+                    product.cardDescription.trim().isEmpty
                         ? 'ไม่มีรายละเอียดสินค้า'
-                        : product.description.trim(),
+                        : product.cardDescription.trim(),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(

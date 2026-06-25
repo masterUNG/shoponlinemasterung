@@ -13,6 +13,7 @@ class OrderItemModel {
     required this.productId,
     required this.productName,
     required this.description,
+    this.shortDescription = '',
     required this.base64Image,
     required this.unit,
     required this.price,
@@ -23,6 +24,7 @@ class OrderItemModel {
   final String productId;
   final String productName;
   final String description;
+  final String shortDescription;
   final String base64Image;
   final String unit;
   final num price;
@@ -49,6 +51,7 @@ class OrderItemModel {
       'productId': productId,
       'productName': productName,
       'description': description,
+      'shortDescription': shortDescription,
       'base64Image': base64Image,
       'unit': unit,
       'price': price,
@@ -62,6 +65,8 @@ class OrderItemModel {
       productId: (map['productId'] ?? '') as String,
       productName: (map['productName'] ?? '') as String,
       description: (map['description'] ?? '') as String,
+      shortDescription:
+          (map['shortDescription'] ?? map['description'] ?? '') as String,
       base64Image: (map['base64Image'] ?? '') as String,
       unit: (map['unit'] ?? '') as String,
       price: (map['price'] ?? 0) as num,

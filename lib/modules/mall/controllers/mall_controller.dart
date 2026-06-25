@@ -57,12 +57,14 @@ class MallController extends GetxController {
         .listen(
           (QuerySnapshot<Map<String, dynamic>> snapshot) {
             products.assignAll(
-              snapshot.docs.map(
-                (doc) => MallProductItem(
-                  id: doc.id,
-                  product: ProductModel.fromMap(doc.data()),
-                ),
-              ),
+              snapshot.docs
+                  .map(
+                    (doc) => MallProductItem(
+                      id: doc.id,
+                      product: ProductModel.fromMap(doc.data()),
+                    ),
+                  )
+                  .where((item) => item.product.isActive),
             );
             isLoading.value = false;
             errorMessage.value = '';
@@ -108,6 +110,7 @@ class MallController extends GetxController {
         productData: <String, dynamic>{
           'name': item.product.name,
           'description': item.product.description,
+          'shortDescription': item.product.shortDescription,
           'base64Image': item.product.base64Image,
           'unit': item.product.unit,
           'price': item.product.price,
@@ -153,6 +156,7 @@ class MallController extends GetxController {
           'productId': item.id,
           'name': item.product.name,
           'description': item.product.description,
+          'shortDescription': item.product.shortDescription,
           'base64Image': item.product.base64Image,
           'unit': item.product.unit,
           'price': item.product.price,

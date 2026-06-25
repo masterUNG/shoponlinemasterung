@@ -22,6 +22,8 @@ class CartItem {
 
   String get name => (data['name'] ?? '') as String;
   String get description => (data['description'] ?? '') as String;
+  String get shortDescription =>
+      (data['shortDescription'] ?? description) as String;
   String get base64Image => (data['base64Image'] ?? '') as String;
   String get unit => (data['unit'] ?? '') as String;
   num get price => (data['price'] ?? 0) as num;
@@ -437,6 +439,7 @@ class CartController extends GetxController {
             'productId': item.data['productId'] ?? item.id,
             'productName': item.name,
             'description': item.description,
+            'shortDescription': item.shortDescription,
             'base64Image': item.base64Image,
             'unit': item.unit,
             'price': item.price,

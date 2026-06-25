@@ -200,9 +200,9 @@ class _CartItemTile extends GetView<CartController> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    item.description.trim().isEmpty
+                    item.shortDescription.trim().isEmpty
                         ? 'ไม่มีรายละเอียดสินค้า'
-                        : item.description.trim(),
+                        : item.shortDescription.trim(),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
