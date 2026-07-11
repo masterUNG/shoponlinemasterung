@@ -1,198 +1,157 @@
 # Shop Online Master Ung
 
-แอปซื้อขายสินค้าออนไลน์สำหรับร้านค้าขนาดเล็ก พัฒนาด้วย Flutter โดยแยกการใช้งานเป็น 2 ส่วน:
+แอปซื้อขายสินค้าออนไลน์สำหรับร้านค้าขนาดเล็ก พัฒนาด้วย Flutter และ Firebase
+โดยแยกการใช้งานหลักเป็น 2 ฝั่ง:
 
-- แอปลูกค้าบน Android/iOS สำหรับดูสินค้า สั่งซื้อ ชำระเงิน และติดตามออเดอร์
-- ระบบผู้ดูแลบน Flutter Web สำหรับจัดการสินค้า สต๊อก ออเดอร์ และตรวจสลิป
+- **Customer App** สำหรับ Android/iOS/desktop/mobile Flutter runtime ใช้ดูสินค้า ใส่ตะกร้า สั่งซื้อ ชำระเงิน และติดตามออเดอร์
+- **Admin Web** สำหรับผู้ดูแลร้าน ใช้จัดการสินค้า สต๊อก ออเดอร์ สลิป และยอดขายเบื้องต้น
 
-ข้อมูลหลักทำงานแบบ real-time ผ่าน Firebase Authentication และ Cloud Firestore
+ระบบใช้ Firebase Authentication สำหรับบัญชีผู้ใช้ และ Cloud Firestore สำหรับข้อมูลสินค้า ตะกร้า โปรไฟล์ และออเดอร์แบบ real-time
 
-## สถานะโปรเจกต์ปัจจุบัน
+## สถานะโปรเจกต์
 
-อัปเดตล่าสุด: **25 มิถุนายน 2026**
+อัปเดตจากการวิเคราะห์โค้ดล่าสุด: **11 กรกฎาคม 2026**
 
-สถานะโดยรวม: **ระบบหลักพร้อมใช้งานจริงในระดับ MVP** ทั้งแอปลูกค้าและ
-Admin Web โดย flow ซื้อสินค้า ตัดสต๊อก ชำระผ่าน PromptPay หรือเงินสด
-ตรวจสลิป ยกเลิกออเดอร์
-และคืนสต๊อกทำงานแล้ว งานที่เหลือเน้นการรองรับระบบที่โตขึ้น
-การชำระเงินอัตโนมัติ การแจ้งเตือน และการเพิ่มชุดทดสอบ
+สถานะโดยรวม: **MVP ใช้งานได้แล้ว** สำหรับ flow ร้านค้าออนไลน์ขนาดเล็ก ตั้งแต่สมัครสมาชิก ดูสินค้า ใส่ตะกร้า สร้างออเดอร์ ตัดสต๊อก ชำระผ่าน PromptPay หรือเงินสด ตรวจสลิป จัดการออเดอร์ และคืนสต๊อกเมื่อยกเลิก
 
-ระบบ Admin Web ที่ deploy ล่าสุด:
+ระบบ Admin Web ที่ระบุไว้ในเอกสารเดิม:
+
 <https://shopinglinemasterung.web.app>
 
-> ฟีเจอร์ชำระเงินสดใน source code รอบวันที่ 21 มิถุนายน 2026 ต้อง deploy
-> `firestore.rules` ก่อนปล่อยแอปลูกค้าและ Admin Web เวอร์ชันใหม่ มิฉะนั้น
-> Firestore ที่ใช้งาน rules เดิมจะปฏิเสธออเดอร์ซึ่งมีฟิลด์ `paymentMethod`
+เวอร์ชันที่พบในโปรเจกต์:
 
-เวอร์ชันที่ตั้งค่าในแต่ละแพลตฟอร์ม:
-
-| แพลตฟอร์ม | Version | Build |
+| จุดตั้งค่า | Version | Build |
 | --- | --- | --- |
-| Android | `1.0.8` | `8` |
-| iOS | `1.0.4` | `4` |
-| Flutter (`pubspec.yaml`) | `1.0.0` | `1` |
+| `pubspec.yaml` | `1.0.12` | `12` |
+| Android `android/app/build.gradle.kts` | ใช้ค่าจาก Flutter | ใช้ค่าจาก Flutter |
+| iOS/macOS | ใช้ค่า Flutter build variable | ใช้ค่า Flutter build variable |
 
-> หมายเหตุ: เวอร์ชันใน `pubspec.yaml`, Android และ iOS ยังไม่ตรงกัน
-> ควรปรับให้ใช้แหล่งกำหนดเวอร์ชันเดียวกันก่อน release รอบถัดไป
-
-ระบบหลักที่มีอยู่ในโค้ด:
-
-| ส่วนงาน | สถานะ |
-| --- | --- |
-| สมัครสมาชิกและเข้าสู่ระบบด้วย Email/Password | ใช้งานแล้ว |
-| Guest reviewer mode | ใช้งานแล้ว |
-| แสดงสินค้าแบบ real-time | ใช้งานแล้ว |
-| ตะกร้าสินค้าและตรวจจำนวนสต๊อก | ใช้งานแล้ว |
-| สร้างออเดอร์และตัดสต๊อกด้วย Firestore transaction | ใช้งานแล้ว |
-| ยกเลิกออเดอร์และคืนสต๊อกด้วย Firestore transaction | ใช้งานแล้ว |
-| รับสินค้าเองหรือส่งฟรีในรัศมี 1 กม. | ใช้งานแล้ว |
-| ชำระผ่าน QR PromptPay และอัปโหลดสลิป | ใช้งานแล้ว |
-| ชำระเงินสดเมื่อรับสินค้าหรือเมื่อจัดส่ง | ใช้งานแล้ว |
-| ติดตามสถานะออเดอร์ | ใช้งานแล้ว |
-| Admin Web และระบบ role | ใช้งานแล้ว |
-| เพิ่ม แก้ไข และลบสินค้า | ใช้งานแล้ว |
-| ตรวจหรือปฏิเสธสลิป | ใช้งานแล้ว |
-| Dashboard ยอดขายวันนี้และเทียบเมื่อวาน | ใช้งานแล้ว |
-| กราฟและรายงานยอดขายย้อนหลัง | ยังไม่มี |
-| Payment gateway อัตโนมัติ | ยังไม่มี |
-| Push notification | ยังไม่มี |
-| Automated tests | เริ่มต้นแล้ว (มี 6 tests) |
-| Firebase Hosting และ Firestore Rules | Deploy แล้ว |
-
-### จุดที่ยังขาดจากการวิเคราะห์ล่าสุด
-
-รายการนี้สรุปช่องว่างสำคัญที่ควรเติมก่อนขยายระบบจาก MVP ไปสู่การใช้งานจริง
-ของร้านออนไลน์ โดยเรียงจากผลกระทบต่อการขายและการปฏิบัติงานหน้าร้าน:
-
-1. **ค้นหา หมวดหมู่ และการกรองสินค้า**
-   - ตอนนี้สินค้าแสดงเป็น feed ล่าสุดจาก Firestore
-   - ยังไม่มี search, category, sort, สินค้าแนะนำ หรือสินค้าขายดี
-
-2. **หน้ารายละเอียดสินค้าแบบเต็ม**
-   - ตอนนี้มีการ์ดสินค้าและ dialog เลือกจำนวน
-   - ยังไม่มีหน้ารายละเอียดเต็ม เช่น รูปหลายภาพ รายละเอียดครบ เงื่อนไขสินค้า
-     และสินค้าที่เกี่ยวข้อง
-
-3. **ที่อยู่จัดส่งแบบอ่านง่าย**
-   - ตอนนี้มีพิกัด `GeoPoint` และคำนวณระยะส่งฟรี 1 กม.
-   - ยังไม่มีบ้านเลขที่ ซอย หมู่บ้าน จุดสังเกต หรือหมายเหตุสำหรับคนส่งของ
-
-4. **แจ้งเตือนร้านและลูกค้า**
-   - ยังไม่มี push notification, email, LINE หรือช่องทางแจ้งเตือนเมื่อมีออเดอร์ใหม่
-   - ลูกค้ายังไม่ได้รับการแจ้งเตือนอัตโนมัติเมื่อร้านรับออเดอร์ ตรวจสลิป
-     หรือเปลี่ยนสถานะสินค้า
-
-5. **ระบบชำระเงินยังเป็น manual**
-   - PromptPay ใช้อัปโหลดสลิปและให้ Admin ตรวจด้วยคน
-   - หากออเดอร์มากขึ้นควรเพิ่ม payment gateway, webhook หรือระบบตรวจสลิปอัตโนมัติ
-
-6. **ไฟล์รูปยังเก็บเป็น Base64 ใน Firestore**
-   - รูปสินค้า Avatar และสลิปอยู่ใน Firestore document
-   - ควรย้ายไป Firebase Storage แล้วเก็บ URL เพื่อลดต้นทุนและหลีกเลี่ยงข้อจำกัดขนาด document
-
-7. **รายงานยอดขายยังเบื้องต้น**
-   - Dashboard มียอดขายวันนี้และเทียบเมื่อวาน
-   - ยังไม่มีรายงานรายวัน รายเดือน export สินค้าขายดี กำไร ต้นทุน
-     หรือลูกค้าซื้อซ้ำ
-
-8. **คูปอง ส่วนลด และโปรโมชัน**
-   - ข้อมูลออเดอร์มี field `discount`
-   - ยังไม่มี flow ให้ลูกค้าใช้คูปอง หรือให้ Admin สร้างโปรโมชัน
-
-9. **Business logic สำคัญยังทำจาก client**
-   - การสร้างออเดอร์และตัดสต๊อกทำด้วย Firestore transaction จากแอป
-   - ถ้าระบบโตขึ้นควรย้าย logic สำคัญไป Cloud Functions เพื่อลดความเสี่ยง
-     และควบคุมสิทธิ์ได้ละเอียดขึ้น
-
-10. **Admin UX บางส่วนยังเป็นโครง**
-    - ปุ่มบางส่วนเช่น quick actions, export, ดูทั้งหมด และตัวกรองบางจุดยังไม่ได้ผูก action จริง
-    - ควรเติม search, filter, pagination และ export ให้ใช้งานจริงก่อนข้อมูลเยอะ
+> ตอนนี้ตั้งให้ `pubspec.yaml` เป็นแหล่งหลักของเลขเวอร์ชัน โดยใช้ `version: 1.0.12+12` แล้วให้ Android และ iOS อ่านค่าจาก Flutter build version เพื่อลดความสับสนตอน release
 
 ### ความคืบหน้าล่าสุด
 
-- เพิ่มสรุปจุดที่ยังขาดจากการวิเคราะห์ล่าสุด เพื่อใช้เป็น roadmap รอบถัดไป
-- เพิ่มตัวเลือกชำระผ่าน PromptPay หรือเงินสดก่อนสร้างออเดอร์
-- เพิ่ม flow เงินสดสำหรับรับเองที่ร้านและจัดส่ง โดย Admin เดินสถานะเตรียมสินค้าได้
-  แต่ต้องยืนยันการรับเงินก่อนปิดออเดอร์
-- บันทึก `cashCollectedAt`, `cashCollectedBy` และ `paidAt` เพื่อตรวจสอบย้อนหลัง
-- เปลี่ยน Dashboard ให้รับรู้ยอดขายตาม `paidAt` และ fallback ไป `createdAt`
-  สำหรับออเดอร์เก่า
-- อัปเดต Android เป็นเวอร์ชัน `1.0.8` build `8`
-- อัปเดต iOS เป็นเวอร์ชัน `1.0.4` build `4`
-- เพิ่มการลบบัญชีผู้ใช้ พร้อมลบโปรไฟล์และข้อมูลตะกร้า
-- เพิ่มเบอร์โทรในโปรไฟล์ลูกค้าและบันทึกลงออเดอร์เพื่อให้ร้านติดต่อได้
-- บังคับให้ออเดอร์ใหม่มีเบอร์โทรก่อนสร้างออเดอร์
-- Deploy Firestore Rules และ Admin Web ไปที่ Firebase Hosting วันที่ 18 มิถุนายน 2026
-- อัปเดต Web favicon และ PWA icons ให้สร้างจาก `images/icon.png`
-- Build Web release และ deploy Firebase Hosting หลังอัปเดตไอคอนเว็บแล้ว
-- เพิ่ม Guest reviewer mode สำหรับทดลองดูสินค้าและใช้งานตะกร้า
-- ปรับหน้า Login, Branding, App icon และ Launch screen
-- เพิ่มหน้า Support และอัปเดต Privacy Policy
-- ปรับ Bottom navigation ฝั่งลูกค้าให้รองรับ SafeArea และพื้นที่ด้านล่างของอุปกรณ์
-- แก้ Dashboard ให้คำนวณยอดขายวันนี้จากออเดอร์ที่ชำระแล้วและไม่ถูกยกเลิก
-- คำนวณเปอร์เซ็นต์ยอดขายเทียบกับเมื่อวานจากข้อมูลจริง
-- คืนสต๊อกอัตโนมัติเมื่อ Admin ยกเลิกออเดอร์ด้วย Firestore transaction
-- ป้องกันการคืนสต๊อกซ้ำด้วย field `stockRestoredAt`
-- เพิ่ม dialog ยืนยันก่อนยกเลิก และอนุญาตให้ยกเลิกออเดอร์ที่ยังไม่ชำระ
-  หรือกำลังรอตรวจสลิป
-- ป้องกันการตรวจสลิปชนกับการยกเลิกออเดอร์จากหลายหน้าจอ
-- Deploy Firestore Rules และ Admin Web เวอร์ชันล่าสุดขึ้น Firebase แล้ว
+- ขยับเลขเวอร์ชันหลักใน `pubspec.yaml` เป็น `1.0.12+12`
+- ปรับ Android ให้ใช้ `flutter.versionCode` และ `flutter.versionName` จาก Flutter แทนการ hardcode ใน `android/app/build.gradle.kts`
+- ปรับ iOS ให้ใช้ `$(FLUTTER_BUILD_NAME)` และ `$(FLUTTER_BUILD_NUMBER)` ใน `ios/Runner/Info.plist`
+- macOS ใช้ `$(FLUTTER_BUILD_NAME)` และ `$(FLUTTER_BUILD_NUMBER)` อยู่แล้ว จึงอิงเลขเดียวกับ Flutter
+- รัน `flutter pub get` และ `flutter test` แล้วผ่านทั้งหมด 6 tests
 
-### ผลตรวจคุณภาพล่าสุด
+## สรุปฟีเจอร์ที่มีแล้ว
 
-ตรวจเมื่อวันที่ **21 มิถุนายน 2026**:
-
-```text
-flutter analyze -> No issues found
-flutter test    -> All tests passed (6 tests)
-```
-
-ข้อควรติดตาม: package `image_gallery_saver_plus` ยังไม่รองรับ Swift Package
-Manager สำหรับ iOS และ Flutter แจ้งว่าอาจกลายเป็น error ในเวอร์ชันอนาคต
+| หมวด | สถานะ |
+| --- | --- |
+| สมัครสมาชิก/เข้าสู่ระบบด้วย Email และ Password | มีแล้ว |
+| โปรไฟล์ลูกค้า เบอร์โทร Avatar และพิกัด | มีแล้ว |
+| Guest reviewer mode | มีแล้ว |
+| รายการสินค้า real-time | มีแล้ว |
+| หน้ารายละเอียดสินค้า | มีแล้ว |
+| รูปสินค้าหลักและแกลเลอรีหลายรูป | มีแล้ว |
+| หมวดหมู่สินค้า tag รายละเอียดสั้น รายละเอียดเต็ม และเงื่อนไขสินค้า | มี field และ UI ฝั่ง Admin แล้ว |
+| สินค้าแนะนำและสถานะซ่อน/แสดงสินค้า | มี field และ UI ฝั่ง Admin แล้ว |
+| ตะกร้าสินค้าแบบ real-time | มีแล้ว |
+| ตรวจจำนวนสินค้าไม่ให้เกินสต๊อก | มีแล้ว |
+| สร้างออเดอร์และตัดสต๊อกด้วย Firestore transaction | มีแล้ว |
+| รับเองที่ร้านหรือส่งฟรีในรัศมี 1 กม. | มีแล้ว |
+| PromptPay พร้อมอัปโหลดสลิป | มีแล้ว |
+| เงินสดเมื่อรับสินค้าหรือจัดส่ง | มีแล้ว |
+| ติดตามสถานะออเดอร์ | มีแล้ว |
+| Admin role จาก Firestore | มีแล้ว |
+| Dashboard ยอดขายวันนี้ เทียบเมื่อวาน จำนวนออเดอร์เปิด และสินค้าใกล้หมด | มีแล้ว |
+| เพิ่ม แก้ไข ลบสินค้า | มีแล้ว |
+| ตรวจ/ปฏิเสธสลิป | มีแล้ว |
+| ยืนยันรับเงินสด | มีแล้ว |
+| ยกเลิกออเดอร์และคืนสต๊อก | มีแล้ว |
+| Firestore Security Rules | มีแล้ว |
+| Unit tests เบื้องต้น | มี 6 tests |
 
 ## ฟีเจอร์ฝั่งลูกค้า
 
-### บัญชีผู้ใช้
+### บัญชีและโปรไฟล์
 
 - สมัครสมาชิกด้วยชื่อ เบอร์โทร รูป Avatar อีเมล และรหัสผ่าน
 - เข้าสู่ระบบและออกจากระบบด้วย Firebase Authentication
-- เก็บโปรไฟล์และ role ที่ `users/{uid}`
-- เก็บและแก้ไขเบอร์โทรสำหรับติดต่อเรื่องออเดอร์
-- ขอสิทธิ์ Location และบันทึกพิกัดลูกค้าใน Firestore
-- ลบบัญชี โปรไฟล์ และข้อมูลในตะกร้า
-- Guest reviewer mode เปิดดูสินค้าและทดลองตะกร้าได้โดยไม่บันทึกข้อมูลจริง
+- สร้างเอกสารผู้ใช้ที่ `users/{uid}` เมื่อสมัครหรือ login หากยังไม่มีข้อมูล
+- บันทึก role เริ่มต้นเป็น `customer`
+- แก้ไขเบอร์โทรในหน้า Profile
+- ขอสิทธิ์ Location และบันทึกพิกัดเป็น `GeoPoint`
+- ใช้พิกัดเพื่อคำนวณสิทธิ์ส่งฟรีจากตำแหน่งร้าน
+- ลบบัญชีผู้ใช้ พร้อมลบโปรไฟล์และตะกร้า
+- Guest reviewer mode สำหรับทดลองดูสินค้าและตะกร้าโดยไม่สร้างข้อมูลจริง
 
-### Mall
+ข้อจำกัดปัจจุบัน:
 
-- อ่านสินค้าจาก collection `product` แบบ real-time
-- แสดงรูป ชื่อ รายละเอียด ราคา หน่วย และจำนวนคงเหลือ
+- การลบบัญชียังไม่ลบหรือ anonymize ประวัติออเดอร์เดิม
+- ยังไม่มีระบบที่อยู่จัดส่งแบบละเอียด เช่น บ้านเลขที่ ซอย หมู่บ้าน จุดสังเกต หรือหมายเหตุคนส่ง
+
+### Mall และรายละเอียดสินค้า
+
+- อ่านข้อมูลจาก collection `product` แบบ real-time
+- เรียงสินค้าตาม `timestamp` ล่าสุดก่อน
+- แสดงเฉพาะสินค้าที่ `isActive == true`
+- แสดงชื่อสินค้า รายละเอียด ราคา หน่วย รูป และสต๊อก
 - แจ้งสถานะสินค้าใกล้หมดเมื่อเหลือไม่เกิน 5 ชิ้น
-- ไม่อนุญาตให้เลือกสินค้าที่หมด
-- เลือกจำนวนก่อนเพิ่มลงตะกร้า และจำกัดจำนวนตามสต๊อก
+- ไม่อนุญาตให้เพิ่มสินค้าที่หมดแล้วลงตะกร้า
+- มีหน้า `ProductDetailView` แสดง:
+  - แกลเลอรีรูปสินค้า
+  - หมวดหมู่
+  - badge สินค้าแนะนำ
+  - ราคาและหน่วย
+  - รายละเอียดเต็ม
+  - เงื่อนไขสินค้า
+  - tags
+  - จำนวนคงเหลือ
+  - stepper เลือกจำนวนก่อนเพิ่มลงตะกร้า
 
-### Cart และการสร้างออเดอร์
+ข้อจำกัดปัจจุบัน:
 
-- ตะกร้าของแต่ละคนอยู่ที่ `users/{uid}/cart/{productId}`
-- เพิ่ม ลด เปลี่ยนจำนวน และลบสินค้า
-- คำนวณจำนวนสินค้าและยอดรวม
-- เลือกรับสินค้าเองที่ร้าน
-- เลือกส่งฟรีได้เมื่อพิกัดลูกค้าอยู่ไม่เกิน 1 กม. จากพิกัดร้าน
-- ตรวจว่าลูกค้ามีเบอร์โทรก่อนสร้างออเดอร์ เพื่อให้ร้านติดต่อได้
-- เลือกชำระผ่าน PromptPay หรือเงินสดตอนรับสินค้า
-- ตรวจสต๊อกอีกครั้งก่อนสั่งซื้อ
-- สร้างออเดอร์ ตัดสต๊อก และล้างตะกร้าใน Firestore transaction เดียว
+- ยังไม่มี search/filter/sort ฝั่งลูกค้า
+- ยังไม่มีหน้าแยกตามหมวดหมู่ สินค้าขายดี หรือสินค้าแนะนำ
+- `soldCount` และ `viewCount` มี field แล้ว แต่ยังไม่เห็น flow เพิ่มค่าเมื่อขายหรือเปิดดู
+- `relatedProductIds` มี field แล้ว แต่ยังไม่มี UI สินค้าที่เกี่ยวข้อง
+
+### ตะกร้าสินค้า
+
+- เก็บข้อมูลที่ `users/{uid}/cart/{productId}`
+- เพิ่มสินค้าใหม่หรือรวมจำนวนกับรายการเดิมด้วย transaction
+- จำกัดจำนวนรวมในตะกร้าไม่ให้เกินสต๊อก ณ ตอนเพิ่มสินค้า
+- เพิ่ม ลด รีเซ็ตเป็น 1 และลบสินค้าในตะกร้า
+- คำนวณยอดรวมและจำนวนสินค้ารวม
+- Guest reviewer mode ใช้ตะกร้าจำลองใน memory ไม่เขียน Firestore
+
+ข้อควรระวัง:
+
+- ข้อมูลสินค้าในตะกร้าเป็น snapshot จากตอนเพิ่มสินค้า หากราคาหรือชื่อสินค้าเปลี่ยนหลังจากนั้น ตะกร้าเดิมอาจไม่อัปเดตตามจนกว่าจะเพิ่มใหม่
+
+### การสั่งซื้อและจัดส่ง
+
+- สร้างออเดอร์จากตะกร้าด้วย Firestore transaction
+- ตรวจสต๊อกจริงจาก collection `product` อีกครั้งก่อนสั่งซื้อ
+- ตัดสต๊อกด้วย `FieldValue.increment(-quantity)`
+- ล้างตะกร้าหลังสร้างออเดอร์สำเร็จ
 - สร้างเลขออเดอร์รูปแบบ `ORD-YYYYMMDD-XXXXXX`
+- บังคับให้มีเบอร์โทรที่ถูกต้องก่อนสร้างออเดอร์
+- รองรับ `pickup` รับเองที่ร้าน
+- รองรับ `delivery` ส่งฟรีเมื่อพิกัดลูกค้าอยู่ในรัศมี 1,000 เมตรจากร้าน
+- บันทึก `deliveryLocation`, `deliveryDistanceMeters` และ `shopLocation` เมื่อเลือกจัดส่ง
 
-### Order และการชำระเงิน
+ข้อจำกัดปัจจุบัน:
 
-- แยกออเดอร์ที่กำลังดำเนินการออกจากออเดอร์ที่เสร็จหรือยกเลิก
-- แสดงรายละเอียดสินค้า ยอดชำระ และสถานะล่าสุดแบบ real-time
-- แสดง QR PromptPay จาก `images/promptpay.JPG`
-- บันทึก QR ลง Gallery บนอุปกรณ์
-- เลือกรูปสลิปจาก Gallery และส่งให้ร้านตรวจ
-- อัปโหลดสลิปใหม่ได้เมื่อยังไม่ชำระหรือสลิปถูกปฏิเสธ
-- ออเดอร์เงินสดไม่แสดง QR หรือปุ่มอัปโหลดสลิป และแจ้งยอดที่ต้องเตรียม
-- แสดงผลแบบ real-time เมื่อร้านยืนยันว่าได้รับเงินสดแล้ว
+- ยังไม่มีค่าจัดส่งหลายระดับ
+- ยังไม่มี address form แบบอ่านง่าย
+- ยังไม่มีเวลาเลือกนัดรับ/นัดส่ง
+- ยังไม่มีหมายเหตุของลูกค้าต่อออเดอร์ แม้ model จะมี `pickupInfo.note`
+
+### การชำระเงินและติดตามออเดอร์
+
+- เลือกวิธีชำระตอนสร้างออเดอร์:
+  - `promptpay`
+  - `cash`
+- PromptPay ใช้รูป QR จาก `images/promptpay.JPG`
+- ลูกค้าอัปโหลดสลิปจาก Gallery ได้เมื่อสถานะเป็น `unpaid` หรือ `rejected`
+- เมื่ออัปโหลดสลิป ระบบเปลี่ยน `paymentStatus` เป็น `waiting_verify`
+- เงินสดจะไม่แสดงปุ่มอัปโหลดสลิป และรอ Admin ยืนยันรับเงิน
+- หน้า Order แยกออเดอร์ที่ยังดำเนินการกับออเดอร์ที่จบหรือยกเลิก
+- แสดงสถานะออเดอร์และสถานะชำระเงินแบบ real-time
 
 สถานะออเดอร์:
 
@@ -208,33 +167,121 @@ unpaid -> waiting_verify -> paid
                          \-> rejected -> waiting_verify
 ```
 
-สำหรับเงินสดใช้ `paymentStatus = unpaid` ระหว่างรอรับเงิน และเปลี่ยนเป็น
-`paid` เมื่อ Admin ยืนยันการรับเงิน โดยแยกวิธีชำระด้วย `paymentMethod = cash`
+สำหรับเงินสด:
+
+```text
+unpaid -> paid
+```
+
+โดย Admin เป็นผู้กดยืนยันรับเงินสด และระบบบันทึก `cashCollectedAt`, `cashCollectedBy` และ `paidAt`
 
 ## ฟีเจอร์ฝั่ง Admin Web
 
-เมื่อรันบน Web แอปจะเปิดหน้า Admin Login โดยอัตโนมัติ
+เมื่อรันบน Web แอปตั้งค่า initial route เป็นหน้า Admin Login โดยอัตโนมัติ
 
-- ตรวจสิทธิ์จาก `users/{uid}.role == "admin"`
-- Dashboard แสดงยอดขายวันนี้ เปรียบเทียบเมื่อวาน จำนวนออเดอร์เปิด
-  สินค้าทั้งหมด และสินค้าใกล้หมด
-- ดูสินค้าและออเดอร์จาก Firestore แบบ real-time
-- เพิ่มสินค้าใหม่พร้อมรูป ชื่อ รายละเอียด ราคา หน่วย และสต๊อก
-- แก้ไขข้อมูลสินค้า ราคา รูป และสต๊อก
-- แสดงสินค้า Active, Low stock และ Out of stock
-- ดูรายละเอียดออเดอร์ รายการสินค้า ข้อมูลผู้รับ และพิกัดจัดส่ง
-- เปลี่ยนสถานะออเดอร์ตามลำดับงาน
-- ยกเลิกออเดอร์และคืนสต๊อกอัตโนมัติ โดยป้องกันการคืนซ้ำ
-- เปิดดู ยืนยัน หรือปฏิเสธสลิปการชำระเงิน
-- แสดงวิธีชำระและสถานะ “รอรับเงินสด” แยกจาก PromptPay
-- เดินสถานะออเดอร์เงินสดได้ถึง `ready` ก่อนรับเงิน
-- ยืนยันการรับเงินสดพร้อมบันทึกเวลาและ UID ของ Admin
-- ป้องกันการเปลี่ยนออเดอร์เป็น `completed` จนกว่าจะชำระเงินแล้ว
-- ลบสินค้าได้เฉพาะ admin อีเมลที่กำหนดในระบบ
+### สิทธิ์ผู้ดูแล
+
+- ตรวจผู้ใช้จาก Firebase Authentication
+- ตรวจ role จาก `users/{uid}.role == "admin"`
+- หากไม่ใช่ admin จะ sign out และส่งกลับหน้า login admin
+- สิทธิ์ลบสินค้าอนุญาตเฉพาะ email `adminung@abc.com`
+
+### Dashboard
+
+- แสดงยอดขายวันนี้
+- เปรียบเทียบยอดขายกับเมื่อวาน
+- นับจำนวนสินค้า
+- นับสินค้า active
+- นับสินค้าใกล้หมด
+- นับออเดอร์ที่ยังเปิดอยู่
+- คำนวณยอดขายจากออเดอร์ที่ `paymentStatus == paid` และไม่ถูกยกเลิก
+- ใช้ `paidAt` เป็นหลัก และ fallback ไป `createdAt` สำหรับข้อมูลเก่า
+
+ข้อจำกัดปัจจุบัน:
+
+- ยังไม่มีกราฟ
+- ยังไม่มีรายงานตามช่วงวันที่
+- ยังไม่มี export รายงาน
+- ยังไม่มีแยกยอด PromptPay/เงินสดในรายงาน
+
+### จัดการสินค้า
+
+Admin เพิ่มและแก้ไขสินค้าได้จาก Web UI โดยข้อมูลที่รองรับมี:
+
+- ชื่อสินค้า
+- คำอธิบายหลัก
+- รายละเอียดสั้น
+- รายละเอียดเต็ม
+- เงื่อนไขสินค้า
+- หมวดหมู่
+- tags
+- รูปหลัก
+- รูปแกลเลอรีสูงสุด 4 รูป
+- หน่วยสินค้า
+- ราคา
+- สต๊อก
+- สถานะเปิดขาย/ซ่อน
+- สินค้าแนะนำ
+- `soldCount`
+- `viewCount`
+- `relatedProductIds`
+
+ระบบแสดงสถานะสินค้า:
+
+- Active
+- Low stock
+- Out of stock
+- Hidden
+
+ข้อจำกัดปัจจุบัน:
+
+- รูปยังเก็บเป็น Base64 ใน Firestore
+- ยังไม่มี archive product แบบจริงจังสำหรับสินค้าที่เคยอยู่ในออเดอร์
+- การลบสินค้าจริงอาจทำให้ออเดอร์เก่าบางกรณียกเลิกและคืนสต๊อกไม่ได้ เพราะหา product document ไม่เจอ
+- ช่อง search บน Admin Web มี UI แล้ว แต่จากโค้ดยังไม่เห็น state/filter ที่ใช้งานจริง
+- ปุ่ม quick action/export/ดูทั้งหมดบางตำแหน่งยังเป็น `onPressed: () {}`
+
+### จัดการออเดอร์
+
+- โหลดออเดอร์จาก collection `orders` แบบ real-time
+- เรียงออเดอร์ล่าสุดก่อน
+- แสดงเลขออเดอร์ ลูกค้า จำนวนสินค้า ยอดรวม สถานะ และ note สรุป
+- ดูรายการสินค้าในออเดอร์
+- ดูข้อมูลผู้รับ/เบอร์โทร
+- ดูข้อมูลรับเองหรือจัดส่ง
+- แสดงระยะส่งฟรีและพิกัดจัดส่งเมื่อมีข้อมูล
+- เปลี่ยนสถานะตามลำดับที่ระบบอนุญาต
+- ห้ามข้ามสถานะผิดลำดับ
+- ห้ามปิดออเดอร์เป็น `completed` หากยังไม่ชำระเงิน
+- ยกเลิกออเดอร์ด้วย transaction และคืนสต๊อก
+- ป้องกันการคืนสต๊อกซ้ำด้วย `stockRestoredAt`
+
+ลำดับสถานะที่ Admin เปลี่ยนได้:
+
+```text
+pending   -> accepted | cancelled
+accepted  -> preparing | cancelled
+preparing -> ready | cancelled
+ready     -> completed | cancelled
+```
+
+### ตรวจชำระเงิน
+
+- PromptPay:
+  - ดูสลิปจาก `paymentSlipBase64`
+  - ยืนยันสลิป เปลี่ยน `paymentStatus` เป็น `paid`
+  - บันทึก `paymentVerifiedAt` และ `paidAt`
+  - ปฏิเสธสลิป เปลี่ยน `paymentStatus` เป็น `rejected`
+  - บันทึก `paymentRejectedAt`
+- เงินสด:
+  - แสดงสถานะรอรับเงินสด
+  - Admin ยืนยันรับเงินสดได้เมื่อออเดอร์ยังไม่ปิด
+  - บันทึก `cashCollectedAt`, `cashCollectedBy`, `paidAt`
 
 ## เทคโนโลยีที่ใช้
 
-- Flutter และ Dart
+- Flutter
+- Dart `^3.11.4`
 - Material 3
 - GetX สำหรับ routing, binding และ state management
 - Firebase Core
@@ -243,7 +290,8 @@ unpaid -> waiting_verify -> paid
 - Image Picker
 - Geolocator
 - Image Gallery Saver Plus
-- Firebase Hosting สำหรับ Admin Web
+- Firebase Hosting
+- flutter_launcher_icons
 
 ## โครงสร้างโปรเจกต์
 
@@ -256,15 +304,28 @@ lib/
 ├── modules/
 │   ├── login/                  # Login/Register ลูกค้า
 │   ├── main_home/              # Bottom navigation ฝั่งลูกค้า
-│   ├── mall/                   # รายการสินค้า
+│   ├── mall/                   # รายการสินค้าและรายละเอียดสินค้า
 │   ├── cart/                   # ตะกร้าและสร้างออเดอร์
 │   ├── order/                  # ประวัติออเดอร์และชำระเงิน
-│   ├── profile/                # โปรไฟล์ Location และลบบัญชี
+│   ├── profile/                # โปรไฟล์ Location เบอร์โทร และลบบัญชี
 │   ├── login_admin_web/        # Login ผู้ดูแล
 │   └── main_home_web/          # Dashboard และระบบหลังบ้าน
 ├── firebase_options.dart
 └── main.dart
 ```
+
+ไฟล์สำคัญ:
+
+| ไฟล์ | หน้าที่ |
+| --- | --- |
+| `lib/main.dart` | init Firebase และเลือก route เริ่มต้น mobile/web |
+| `lib/core/app_constant.dart` | สีหลักและพิกัดร้าน |
+| `lib/model/product_model.dart` | โครงสร้างสินค้าและรูปสินค้า |
+| `lib/model/order_model.dart` | โครงสร้างออเดอร์ รายการสินค้า และ payment method |
+| `lib/services/admin_role_service.dart` | ตรวจสิทธิ์ admin และสิทธิ์ลบสินค้า |
+| `lib/services/reviewer_mode_service.dart` | Guest reviewer mode |
+| `firestore.rules` | Firestore Security Rules |
+| `firebase.json` | Firebase Hosting/Firestore config |
 
 ## โครงสร้างข้อมูล Firestore
 
@@ -277,7 +338,7 @@ lib/
   "phone": "0812345678",
   "base64avatar": "BASE64_IMAGE",
   "role": "customer",
-  "geopoint": "GeoPoint (optional)"
+  "geopoint": "GeoPoint optional"
 }
 ```
 
@@ -287,7 +348,8 @@ lib/
 {
   "productId": "product-document-id",
   "name": "Product name",
-  "description": "Description",
+  "description": "Long description",
+  "shortDescription": "Short text",
   "base64Image": "BASE64_IMAGE",
   "unit": "ชิ้น",
   "price": 100,
@@ -303,95 +365,108 @@ lib/
 ```json
 {
   "name": "Product name",
-  "description": "Description",
+  "description": "Main description",
+  "shortDescription": "Short description",
+  "detailDescription": "Full product detail",
+  "condition": "Product condition or sale condition",
+  "category": "General",
+  "tags": ["tag1", "tag2"],
   "base64Image": "BASE64_IMAGE",
+  "images": [
+    {
+      "base64Image": "BASE64_IMAGE",
+      "alt": "image name",
+      "sortOrder": 0
+    }
+  ],
   "unit": "ชิ้น",
   "price": 100,
   "stock": 10,
+  "isActive": true,
+  "isRecommended": false,
+  "relatedProductIds": [],
+  "soldCount": 0,
+  "viewCount": 0,
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp",
   "timestamp": "Timestamp"
 }
 ```
 
 ### `orders/{orderId}`
 
-ข้อมูลสำคัญประกอบด้วย:
-
-- `orderNo`, `userId`, `userName`, `userPhone`
-- `orderType`: `pickup` หรือ `delivery`
-- `items`, `subtotal`, `discount`, `grandTotal`
-- `deliveryLocation` และ `deliveryDistanceMeters` เมื่อเลือกจัดส่ง
-- `status`, `paymentMethod` (`promptpay` หรือ `cash`) และ `paymentStatus`
-- `paymentSlipBase64`
-- `paidAt` เมื่อรับรู้ยอดชำระแล้ว
-- `cashCollectedAt` และ `cashCollectedBy` สำหรับการชำระเงินสด
-- `stockRestoredAt` เมื่อยกเลิกออเดอร์และคืนสต๊อกสำเร็จ
-- `pickupInfo`
-- `createdAt` และ `updatedAt`
-
-## การตั้งค่าและรันโปรเจกต์
-
-สิ่งที่ต้องมี:
-
-- Flutter SDK ที่รองรับ Dart `^3.11.4`
-- Firebase project
-- เปิดใช้งาน Email/Password ใน Firebase Authentication
-- สร้าง Cloud Firestore database
-- FlutterFire CLI และ Firebase CLI สำหรับเปลี่ยน Firebase project หรือ deploy
-
-ติดตั้ง dependencies:
-
-```sh
-flutter pub get
+```json
+{
+  "orderNo": "ORD-20260711-ABC123",
+  "userId": "firebase-auth-uid",
+  "userName": "Customer Name",
+  "userPhone": "0812345678",
+  "orderType": "pickup",
+  "items": [
+    {
+      "productId": "product-document-id",
+      "productName": "Product name",
+      "description": "Description",
+      "shortDescription": "Short description",
+      "base64Image": "BASE64_IMAGE",
+      "unit": "ชิ้น",
+      "price": 100,
+      "quantity": 2,
+      "total": 200
+    }
+  ],
+  "subtotal": 200,
+  "discount": 0,
+  "deliveryFee": 0,
+  "deliveryDistanceMeters": 500,
+  "deliveryLocation": "GeoPoint optional",
+  "shopLocation": "GeoPoint optional",
+  "grandTotal": 200,
+  "status": "pending",
+  "paymentMethod": "promptpay",
+  "paymentStatus": "unpaid",
+  "paymentSlipBase64": "BASE64_IMAGE optional",
+  "paymentSlipUploadedAt": "Timestamp optional",
+  "paymentVerifiedAt": "Timestamp optional",
+  "paymentRejectedAt": "Timestamp optional",
+  "cashCollectedAt": "Timestamp optional",
+  "cashCollectedBy": "admin uid optional",
+  "paidAt": "Timestamp optional",
+  "stockRestoredAt": "Timestamp optional",
+  "pickupInfo": {
+    "pickupName": "Customer Name",
+    "pickupPhone": "0812345678",
+    "note": ""
+  },
+  "createdAt": "Timestamp",
+  "updatedAt": "Timestamp"
+}
 ```
 
-รันแอปลูกค้าบนมือถือ:
+## Firebase Security Rules
 
-```sh
-flutter run
-```
+ไฟล์ `firestore.rules` กำหนดสิทธิ์หลักดังนี้:
 
-รันระบบ Admin บน Web:
+- ผู้ใช้ทั่วไปอ่านสินค้าได้
+- ลูกค้าจัดการ profile ของตัวเองได้เฉพาะ field ที่อนุญาต
+- ลูกค้าจัดการ cart ของตัวเองได้
+- ลูกค้าสร้าง order ของตัวเองได้เมื่อข้อมูลตรงเงื่อนไข
+- ลูกค้าอัปโหลดสลิปได้เฉพาะออเดอร์ของตนเอง และเฉพาะ PromptPay ที่ยังไม่จบ
+- Admin อ่าน/เขียนข้อมูลที่จำเป็นของสินค้า ออเดอร์ และผู้ใช้ได้
+- Admin เท่านั้นที่ตรวจสลิป ยืนยันเงินสด เปลี่ยนสถานะ และลบออเดอร์ได้
+- ลบสินค้าได้เฉพาะ admin ที่มี email `adminung@abc.com`
 
-```sh
-flutter run -d chrome
-```
+จุดที่ควรปรับปรุงด้าน security:
 
-ตรวจสอบโค้ดและทดสอบ:
-
-```sh
-flutter analyze
-flutter test
-```
-
-Build และ deploy Web:
-
-```sh
-flutter build web
-firebase deploy --only hosting
-```
-
-Deploy Firestore Security Rules:
-
-```sh
-firebase deploy --only firestore:rules
-```
-
-## Firebase Security Rules และ Admin Role
-
-โปรเจกต์มี rules ในไฟล์ `firestore.rules` โดยกำหนดว่า:
-
-- บุคคลทั่วไปอ่านสินค้าได้
-- ลูกค้าจัดการโปรไฟล์และตะกร้าของตนเองเท่านั้น
-- ลูกค้าสร้างออเดอร์ของตนเองโดยเลือก PromptPay หรือเงินสด
-- ลูกค้าอัปโหลดสลิปได้เฉพาะออเดอร์ PromptPay ตามสถานะที่อนุญาต
-- Admin จัดการสินค้า ออเดอร์ และข้อมูลที่จำเป็นได้
-- การตรวจสิทธิ์ admin ใช้ field `role` ใน Firestore ไม่ได้ตรวจจากหน้าจอเพียงอย่างเดียว
+- ตอนนี้ signed-in user สามารถ update เฉพาะ field `stock` ของสินค้าให้ลดลงได้ตาม rules เพื่อรองรับการตัดสต๊อกจาก client transaction แต่ในเชิง security ผู้ใช้ที่รู้วิธียิง Firestore โดยตรงอาจลด stock ได้โดยไม่สร้างออเดอร์ ควรย้าย business logic การสร้างออเดอร์และตัดสต๊อกไป Cloud Functions หรือปรับ rules ให้ตรวจความสัมพันธ์กับ order ได้รัดกุมขึ้น
+- Logic สำคัญ เช่น ตัดสต๊อก คืนสต๊อก ตรวจชำระเงิน ยังทำจาก client/admin client เป็นหลัก เหมาะกับ MVP แต่ควรย้ายไป server-side เมื่อระบบเริ่มใช้งานจริงมากขึ้น
+- ยังไม่มี Firestore Rules tests
 
 วิธีตั้ง admin ครั้งแรก:
 
-1. สร้างผู้ใช้ด้วย Firebase Authentication แบบ Email/Password
-2. เปิด Firestore และสร้างหรือแก้ document ที่ `users/{uid}`
-3. กำหนดข้อมูลอย่างน้อยดังนี้:
+1. สร้างผู้ใช้ใน Firebase Authentication ด้วย Email/Password
+2. เปิด Firestore แล้วสร้างหรือแก้เอกสาร `users/{uid}`
+3. ตั้งค่าอย่างน้อยดังนี้:
 
 ```json
 {
@@ -403,82 +478,204 @@ firebase deploy --only firestore:rules
 }
 ```
 
-การลบสินค้าอนุญาตเฉพาะบัญชี `adminung@abc.com` ตามค่าที่กำหนดใน `AdminRoleService` และ `firestore.rules` หากเปลี่ยนอีเมลต้องแก้ทั้งสองตำแหน่งแล้ว deploy rules ใหม่
+หากต้องเปลี่ยนอีเมลผู้มีสิทธิ์ลบสินค้า ให้แก้ทั้ง:
 
-## ค่าที่ต้องปรับก่อนนำไปใช้กับร้านอื่น
+- `lib/services/admin_role_service.dart`
+- `firestore.rules`
 
-- พิกัดร้านอยู่ที่ `AppConstant.shopLocation` ใน `lib/core/app_constant.dart`
-- รัศมีส่งฟรีอยู่ที่ `CartController.freeDeliveryRadiusMeters` ปัจจุบันเท่ากับ 1,000 เมตร
-- QR PromptPay อยู่ที่ `images/promptpay.JPG`
-- ไอคอนแอปและไอคอนเว็บใช้ต้นฉบับจาก `images/icon.png`
-- ชื่อบัญชีและเลขบัญชี PromptPay ยังเขียนไว้ใน UI ของหน้า Order
-- อีเมลที่มีสิทธิ์ลบสินค้าอยู่ใน `AdminRoleService` และ `firestore.rules`
-- Firebase configuration อยู่ใน `lib/firebase_options.dart` และไฟล์ config ของแต่ละ platform
+จากนั้น deploy rules ใหม่
 
-## ข้อจำกัดและงานที่ควรพัฒนาต่อ
+## การตั้งค่าและรันโปรเจกต์
 
-### ข้อมูลและกระบวนการสั่งซื้อ
+สิ่งที่ต้องมี:
 
-- ยอดขายวันนี้กรองออเดอร์ที่ `paid` และไม่ `cancelled` โดยใช้งาน `paidAt`
-  เป็นหลัก และ fallback ไป `createdAt` สำหรับออเดอร์เก่าที่ยังไม่มีฟิลด์นี้
-- เมื่อยกเลิกออเดอร์ที่ชำระแล้ว ระบบคืนสต๊อกและเปลี่ยนสถานะออเดอร์ได้
-  แต่ยังไม่มีสถานะหรือกระบวนการคืนเงินให้ลูกค้า
-- หากสินค้าถูกลบออกจาก collection `product` ก่อนยกเลิกออเดอร์
-  ระบบจะไม่ยกเลิกออเดอร์นั้น เพื่อป้องกันการคืนสต๊อกไม่ครบ
-  ควรเปลี่ยนจากการลบสินค้าเป็นการ archive หรือปิดขาย
-- ฟิลด์ `discount` มีอยู่ในข้อมูลออเดอร์ แต่ปัจจุบันกำหนดเป็น `0`
-  และยังไม่มีระบบคูปองหรือส่วนลด
-- การจัดส่งรองรับเฉพาะรับเองหรือส่งฟรีภายใน 1 กม.
-  ยังไม่มีค่าจัดส่งแบบหลายระยะหรือหลายระดับ
+- Flutter SDK ที่รองรับ Dart `^3.11.4`
+- Firebase project
+- Firebase Authentication เปิด Email/Password provider
+- Cloud Firestore
+- FlutterFire CLI สำหรับสร้าง `firebase_options.dart` เมื่อเปลี่ยน Firebase project
+- Firebase CLI สำหรับ deploy Hosting และ Rules
 
-### การชำระเงินและไฟล์รูป
+ติดตั้ง dependencies:
 
-- PromptPay เป็น QR รูปภาพและให้ Admin ตรวจสลิปด้วยคน ส่วนเงินสดให้ Admin
-  ยืนยันการรับเงินด้วยตนเอง
-  ยังไม่มี payment gateway, webhook หรือการตรวจสลิปอัตโนมัติ
-- รูปสินค้า Avatar และสลิปเก็บเป็น Base64 ใน Firestore
-  จึงติดข้อจำกัดขนาด document และมีต้นทุนการอ่านสูง
-  ควรย้ายไฟล์ไป Firebase Storage แล้วเก็บเฉพาะ URL
+```sh
+flutter pub get
+```
 
-### บัญชีและการแจ้งเตือน
+รันแอปลูกค้าบน mobile/desktop:
 
-- การลบบัญชีลบ Firebase Authentication, โปรไฟล์ และตะกร้า
-  แต่ยังไม่ลบหรือ anonymize ประวัติออเดอร์ของผู้ใช้
-- ยังไม่มี push notification เมื่อมีออเดอร์ใหม่ อัปโหลดสลิป
-  หรือมีการเปลี่ยนสถานะออเดอร์
+```sh
+flutter run
+```
 
-### Dashboard และการจัดการข้อมูล
+รัน Admin Web:
 
-- Dashboard มีเฉพาะยอดขายวันนี้และเปอร์เซ็นต์เทียบเมื่อวาน
-  ยังไม่มีกราฟ รายงานย้อนหลัง หรือตัวเลือกช่วงวันที่
-- Admin Web โหลดสินค้าและออเดอร์ทั้งหมดแบบ real-time โดยยังไม่มี pagination
-  หรือการจำกัดจำนวนข้อมูล ซึ่งจะอ่านข้อมูลมากขึ้นเมื่อระบบเติบโต
-- ช่องค้นหาบน Admin Web ยังเป็นส่วนแสดงผลและไม่ได้กรองข้อมูลจริง
-- หมวดหมู่สินค้ายังใช้ค่า `General` ในฝั่ง Admin
-  และยังไม่มี field หมวดหมู่ในข้อมูลสินค้าจริง
+```sh
+flutter run -d chrome
+```
 
-### คุณภาพและการนำขึ้นระบบ
+ตรวจคุณภาพโค้ด:
 
-- ชุดทดสอบปัจจุบันมี 6 รายการ ครอบคลุม Product/User/Order model,
-  backward compatibility ของวิธีชำระ และการเตรียมจำนวนสินค้าสำหรับคืนสต๊อก
-  ควรเพิ่ม unit, widget, integration และ Firestore Rules tests
-  สำหรับ transaction, การตัดและคืนสต๊อก, การชำระเงิน และเส้นทางสั่งซื้อ
-- เวอร์ชันใน `pubspec.yaml`, Android และ iOS ยังไม่ตรงกัน
-  ควรใช้เวอร์ชันจาก `pubspec.yaml` เป็นแหล่งเดียวก่อน release รอบถัดไป
-- `image_gallery_saver_plus` ยังไม่รองรับ Swift Package Manager
-  และอาจสร้างปัญหากับ Flutter/iOS toolchain รุ่นอนาคต
+```sh
+flutter analyze
+flutter test
+```
 
-## ลำดับงานที่แนะนำ
+Build web:
 
-1. เพิ่มสถานะและขั้นตอนคืนเงินสำหรับออเดอร์ที่ชำระแล้วแต่ถูกยกเลิก
-2. เปลี่ยนการลบสินค้าเป็น archive เพื่อเก็บความสัมพันธ์กับออเดอร์เก่า
-3. เพิ่มรายงานยอดขายตามช่วงวันที่และแยกยอด PromptPay/เงินสด
-4. ย้ายรูปสินค้า Avatar และสลิปจาก Base64 ไป Firebase Storage
-5. เพิ่ม pagination และระบบค้นหาจริงใน Admin Web
-6. เพิ่มหมวดหมู่สินค้า ส่วนลด และค่าจัดส่ง
-7. เพิ่ม push notification และ payment gateway เมื่อ flow หลักนิ่งแล้ว
-8. เพิ่ม integration tests และ Firestore Rules tests สำหรับ flow สั่งซื้อ
-   ตรวจสลิป ยกเลิก คืนสต๊อก และคืนเงิน
+```sh
+flutter build web
+```
+
+Deploy Firebase Hosting:
+
+```sh
+firebase deploy --only hosting
+```
+
+Deploy Firestore Rules:
+
+```sh
+firebase deploy --only firestore:rules
+```
+
+## ค่าที่ต้องปรับก่อนใช้กับร้านอื่น
+
+| รายการ | ตำแหน่ง |
+| --- | --- |
+| พิกัดร้าน | `AppConstant.shopLocation` ใน `lib/core/app_constant.dart` |
+| รัศมีส่งฟรี | `CartController.freeDeliveryRadiusMeters` |
+| รูป QR PromptPay | `images/promptpay.JPG` |
+| ข้อความบัญชี PromptPay ใน UI | หน้า Order ที่แสดง QR/รายละเอียดชำระเงิน |
+| ไอคอนแอป | `images/icon.png` และ config `flutter_launcher_icons` |
+| Firebase project | `lib/firebase_options.dart` และ config แต่ละ platform |
+| Admin delete email | `AdminRoleService` และ `firestore.rules` |
+| URL privacy/support | `resource/` และลิงก์ในเอกสาร/หน้าที่เกี่ยวข้อง |
+
+## สิ่งที่ควรเพิ่ม
+
+### Priority สูง
+
+1. **ย้ายรูปไป Firebase Storage**
+   - ตอนนี้รูปสินค้า รูป Avatar และสลิปเก็บเป็น Base64 ใน Firestore
+   - เสี่ยงชนขนาด document limit และทำให้ read/write แพง
+   - ควรเก็บไฟล์ใน Storage แล้วบันทึก URL/path ใน Firestore
+
+2. **ย้าย order transaction สำคัญไป Cloud Functions**
+   - ลดความเสี่ยง client แก้ stock โดยตรง
+   - ตรวจสิทธิ์และคำนวณยอดจากฝั่ง server
+   - ทำให้ rules เข้มขึ้นได้
+
+3. **เพิ่มระบบที่อยู่จัดส่ง**
+   - บ้านเลขที่
+   - หมู่บ้าน/อาคาร
+   - ซอย/ถนน
+   - จุดสังเกต
+   - หมายเหตุคนส่ง
+   - เบอร์โทรสำรอง
+
+4. **เพิ่ม search/filter/sort**
+   - ฝั่งลูกค้า: ค้นหาชื่อสินค้า หมวดหมู่ tags ราคา สินค้าแนะนำ
+   - ฝั่ง Admin: ค้นหาสินค้าและออเดอร์จริง ไม่ใช่เฉพาะช่อง UI
+
+5. **เพิ่ม notification**
+   - แจ้งร้านเมื่อมีออเดอร์ใหม่
+   - แจ้งร้านเมื่อลูกค้าอัปโหลดสลิป
+   - แจ้งลูกค้าเมื่อร้านรับออเดอร์ ตรวจสลิป พร้อมรับสินค้า หรือยกเลิก
+   - อาจเริ่มจาก Firebase Cloud Messaging หรือ LINE Notify/LINE Messaging API
+
+### Priority กลาง
+
+6. **รายงานยอดขาย**
+   - เลือกช่วงวันที่
+   - กราฟรายวัน/รายเดือน
+   - แยก PromptPay/เงินสด
+   - สินค้าขายดี
+   - ลูกค้าซื้อซ้ำ
+   - export CSV/Excel
+
+7. **ระบบคืนเงิน**
+   - ตอนนี้ยกเลิกออเดอร์ที่ชำระแล้วและคืนสต๊อกได้ แต่ยังไม่มีสถานะ refund
+   - ควรเพิ่ม `refundStatus`, `refundedAt`, `refundNote`, `refundBy`
+
+8. **Archive product แทน delete**
+   - ลดปัญหาออเดอร์เก่าอ้างอิงสินค้าไม่ได้
+   - ใช้ `isActive = false` หรือเพิ่ม `archivedAt`
+
+9. **คูปอง ส่วนลด และโปรโมชัน**
+   - มี field `discount` แล้วแต่ยังไม่มี flow ใช้งานจริง
+   - เพิ่ม coupon collection, validation, usage limit และวันหมดอายุ
+
+10. **Payment gateway หรือตรวจสลิปอัตโนมัติ**
+    - PromptPay ปัจจุบันเป็น manual upload/review
+    - ถ้า order เยอะควรต่อ gateway/webhook หรือ slip verification service
+
+### Priority ต่ำถึงกลาง
+
+11. **สินค้าเกี่ยวข้องและ recommended section**
+    - ใช้ `relatedProductIds`, `isRecommended`, `soldCount`, `viewCount` ที่มีอยู่ให้เกิดผลใน UI
+
+12. **Pagination / limit query**
+    - Admin Web ตอนนี้โหลดสินค้าและออเดอร์ทั้งหมดแบบ real-time
+    - เมื่อข้อมูลเยอะควรใช้ pagination, date filter หรือ query limit
+
+13. **เพิ่ม test coverage**
+    - Unit test สำหรับ controller logic
+    - Widget test สำหรับ flow สำคัญ
+    - Integration test สำหรับสั่งซื้อและชำระเงิน
+    - Firestore Rules test
+    - Transaction test สำหรับตัดสต๊อก/คืนสต๊อก
+
+14. **ปรับ release process ให้ชัดเจนขึ้น**
+    - ใช้ `pubspec.yaml` เป็น single source of truth สำหรับเลข version แล้ว
+    - เพิ่ม checklist ก่อน release
+    - แยก environment dev/staging/prod
+
+## ข้อจำกัดสำคัญที่พบจากโค้ด
+
+- เก็บรูปเป็น Base64 ใน Firestore ทำให้ข้อมูลหนักและเสี่ยงเกินขนาด document
+- Business logic สำคัญยังอยู่ฝั่ง client
+- ยังไม่มี push notification
+- ยังไม่มี payment automation
+- ยังไม่มีระบบ refund
+- ยังไม่มี address form แบบละเอียด
+- ยังไม่มี search/filter ที่ใช้งานครบทั้งลูกค้าและ Admin
+- ยังไม่มี pagination สำหรับข้อมูลจำนวนมาก
+- ยังไม่มี analytics/report เชิงลึก
+- ยังไม่มี Firestore Rules tests
+- ปุ่ม UI บางจุดใน Admin Web ยังไม่ได้ผูก action จริง
+- version หลักถูกปรับให้ใช้จาก `pubspec.yaml` แล้ว แต่ควรตรวจซ้ำก่อน release ทุกครั้ง
+
+## ผลทดสอบในโปรเจกต์
+
+ชุดทดสอบปัจจุบันอยู่ที่ `test/widget_test.dart` มี 6 tests ครอบคลุม:
+
+- map ข้อมูล `ProductModel`
+- decode รูปจาก Base64
+- map เบอร์โทรใน `AppUserModel`
+- รวมจำนวนสินค้าเพื่อคืนสต๊อก
+- reject order item ที่คืนสต๊อกไม่ได้
+- backward compatibility ของ PromptPay order เก่า
+- audit fields ของการชำระเงินสด
+
+คำสั่งที่ควรรันก่อน release:
+
+```sh
+flutter analyze
+flutter test
+```
+
+## Roadmap แนะนำ
+
+1. เพิ่ม search/filter ใน Mall และ Admin Web
+2. เพิ่ม address form และ note สำหรับจัดส่ง
+3. เปลี่ยน product delete เป็น archive
+4. เพิ่ม refund status สำหรับออเดอร์ที่ชำระแล้วแต่ถูกยกเลิก
+5. ย้ายรูปทั้งหมดไป Firebase Storage
+6. ย้าย flow สร้างออเดอร์/ตัดสต๊อก/คืนสต๊อกไป Cloud Functions
+7. เพิ่ม notification สำหรับออเดอร์และการชำระเงิน
+8. เพิ่มรายงานยอดขายตามช่วงวันที่และ export
+9. เพิ่ม Firestore Rules tests และ integration tests
 
 ## ติดต่อผู้พัฒนา
 
