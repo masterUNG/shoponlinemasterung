@@ -65,6 +65,12 @@ class _DashboardSection extends StatelessWidget {
                           title: 'สินค้าล่าสุด',
                           subtitle: 'ดูสินค้า ปรับราคา และจัดการสถานะการขาย',
                           buttonLabel: 'ดูทั้งหมด',
+                          onTrailingPressed: () => controller.changeSection(
+                            MainHomeWebSection.products,
+                          ),
+                          onManagePressed: () => controller.changeSection(
+                            MainHomeWebSection.products,
+                          ),
                         ),
                         const SizedBox(height: 20),
                         AdminOrdersPanel(
@@ -73,6 +79,9 @@ class _DashboardSection extends StatelessWidget {
                               controller.orders.take(3).toList(),
                           title: 'รายการสั่งซื้อล่าสุด',
                           subtitle: 'ติดตามสถานะออเดอร์รับที่ร้านของวันนี้',
+                          onViewAllPressed: () => controller.changeSection(
+                            MainHomeWebSection.orders,
+                          ),
                         ),
                       ],
                     ),
@@ -82,7 +91,7 @@ class _DashboardSection extends StatelessWidget {
                     flex: 4,
                     child: Column(
                       children: [
-                        const _QuickActionsPanel(),
+                        _QuickActionsPanel(controller: controller),
                         const SizedBox(height: 20),
                         _StockAlertPanel(controller: controller),
                       ],
@@ -94,7 +103,7 @@ class _DashboardSection extends StatelessWidget {
 
             return Column(
               children: [
-                const _QuickActionsPanel(),
+                _QuickActionsPanel(controller: controller),
                 const SizedBox(height: 20),
                 _StockAlertPanel(controller: controller),
                 const SizedBox(height: 20),
@@ -104,6 +113,10 @@ class _DashboardSection extends StatelessWidget {
                   title: 'สินค้าล่าสุด',
                   subtitle: 'ดูสินค้า ปรับราคา และจัดการสถานะการขาย',
                   buttonLabel: 'ดูทั้งหมด',
+                  onTrailingPressed: () =>
+                      controller.changeSection(MainHomeWebSection.products),
+                  onManagePressed: () =>
+                      controller.changeSection(MainHomeWebSection.products),
                 ),
                 const SizedBox(height: 20),
                 AdminOrdersPanel(
@@ -111,6 +124,8 @@ class _DashboardSection extends StatelessWidget {
                   ordersBuilder: () => controller.orders.take(3).toList(),
                   title: 'รายการสั่งซื้อล่าสุด',
                   subtitle: 'ติดตามสถานะออเดอร์รับที่ร้านของวันนี้',
+                  onViewAllPressed: () =>
+                      controller.changeSection(MainHomeWebSection.orders),
                 ),
               ],
             );
@@ -487,6 +502,8 @@ class AdminProductsPanel extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.buttonLabel,
+    this.onTrailingPressed,
+    this.onManagePressed,
     super.key,
   });
 
@@ -495,6 +512,8 @@ class AdminProductsPanel extends StatelessWidget {
   final String title;
   final String subtitle;
   final String buttonLabel;
+  final VoidCallback? onTrailingPressed;
+  final VoidCallback? onManagePressed;
 
   @override
   Widget build(BuildContext context) {
@@ -512,7 +531,7 @@ class AdminProductsPanel extends StatelessWidget {
             title: title,
             subtitle: subtitle,
             trailing: FilledButton.icon(
-              onPressed: () {},
+              onPressed: onTrailingPressed ?? () {},
               style: FilledButton.styleFrom(
                 backgroundColor: AppConstant.appColorDark,
                 foregroundColor: Colors.white,
@@ -560,7 +579,7 @@ class AdminProductsPanel extends StatelessWidget {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: onManagePressed ?? () {},
                       child: const Text('จัดการสินค้า'),
                     ),
                   ],
@@ -633,6 +652,7 @@ class AdminOrdersPanel extends StatelessWidget {
     required this.ordersBuilder,
     required this.title,
     required this.subtitle,
+    this.onViewAllPressed,
     super.key,
   });
 
@@ -640,6 +660,7 @@ class AdminOrdersPanel extends StatelessWidget {
   final List<AdminOrderModel> Function() ordersBuilder;
   final String title;
   final String subtitle;
+  final VoidCallback? onViewAllPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -653,7 +674,7 @@ class AdminOrdersPanel extends StatelessWidget {
         title: title,
         subtitle: subtitle,
         trailing: OutlinedButton.icon(
-          onPressed: () {},
+          onPressed: onViewAllPressed ?? () {},
           icon: const Icon(Icons.visibility_rounded),
           label: const Text('ดูทั้งหมด'),
         ),
@@ -742,11 +763,13 @@ class _EmptyOrdersState extends StatelessWidget {
 }
 
 class _QuickActionsPanel extends StatelessWidget {
-  const _QuickActionsPanel();
+  const _QuickActionsPanel({required this.controller});
+
+  final MainHomeWebController controller;
 
   @override
   Widget build(BuildContext context) {
-    return const AdminPanelShell(
+    return AdminPanelShell(
       title: 'เมนูลัด',
       subtitle: 'ปุ่มสำหรับงานที่ใช้บ่อยในร้านขนาดเล็ก',
       child: Column(
@@ -756,20 +779,23 @@ class _QuickActionsPanel extends StatelessWidget {
             title: 'เพิ่มสินค้าใหม่',
             subtitle: 'เปิดฟอร์มกรอกสินค้า ราคา และจำนวน',
             accent: AppConstant.appColorSoft,
+            onTap: () => _showAddProductDialog(context),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           _QuickActionTile(
             icon: Icons.edit_note_rounded,
             title: 'แก้ไขราคา',
             subtitle: 'ปรับราคาสินค้าที่มีโปรโมชันหรืออัปเดตต้นทุน',
-            accent: Color(0xFFFFF1DA),
+            accent: const Color(0xFFFFF1DA),
+            onTap: () => controller.changeSection(MainHomeWebSection.products),
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 12),
           _QuickActionTile(
             icon: Icons.inventory_2_outlined,
             title: 'ปรับสต๊อก',
             subtitle: 'เพิ่มของเข้า หรือแก้ไขจำนวนคงเหลือ',
-            accent: Color(0xFFE9F9EF),
+            accent: const Color(0xFFE9F9EF),
+            onTap: () => controller.changeSection(MainHomeWebSection.stock),
           ),
         ],
       ),
@@ -2366,58 +2392,64 @@ class _QuickActionTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.accent,
+    required this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final Color accent;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: accent,
+    return Material(
+      color: accent,
+      borderRadius: BorderRadius.circular(20),
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Icon(icon, color: AppConstant.appColorDark),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: AppConstant.appColorDark,
-                    fontWeight: FontWeight.w700,
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppConstant.appColorMuted,
-                    fontSize: 13,
-                    height: 1.5,
-                  ),
+                child: Icon(icon, color: AppConstant.appColorDark),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        color: AppConstant.appColorDark,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: AppConstant.appColorMuted,
+                        fontSize: 13,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              const Icon(Icons.arrow_forward_ios_rounded, size: 16),
+            ],
           ),
-          const Icon(Icons.arrow_forward_ios_rounded, size: 16),
-        ],
+        ),
       ),
     );
   }

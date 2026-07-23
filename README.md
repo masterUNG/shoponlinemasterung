@@ -3,14 +3,17 @@
 แอปซื้อขายสินค้าออนไลน์สำหรับร้านค้าขนาดเล็ก พัฒนาด้วย Flutter และ Firebase
 โดยแยกการใช้งานหลักเป็น 2 ฝั่ง:
 
-- **Customer App** สำหรับ Android/iOS/desktop/mobile Flutter runtime ใช้ดูสินค้า ใส่ตะกร้า สั่งซื้อ ชำระเงิน และติดตามออเดอร์
+- **Customer App** สำหรับ Android, iOS, macOS และ Windows ใช้ดูสินค้า ใส่ตะกร้า สั่งซื้อ ชำระเงิน และติดตามออเดอร์
 - **Admin Web** สำหรับผู้ดูแลร้าน ใช้จัดการสินค้า สต๊อก ออเดอร์ สลิป และยอดขายเบื้องต้น
+
+> Linux มี runner อยู่ใน repository แต่ยังไม่รองรับการรันจริง เพราะ
+> `lib/firebase_options.dart` ยังไม่มี Firebase configuration สำหรับ Linux
 
 ระบบใช้ Firebase Authentication สำหรับบัญชีผู้ใช้ และ Cloud Firestore สำหรับข้อมูลสินค้า ตะกร้า โปรไฟล์ และออเดอร์แบบ real-time
 
 ## สถานะโปรเจกต์
 
-อัปเดตจากการวิเคราะห์โค้ดล่าสุด: **11 กรกฎาคม 2026**
+อัปเดตจากการวิเคราะห์โค้ดล่าสุด: **23 กรกฎาคม 2026**
 
 สถานะโดยรวม: **MVP ใช้งานได้แล้ว** สำหรับ flow ร้านค้าออนไลน์ขนาดเล็ก ตั้งแต่สมัครสมาชิก ดูสินค้า ใส่ตะกร้า สร้างออเดอร์ ตัดสต๊อก ชำระผ่าน PromptPay หรือเงินสด ตรวจสลิป จัดการออเดอร์ และคืนสต๊อกเมื่อยกเลิก
 
@@ -30,11 +33,15 @@
 
 ### ความคืบหน้าล่าสุด
 
+- ผูก action ของ Admin Web Dashboard แล้ว: เมนูลัดเพิ่มสินค้าเปิด dialog จริง
+  ส่วนแก้ไขราคา ปรับสต๊อก ดูสินค้าทั้งหมด และดูออเดอร์ทั้งหมดจะเปลี่ยนไปยัง
+  section ที่เกี่ยวข้อง
+- อัปเดต iOS/macOS CocoaPods lockfile ให้ใช้ `GoogleUtilities 8.1.2`
 - ขยับเลขเวอร์ชันหลักใน `pubspec.yaml` เป็น `1.0.12+12`
 - ปรับ Android ให้ใช้ `flutter.versionCode` และ `flutter.versionName` จาก Flutter แทนการ hardcode ใน `android/app/build.gradle.kts`
 - ปรับ iOS ให้ใช้ `$(FLUTTER_BUILD_NAME)` และ `$(FLUTTER_BUILD_NUMBER)` ใน `ios/Runner/Info.plist`
 - macOS ใช้ `$(FLUTTER_BUILD_NAME)` และ `$(FLUTTER_BUILD_NUMBER)` อยู่แล้ว จึงอิงเลขเดียวกับ Flutter
-- รัน `flutter pub get` และ `flutter test` แล้วผ่านทั้งหมด 6 tests
+- รัน `flutter analyze` แล้วไม่พบปัญหา และ `flutter test` ผ่านทั้งหมด 6 tests
 
 ## สรุปฟีเจอร์ที่มีแล้ว
 
@@ -239,7 +246,8 @@ Admin เพิ่มและแก้ไขสินค้าได้จา�
 - ยังไม่มี archive product แบบจริงจังสำหรับสินค้าที่เคยอยู่ในออเดอร์
 - การลบสินค้าจริงอาจทำให้ออเดอร์เก่าบางกรณียกเลิกและคืนสต๊อกไม่ได้ เพราะหา product document ไม่เจอ
 - ช่อง search บน Admin Web มี UI แล้ว แต่จากโค้ดยังไม่เห็น state/filter ที่ใช้งานจริง
-- ปุ่ม quick action/export/ดูทั้งหมดบางตำแหน่งยังเป็น `onPressed: () {}`
+- ปุ่มบน Dashboard ผูก action แล้ว แต่ปุ่ม Export/จัดการสินค้า/เติมสต๊อก/
+  ดูทั้งหมดบางตำแหน่งในหน้า Products, Stock และ Orders ยังไม่ได้ผูก action จริง
 
 ### จัดการออเดอร์
 
@@ -490,6 +498,8 @@ lib/
 สิ่งที่ต้องมี:
 
 - Flutter SDK ที่รองรับ Dart `^3.11.4`
+- Java 17 สำหรับ Android build
+- Android SDK 36 (แอปตั้ง `minSdk 24`, `compileSdk 36` และ `targetSdk 36`)
 - Firebase project
 - Firebase Authentication เปิด Email/Password provider
 - Cloud Firestore
@@ -507,6 +517,9 @@ flutter pub get
 ```sh
 flutter run
 ```
+
+Platform ที่มี Firebase configuration แล้วคือ Android, iOS, macOS, Windows และ
+Web ส่วน Linux ต้องรัน FlutterFire CLI เพื่อเพิ่ม configuration ก่อน
 
 รัน Admin Web:
 
@@ -538,6 +551,33 @@ Deploy Firestore Rules:
 ```sh
 firebase deploy --only firestore:rules
 ```
+
+### Android release signing
+
+`android/app/build.gradle.kts` อ่าน signing credential จาก
+`android/key.properties` ซึ่งเป็นไฟล์ local และไม่ควร commit:
+
+```properties
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=YOUR_KEY_ALIAS
+storeFile=/absolute/path/to/upload-keystore.jks
+```
+
+จากนั้น build release ด้วย:
+
+```sh
+flutter build appbundle
+```
+
+### แนวทางพัฒนา
+
+- ใช้ GetX Binding ลงทะเบียน controller/service ของแต่ละ module
+- เมื่อเพิ่มหรือเปลี่ยน Firestore field ให้ปรับ model, จุดอ่าน/เขียน,
+  `firestore.rules`, ตัวอย่าง schema ใน README และ tests ให้สอดคล้องกัน
+- `lib/firebase_options.dart`, platform Firebase config, generated plugin files
+  และไฟล์ใน Pods เป็น generated/vendor files ไม่ควรแก้ด้วยมือ
+- คู่มือการแก้ repository และ checklist สำหรับ agent อยู่ที่ `AGENTS.md`
 
 ## ค่าที่ต้องปรับก่อนใช้กับร้านอื่น
 
@@ -643,7 +683,8 @@ firebase deploy --only firestore:rules
 - ยังไม่มี pagination สำหรับข้อมูลจำนวนมาก
 - ยังไม่มี analytics/report เชิงลึก
 - ยังไม่มี Firestore Rules tests
-- ปุ่ม UI บางจุดใน Admin Web ยังไม่ได้ผูก action จริง
+- ปุ่มบน Admin Web Dashboard ผูก action แล้ว แต่หน้า Products, Stock และ Orders
+  ยังมีปุ่มบางจุดที่ไม่ได้ผูก action จริง
 - version หลักถูกปรับให้ใช้จาก `pubspec.yaml` แล้ว แต่ควรตรวจซ้ำก่อน release ทุกครั้ง
 
 ## ผลทดสอบในโปรเจกต์
@@ -661,6 +702,7 @@ firebase deploy --only firestore:rules
 คำสั่งที่ควรรันก่อน release:
 
 ```sh
+dart format --output=none --set-exit-if-changed lib test
 flutter analyze
 flutter test
 ```
