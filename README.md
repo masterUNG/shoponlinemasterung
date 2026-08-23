@@ -13,7 +13,7 @@
 
 ## สถานะโปรเจกต์
 
-อัปเดตจากการวิเคราะห์โค้ดล่าสุด: **23 กรกฎาคม 2026**
+อัปเดตจากการวิเคราะห์โค้ดล่าสุด: **23 สิงหาคม 2026**
 
 สถานะโดยรวม: **MVP ใช้งานได้แล้ว** สำหรับ flow ร้านค้าออนไลน์ขนาดเล็ก ตั้งแต่สมัครสมาชิก ดูสินค้า ใส่ตะกร้า สร้างออเดอร์ ตัดสต๊อก ชำระผ่าน PromptPay หรือเงินสด ตรวจสลิป จัดการออเดอร์ และคืนสต๊อกเมื่อยกเลิก
 
@@ -25,19 +25,19 @@
 
 | จุดตั้งค่า | Version | Build |
 | --- | --- | --- |
-| `pubspec.yaml` | `1.0.12` | `12` |
+| `pubspec.yaml` | `1.0.13` | `13` |
 | Android `android/app/build.gradle.kts` | ใช้ค่าจาก Flutter | ใช้ค่าจาก Flutter |
 | iOS/macOS | ใช้ค่า Flutter build variable | ใช้ค่า Flutter build variable |
 
-> ตอนนี้ตั้งให้ `pubspec.yaml` เป็นแหล่งหลักของเลขเวอร์ชัน โดยใช้ `version: 1.0.12+12` แล้วให้ Android และ iOS อ่านค่าจาก Flutter build version เพื่อลดความสับสนตอน release
+> ตอนนี้ตั้งให้ `pubspec.yaml` เป็นแหล่งหลักของเลขเวอร์ชัน โดยใช้ `version: 1.0.13+13` แล้วให้ Android, iOS และ macOS อ่านค่าจาก Flutter build version เพื่อลดความสับสนตอน release
 
 ### ความคืบหน้าล่าสุด
 
+- ขยับเลขเวอร์ชันหลักใน `pubspec.yaml` เป็น `1.0.13+13`
 - ผูก action ของ Admin Web Dashboard แล้ว: เมนูลัดเพิ่มสินค้าเปิด dialog จริง
   ส่วนแก้ไขราคา ปรับสต๊อก ดูสินค้าทั้งหมด และดูออเดอร์ทั้งหมดจะเปลี่ยนไปยัง
   section ที่เกี่ยวข้อง
 - อัปเดต iOS/macOS CocoaPods lockfile ให้ใช้ `GoogleUtilities 8.1.2`
-- ขยับเลขเวอร์ชันหลักใน `pubspec.yaml` เป็น `1.0.12+12`
 - ปรับ Android ให้ใช้ `flutter.versionCode` และ `flutter.versionName` จาก Flutter แทนการ hardcode ใน `android/app/build.gradle.kts`
 - ปรับ iOS ให้ใช้ `$(FLUTTER_BUILD_NAME)` และ `$(FLUTTER_BUILD_NUMBER)` ใน `ios/Runner/Info.plist`
 - macOS ใช้ `$(FLUTTER_BUILD_NAME)` และ `$(FLUTTER_BUILD_NUMBER)` อยู่แล้ว จึงอิงเลขเดียวกับ Flutter

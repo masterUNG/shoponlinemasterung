@@ -14,7 +14,9 @@
 - Web ใช้ initial route `/login-admin-web` และเป็น Admin Web
 - Linux runner มีใน repository แต่ `firebase_options.dart` ยังไม่รองรับ Linux
 - Firebase project ปัจจุบัน: `shopinglinemasterung`
-- Version/build number ให้อ่านและแก้ที่ `pubspec.yaml` เป็นหลัก
+- App version ที่ตรวจล่าสุด: `1.0.13+13` (23 สิงหาคม 2026)
+- Version/build number ให้อ่านและแก้ที่ `pubspec.yaml` เป็นหลัก; Android,
+  iOS และ macOS รับค่า version จาก Flutter build variables
 
 ## Repository map
 
