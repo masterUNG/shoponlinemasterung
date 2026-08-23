@@ -1,7 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:shoponlinemasterung/core/app_snackbar.dart';
 import 'package:shoponlinemasterung/model/order_model.dart';
 import 'package:shoponlinemasterung/model/product_model.dart';
 
@@ -44,19 +46,33 @@ class MainHomeWebController extends GetxController {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   final AdminRoleService _adminRoleService = AdminRoleService();
+  final TextEditingController searchController = TextEditingController();
   final Rx<MainHomeWebSection> selectedSection =
       MainHomeWebSection.dashboard.obs;
   final RxList<AdminProductModel> _products = <AdminProductModel>[].obs;
   final RxList<AdminOrderModel> _orders = <AdminOrderModel>[].obs;
   final RxBool isProductsLoading = true.obs;
   final RxBool isOrdersLoading = true.obs;
+  final RxBool isAdminGuardChecking = true.obs;
+  final RxString adminGuardErrorMessage = ''.obs;
+  final RxString searchQuery = ''.obs;
+  final RxBool _canDeleteProducts = false.obs;
   final RxString updatingOrderId = ''.obs;
   final RxString updatingPaymentOrderId = ''.obs;
 
   @override
   void onInit() {
     super.onInit();
+    searchController.addListener(() {
+      searchQuery.value = searchController.text.trim();
+    });
     _bindAdminDataIfAllowed();
+  }
+
+  @override
+  void onClose() {
+    searchController.dispose();
+    super.onClose();
   }
 
   User? get currentUser => _firebaseAuth.currentUser;
@@ -65,11 +81,45 @@ class MainHomeWebController extends GetxController {
   List<AdminOrderModel> get orders =>
       List<AdminOrderModel>.unmodifiable(_orders);
 
+  List<AdminProductModel> get filteredProducts {
+    final String query = _normalizedSearchQuery;
+    if (query.isEmpty) {
+      return products;
+    }
+
+    return _products.where((product) {
+      return _productMatchesSearch(product, query);
+    }).toList();
+  }
+
   List<AdminProductModel> get lowStockProducts =>
       _products.where((product) => product.isLowStock).toList();
 
+  List<AdminProductModel> get filteredLowStockProducts {
+    final String query = _normalizedSearchQuery;
+    final List<AdminProductModel> source = lowStockProducts;
+    if (query.isEmpty) {
+      return source;
+    }
+
+    return source.where((product) {
+      return _productMatchesSearch(product, query);
+    }).toList();
+  }
+
   List<AdminOrderModel> get openOrders =>
       _orders.where((order) => order.isOpen).toList();
+
+  List<AdminOrderModel> get filteredOrders {
+    final String query = _normalizedSearchQuery;
+    if (query.isEmpty) {
+      return orders;
+    }
+
+    return _orders.where((order) {
+      return _orderMatchesSearch(order, query);
+    }).toList();
+  }
 
   int get totalProducts => _products.length;
   int get activeProductsCount =>
@@ -99,8 +149,9 @@ class MainHomeWebController extends GetxController {
   String get totalProductsLabel => '$totalProducts';
   String get newOrdersLabel => '$newOrdersCount';
   String get lowStockLabel => '$lowStockCount';
-  bool get canDeleteProducts =>
-      _adminRoleService.currentUserCanDeleteProducts();
+  bool get canDeleteProducts => _canDeleteProducts.value;
+
+  bool get hasSearchQuery => _normalizedSearchQuery.isNotEmpty;
 
   Future<void> signOut() async {
     await _firebaseAuth.signOut();
@@ -108,25 +159,47 @@ class MainHomeWebController extends GetxController {
   }
 
   Future<void> _bindAdminDataIfAllowed() async {
-    final bool isAdmin = await _adminRoleService.currentUserIsAdmin();
-    if (!isAdmin) {
-      await _firebaseAuth.signOut();
-      Get.offAllNamed(Routes.loginAdminWeb);
-      Get.snackbar(
-        'ไม่มีสิทธิ์ผู้ดูแล',
-        'กรุณาเข้าสู่ระบบด้วยบัญชี admin',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return;
-    }
+    isAdminGuardChecking.value = true;
+    adminGuardErrorMessage.value = '';
 
-    _products.bindStream(_productStream());
-    _orders.bindStream(_orderStream());
+    try {
+      final bool isAdmin = await _adminRoleService.currentUserIsAdmin();
+      if (!isAdmin) {
+        await _firebaseAuth.signOut();
+        Get.offAllNamed(Routes.loginAdminWeb);
+        AppSnackbar.error(
+          'ไม่มีสิทธิ์ผู้ดูแล',
+          'กรุณาเข้าสู่ระบบด้วยบัญชี admin',
+        );
+        return;
+      }
+
+      _canDeleteProducts.value = await _adminRoleService
+          .currentUserCanDeleteProducts();
+      _products.bindStream(_productStream());
+      _orders.bindStream(_orderStream());
+    } on FirebaseException {
+      adminGuardErrorMessage.value =
+          'ตรวจสอบสิทธิ์ผู้ดูแลไม่สำเร็จ กรุณาตรวจสอบเครือข่ายแล้วลองใหม่';
+      AppSnackbar.error(
+        'ตรวจสอบสิทธิ์ผู้ดูแลไม่สำเร็จ',
+        adminGuardErrorMessage.value,
+      );
+    } finally {
+      isAdminGuardChecking.value = false;
+    }
   }
 
   void changeSection(MainHomeWebSection section) {
     selectedSection.value = section;
   }
+
+  void clearSearch() {
+    searchController.clear();
+    searchQuery.value = '';
+  }
+
+  Future<void> retryAdminGuard() => _bindAdminDataIfAllowed();
 
   Future<void> updateOrderStatus({
     required AdminOrderModel order,
@@ -167,8 +240,20 @@ class MainHomeWebController extends GetxController {
         if (status != AdminOrderStatus.cancelled) {
           transaction.update(orderRef, <String, dynamic>{
             'status': status.firestoreValue,
+            'lastUpdatedBy': currentUser?.uid ?? '',
             'updatedAt': FieldValue.serverTimestamp(),
           });
+          _writeAdminAuditLog(
+            transaction: transaction,
+            action: 'order_status_update',
+            targetCollection: 'orders',
+            targetId: order.id,
+            data: <String, dynamic>{
+              'fromStatus': currentStatus.firestoreValue,
+              'toStatus': status.firestoreValue,
+              'orderNo': latestOrder.orderNo,
+            },
+          );
           return;
         }
 
@@ -204,30 +289,36 @@ class MainHomeWebController extends GetxController {
         transaction.update(orderRef, <String, dynamic>{
           'status': AdminOrderStatus.cancelled.firestoreValue,
           'stockRestoredAt': FieldValue.serverTimestamp(),
+          'lastUpdatedBy': currentUser?.uid ?? '',
           'updatedAt': FieldValue.serverTimestamp(),
         });
+        _writeAdminAuditLog(
+          transaction: transaction,
+          action: 'order_cancelled',
+          targetCollection: 'orders',
+          targetId: order.id,
+          data: <String, dynamic>{
+            'fromStatus': currentStatus.firestoreValue,
+            'orderNo': latestOrder.orderNo,
+            'restoredProductIds': restoreQuantities.keys.toList(),
+          },
+        );
       });
     } on StateError catch (error) {
       _replaceOrder(order);
-      Get.snackbar(
+      AppSnackbar.error(
         'อัปเดตออเดอร์ไม่สำเร็จ',
         _orderUpdateErrorMessage(error),
-        snackPosition: SnackPosition.BOTTOM,
       );
     } on FormatException {
       _replaceOrder(order);
-      Get.snackbar(
+      AppSnackbar.error(
         'ยกเลิกออเดอร์ไม่สำเร็จ',
         'รายการสินค้าในออเดอร์ไม่สมบูรณ์ กรุณาตรวจสอบข้อมูล',
-        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (_) {
       _replaceOrder(order);
-      Get.snackbar(
-        'อัปเดตออเดอร์ไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('อัปเดตออเดอร์ไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     } finally {
       updatingOrderId.value = '';
     }
@@ -255,23 +346,28 @@ class MainHomeWebController extends GetxController {
           'paymentStatus': 'paid',
           'paymentVerifiedAt': FieldValue.serverTimestamp(),
           'paidAt': FieldValue.serverTimestamp(),
+          'lastUpdatedBy': currentUser?.uid ?? '',
           'updatedAt': FieldValue.serverTimestamp(),
         });
+        _writeAdminAuditLog(
+          transaction: transaction,
+          action: 'payment_verified',
+          targetCollection: 'orders',
+          targetId: order.id,
+          data: <String, dynamic>{
+            'orderNo': OrderModel.fromDocument(snapshot).orderNo,
+          },
+        );
       });
     } on StateError catch (error) {
       _replaceOrder(order);
-      Get.snackbar(
+      AppSnackbar.error(
         'ยืนยันสลิปไม่สำเร็จ',
         _paymentUpdateErrorMessage(error),
-        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (_) {
       _replaceOrder(order);
-      Get.snackbar(
-        'ยืนยันสลิปไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('ยืนยันสลิปไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     } finally {
       updatingPaymentOrderId.value = '';
     }
@@ -298,23 +394,28 @@ class MainHomeWebController extends GetxController {
         transaction.update(orderRef, <String, dynamic>{
           'paymentStatus': 'rejected',
           'paymentRejectedAt': FieldValue.serverTimestamp(),
+          'lastUpdatedBy': currentUser?.uid ?? '',
           'updatedAt': FieldValue.serverTimestamp(),
         });
+        _writeAdminAuditLog(
+          transaction: transaction,
+          action: 'payment_rejected',
+          targetCollection: 'orders',
+          targetId: order.id,
+          data: <String, dynamic>{
+            'orderNo': OrderModel.fromDocument(snapshot).orderNo,
+          },
+        );
       });
     } on StateError catch (error) {
       _replaceOrder(order);
-      Get.snackbar(
+      AppSnackbar.error(
         'ปฏิเสธสลิปไม่สำเร็จ',
         _paymentUpdateErrorMessage(error),
-        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (_) {
       _replaceOrder(order);
-      Get.snackbar(
-        'ปฏิเสธสลิปไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('ปฏิเสธสลิปไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     } finally {
       updatingPaymentOrderId.value = '';
     }
@@ -358,23 +459,26 @@ class MainHomeWebController extends GetxController {
           'cashCollectedAt': paidTimestamp,
           'cashCollectedBy': currentUser?.uid ?? '',
           'paidAt': paidTimestamp,
+          'lastUpdatedBy': currentUser?.uid ?? '',
           'updatedAt': paidTimestamp,
         });
+        _writeAdminAuditLog(
+          transaction: transaction,
+          action: 'cash_payment_confirmed',
+          targetCollection: 'orders',
+          targetId: order.id,
+          data: <String, dynamic>{'orderNo': latestOrder.orderNo},
+        );
       });
     } on StateError catch (error) {
       _replaceOrder(order);
-      Get.snackbar(
+      AppSnackbar.error(
         'บันทึกรับเงินสดไม่สำเร็จ',
         _cashPaymentErrorMessage(error),
-        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (_) {
       _replaceOrder(order);
-      Get.snackbar(
-        'บันทึกรับเงินสดไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('บันทึกรับเงินสดไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     } finally {
       updatingPaymentOrderId.value = '';
     }
@@ -471,6 +575,57 @@ class MainHomeWebController extends GetxController {
           .toList();
       orders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
       return orders;
+    });
+  }
+
+  String get _normalizedSearchQuery => searchQuery.value.trim().toLowerCase();
+
+  bool _productMatchesSearch(AdminProductModel product, String query) {
+    return <String>[
+      product.name,
+      product.description,
+      product.shortDescription,
+      product.detailDescription,
+      product.sku,
+      product.category,
+      product.unit,
+      ...product.tags,
+    ].any((value) => value.toLowerCase().contains(query));
+  }
+
+  bool _orderMatchesSearch(AdminOrderModel order, String query) {
+    return <String>[
+      order.orderNo,
+      order.customerName,
+      order.note,
+      order.paymentMethod,
+      order.paymentStatus,
+      order.status.firestoreValue,
+      order.pickupInfo.pickupName,
+      order.pickupInfo.pickupPhone,
+      ...order.items.map((item) => item.productName),
+    ].any((value) => value.toLowerCase().contains(query));
+  }
+
+  void _writeAdminAuditLog({
+    required Transaction transaction,
+    required String action,
+    required String targetCollection,
+    required String targetId,
+    required Map<String, dynamic> data,
+  }) {
+    final User? user = currentUser;
+    final DocumentReference<Map<String, dynamic>> auditRef = _firestore
+        .collection('adminAuditLogs')
+        .doc();
+    transaction.set(auditRef, <String, dynamic>{
+      'action': action,
+      'targetCollection': targetCollection,
+      'targetId': targetId,
+      'adminUid': user?.uid ?? '',
+      'adminEmail': user?.email ?? '',
+      'data': data,
+      'createdAt': FieldValue.serverTimestamp(),
     });
   }
 

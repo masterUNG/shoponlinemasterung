@@ -9,6 +9,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../core/app_snackbar.dart';
 import '../../../model/app_user_model.dart';
 import '../../../services/reviewer_mode_service.dart';
 
@@ -180,11 +181,9 @@ class ProfileController extends GetxController {
 
       final bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        Get.snackbar(
+        AppSnackbar.error(
           'ยังไม่ได้เปิด Location',
           'กรุณาเปิด Location Service บนอุปกรณ์ก่อนใช้งานบริการส่งสินค้า',
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
         );
         return;
       }
@@ -196,11 +195,9 @@ class ProfileController extends GetxController {
 
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
-        Get.snackbar(
+        AppSnackbar.error(
           'ไม่ได้รับสิทธิ์ตำแหน่ง',
           'คุณสามารถเปิดสิทธิ์ตำแหน่งภายหลังได้จากหน้า Settings ของเครื่อง',
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
         );
         return;
       }
@@ -223,11 +220,9 @@ class ProfileController extends GetxController {
         margin: const EdgeInsets.all(16),
       );
     } catch (_) {
-      Get.snackbar(
+      AppSnackbar.error(
         'บันทึกพิกัดไม่สำเร็จ',
         'กรุณาลองใหม่อีกครั้งเมื่ออุปกรณ์พร้อมใช้งาน Location',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
     } finally {
       isSavingLocation.value = false;
@@ -287,11 +282,9 @@ class ProfileController extends GetxController {
 
     final String normalizedPhone = phone.trim();
     if (!_isValidPhone(normalizedPhone)) {
-      Get.snackbar(
+      AppSnackbar.error(
         'เบอร์โทรไม่ถูกต้อง',
         'กรุณากรอกเบอร์โทรอย่างน้อย 8 หลัก เพื่อให้ร้านติดต่อเรื่องออเดอร์ได้',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
       return;
     }
@@ -308,12 +301,7 @@ class ProfileController extends GetxController {
         margin: const EdgeInsets.all(16),
       );
     } catch (_) {
-      Get.snackbar(
-        'บันทึกเบอร์โทรไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
-      );
+      AppSnackbar.error('บันทึกเบอร์โทรไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     } finally {
       isSavingPhone.value = false;
     }
@@ -362,11 +350,9 @@ class ProfileController extends GetxController {
   Future<void> _deleteAccount() async {
     final User? user = currentUser;
     if (user == null) {
-      Get.snackbar(
+      AppSnackbar.error(
         'ลบบัญชีไม่สำเร็จ',
         'กรุณาเข้าสู่ระบบอีกครั้งก่อนลบบัญชี',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
       return;
     }
@@ -408,27 +394,21 @@ class ProfileController extends GetxController {
       );
     } on FirebaseAuthException catch (error) {
       if (error.code == 'requires-recent-login') {
-        Get.snackbar(
+        AppSnackbar.error(
           'กรุณาเข้าสู่ระบบใหม่',
           'เพื่อความปลอดภัย กรุณา logout แล้ว login ใหม่ก่อนลบบัญชี',
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
         );
       } else {
-        Get.snackbar(
+        AppSnackbar.error(
           'ลบบัญชีไม่สำเร็จ',
           error.message ?? 'กรุณาลองใหม่อีกครั้ง',
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
         );
       }
       _listenToCurrentUserProfile();
     } catch (_) {
-      Get.snackbar(
+      AppSnackbar.error(
         'ลบบัญชีไม่สำเร็จ',
         'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
       _listenToCurrentUserProfile();
     } finally {

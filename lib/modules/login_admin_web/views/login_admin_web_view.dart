@@ -253,144 +253,159 @@ class _RightPanel extends GetView<LoginAdminWebController> {
         ),
         child: Form(
           key: controller.formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                'เข้าสู่ระบบผู้ดูแล',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: AppConstant.appColorDark,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'กรอกอีเมลและรหัสผ่านเพื่อจัดการสินค้า คำสั่งซื้อ และข้อมูลร้าน Ung Shop',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 28),
-              Text(
-                'Email',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppConstant.appColorDark,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: controller.emailController,
-                keyboardType: TextInputType.emailAddress,
-                textInputAction: TextInputAction.next,
-                validator: controller.validateEmail,
-                decoration: const InputDecoration(
-                  hintText: 'admin@shoponline.com',
-                  prefixIcon: Icon(Icons.mail_outline_rounded),
-                  filled: true,
-                  fillColor: AppConstant.appColorSurface,
-                ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'Password',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppConstant.appColorDark,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                controller: controller.passwordController,
-                obscureText: controller.obscurePassword.value,
-                textInputAction: TextInputAction.done,
-                validator: controller.validatePassword,
-                onFieldSubmitted: (_) => controller.signInWithEmailPassword(),
-                decoration: InputDecoration(
-                  hintText: 'กรอกรหัสผ่าน',
-                  prefixIcon: const Icon(Icons.lock_outline_rounded),
-                  suffixIcon: IconButton(
-                    onPressed: controller.togglePasswordVisibility,
-                    icon: Icon(
-                      controller.obscurePassword.value
-                          ? Icons.visibility_off_rounded
-                          : Icons.visibility_rounded,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: AppConstant.appColorSurface,
-                ),
-              ),
-              const SizedBox(height: 26),
-              SizedBox(
-                height: 58,
-                child: FilledButton.icon(
-                  onPressed: controller.isLoading.value
-                      ? null
-                      : controller.signInWithEmailPassword,
-                  icon: controller.isLoading.value
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2.2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Icon(Icons.login_rounded),
-                  label: Text(
-                    controller.isLoading.value
-                        ? 'กำลังเข้าสู่ระบบ...'
-                        : 'เข้าสู่ระบบ',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
+          child: AutofillGroup(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'เข้าสู่ระบบผู้ดูแล',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: AppConstant.appColorDark,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppConstant.appColorSurface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: theme.colorScheme.outlineVariant.withValues(
-                      alpha: 0.6,
-                    ),
+                const SizedBox(height: 8),
+                Text(
+                  'กรอกอีเมลและรหัสผ่านเพื่อจัดการสินค้า คำสั่งซื้อ และข้อมูลร้าน Ung Shop',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    height: 1.5,
                   ),
                 ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: const BoxDecoration(
-                        color: AppConstant.appColorLight,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.verified_user_rounded,
-                        color: AppConstant.appColor,
+                const SizedBox(height: 28),
+                Text(
+                  'Email',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppConstant.appColorDark,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: controller.emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
+                  autofillHints: const <String>[AutofillHints.email],
+                  validator: controller.validateEmail,
+                  decoration: const InputDecoration(
+                    hintText: 'admin@shoponline.com',
+                    prefixIcon: Icon(Icons.mail_outline_rounded),
+                    filled: true,
+                    fillColor: AppConstant.appColorSurface,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Password',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppConstant.appColorDark,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                TextFormField(
+                  controller: controller.passwordController,
+                  obscureText: controller.obscurePassword.value,
+                  textInputAction: TextInputAction.done,
+                  autofillHints: const <String>[AutofillHints.password],
+                  validator: controller.validatePassword,
+                  onFieldSubmitted: (_) => controller.signInWithEmailPassword(),
+                  decoration: InputDecoration(
+                    hintText: 'กรอกรหัสผ่าน',
+                    prefixIcon: const Icon(Icons.lock_outline_rounded),
+                    suffixIcon: IconButton(
+                      onPressed: controller.togglePasswordVisibility,
+                      icon: Icon(
+                        controller.obscurePassword.value
+                            ? Icons.visibility_off_rounded
+                            : Icons.visibility_rounded,
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'พื้นที่นี้สำหรับผู้ดูแลร้านเท่านั้น ระบบจะตรวจสอบบัญชีก่อนพาเข้าสู่หน้าจัดการร้านค้า',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          height: 1.45,
+                    filled: true,
+                    fillColor: AppConstant.appColorSurface,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : controller.sendPasswordResetEmail,
+                    child: const Text('ลืมรหัสผ่าน?'),
+                  ),
+                ),
+                const SizedBox(height: 26),
+                SizedBox(
+                  height: 58,
+                  child: FilledButton.icon(
+                    onPressed: controller.isLoading.value
+                        ? null
+                        : controller.signInWithEmailPassword,
+                    icon: controller.isLoading.value
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Icon(Icons.login_rounded),
+                    label: Text(
+                      controller.isCheckingAdminRole.value
+                          ? 'กำลังตรวจสอบสิทธิ์...'
+                          : controller.isLoading.value
+                          ? 'กำลังเข้าสู่ระบบ...'
+                          : 'เข้าสู่ระบบ',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppConstant.appColorSurface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: theme.colorScheme.outlineVariant.withValues(
+                        alpha: 0.6,
+                      ),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: const BoxDecoration(
+                          color: AppConstant.appColorLight,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.verified_user_rounded,
+                          color: AppConstant.appColor,
                         ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'พื้นที่นี้สำหรับผู้ดูแลร้านเท่านั้น ระบบจะตรวจสอบบัญชีก่อนพาเข้าสู่หน้าจัดการร้านค้า',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

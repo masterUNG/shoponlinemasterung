@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_gallery_saver_plus/image_gallery_saver_plus.dart';
 
+import '../../../core/app_snackbar.dart';
 import '../../../model/order_model.dart';
 import '../controllers/order_controller.dart';
 
@@ -794,11 +795,9 @@ class _SavePromptPayQrButtonState extends State<_SavePromptPayQrButton> {
         margin: const EdgeInsets.all(16),
       );
     } catch (_) {
-      Get.snackbar(
+      AppSnackbar.error(
         'บันทึก QR ไม่สำเร็จ',
         'กรุณาตรวจสอบสิทธิ์การเข้าถึงรูปภาพ แล้วลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
     } finally {
       if (mounted) {

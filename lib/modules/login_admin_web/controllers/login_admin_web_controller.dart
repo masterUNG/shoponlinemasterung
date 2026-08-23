@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../core/app_snackbar.dart';
 import '../../../services/admin_role_service.dart';
 
 class LoginAdminWebController extends GetxController {
@@ -14,6 +15,7 @@ class LoginAdminWebController extends GetxController {
   final passwordController = TextEditingController();
 
   final isLoading = false.obs;
+  final isCheckingAdminRole = false.obs;
   final obscurePassword = true.obs;
 
   @override
@@ -79,14 +81,13 @@ class LoginAdminWebController extends GetxController {
         password: passwordController.text.trim(),
       );
 
+      isCheckingAdminRole.value = true;
       final bool isAdmin = await _adminRoleService.currentUserIsAdmin();
       if (!isAdmin) {
         await _firebaseAuth.signOut();
-        Get.snackbar(
+        AppSnackbar.error(
           'ไม่มีสิทธิ์ผู้ดูแล',
           'บัญชีนี้ยังไม่ได้รับ role admin ใน Firestore',
-          snackPosition: SnackPosition.BOTTOM,
-          margin: const EdgeInsets.all(16),
         );
         return;
       }
@@ -99,18 +100,51 @@ class LoginAdminWebController extends GetxController {
         margin: const EdgeInsets.all(16),
       );
     } on FirebaseAuthException catch (error) {
-      Get.snackbar(
+      AppSnackbar.error('เข้าสู่ระบบไม่สำเร็จ', _firebaseErrorMessage(error));
+    } on FirebaseException {
+      AppSnackbar.error(
+        'ตรวจสอบสิทธิ์ผู้ดูแลไม่สำเร็จ',
+        'เข้าสู่ระบบได้แล้ว แต่ยังอ่าน role admin จาก Firestore ไม่สำเร็จ กรุณาตรวจสอบเครือข่ายแล้วลองใหม่',
+      );
+    } catch (_) {
+      AppSnackbar.error(
         'เข้าสู่ระบบไม่สำเร็จ',
-        _firebaseErrorMessage(error),
+        'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
+      );
+    } finally {
+      isLoading.value = false;
+      isCheckingAdminRole.value = false;
+    }
+  }
+
+  Future<void> sendPasswordResetEmail() async {
+    if (isLoading.value) {
+      return;
+    }
+
+    final String email = emailController.text.trim();
+    final String? validationMessage = validateEmail(email);
+    if (validationMessage != null) {
+      AppSnackbar.error('กรุณากรอกอีเมล', validationMessage);
+      return;
+    }
+
+    isLoading.value = true;
+
+    try {
+      await _firebaseAuth.sendPasswordResetEmail(email: email);
+      Get.snackbar(
+        'ส่งอีเมลรีเซ็ตรหัสผ่านแล้ว',
+        'กรุณาตรวจสอบ inbox ของ $email',
         snackPosition: SnackPosition.BOTTOM,
         margin: const EdgeInsets.all(16),
       );
+    } on FirebaseAuthException catch (error) {
+      AppSnackbar.error('ส่งอีเมลไม่สำเร็จ', _firebaseErrorMessage(error));
     } catch (_) {
-      Get.snackbar(
-        'เข้าสู่ระบบไม่สำเร็จ',
+      AppSnackbar.error(
+        'ส่งอีเมลไม่สำเร็จ',
         'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
     } finally {
       isLoading.value = false;
@@ -141,11 +175,21 @@ class LoginAdminWebController extends GetxController {
       return;
     }
 
-    final bool isAdmin = await _adminRoleService.currentUserIsAdmin();
-    if (isAdmin) {
-      Get.offAllNamed(Routes.mainHomeWeb);
-    } else {
-      await _firebaseAuth.signOut();
+    isCheckingAdminRole.value = true;
+    try {
+      final bool isAdmin = await _adminRoleService.currentUserIsAdmin();
+      if (isAdmin) {
+        Get.offAllNamed(Routes.mainHomeWeb);
+      } else {
+        await _firebaseAuth.signOut();
+      }
+    } on FirebaseException {
+      AppSnackbar.error(
+        'ตรวจสอบสิทธิ์ผู้ดูแลไม่สำเร็จ',
+        'ยังอ่าน role admin จาก Firestore ไม่สำเร็จ กรุณาลองเข้าสู่ระบบใหม่',
+      );
+    } finally {
+      isCheckingAdminRole.value = false;
     }
   }
 }

@@ -18,11 +18,38 @@ void main() {
       'unit': 'kg',
       'price': 120,
       'stock': 8,
+      'shortDescription': 'Sweet orange',
+      'detailDescription': 'Fresh orange from the orchard',
+      'condition': 'Keep chilled',
+      'category': 'Fruit',
+      'tags': <String>['fresh', 'recommended'],
+      'images': <Map<String, dynamic>>[
+        <String, dynamic>{
+          'base64Image': base64Image,
+          'alt': 'Orange front',
+          'sortOrder': 0,
+        },
+      ],
+      'isActive': true,
+      'isRecommended': true,
+      'relatedProductIds': <String>['product-b'],
+      'soldCount': 3,
+      'viewCount': 9,
       'timestamp': timestamp,
     });
 
     expect(product.name, 'Orange');
     expect(product.description, 'Fresh orange');
+    expect(product.shortDescription, 'Sweet orange');
+    expect(product.fullDescription, 'Fresh orange from the orchard');
+    expect(product.condition, 'Keep chilled');
+    expect(product.category, 'Fruit');
+    expect(product.tags, <String>['fresh', 'recommended']);
+    expect(product.displayImages.length, 1);
+    expect(product.isRecommended, isTrue);
+    expect(product.relatedProductIds, <String>['product-b']);
+    expect(product.soldCount, 3);
+    expect(product.viewCount, 9);
     expect(product.unit, 'kg');
     expect(product.price, 120);
     expect(product.stock, 8);
@@ -36,6 +63,7 @@ void main() {
       base64Avatar: '',
       uid: 'uid-1',
       phone: '0812345678',
+      permissions: <String, bool>{'canDeleteProducts': true},
     );
 
     final Map<String, dynamic> map = user.toMap();
@@ -43,6 +71,7 @@ void main() {
 
     expect(map['phone'], '0812345678');
     expect(parsed.phone, '0812345678');
+    expect(parsed.permissions['canDeleteProducts'], isTrue);
   });
 
   test('buildStockRestoreQuantities combines duplicate product quantities', () {

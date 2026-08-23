@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:shoponlinemasterung/core/app_snackbar.dart';
 import 'package:shoponlinemasterung/core/app_constant.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
@@ -157,10 +159,12 @@ class _ProductsSection extends StatelessWidget {
         const SizedBox(height: 20),
         AdminProductsPanel(
           controller: controller,
-          productsBuilder: () => controller.products,
+          productsBuilder: () => controller.filteredProducts,
           title: 'รายการสินค้าทั้งหมด',
           subtitle: 'ตัวอย่างข้อมูลจาก model Product ที่พร้อมต่อ backend',
           buttonLabel: 'Export',
+          onTrailingPressed: () => controller.clearSearch(),
+          onManagePressed: () => _showAddProductDialog(context),
         ),
       ],
     );
@@ -176,13 +180,14 @@ class _StockSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const _SectionIntroCard(
+        _SectionIntroCard(
           title: 'จัดการสต๊อก',
           subtitle:
               'โฟกัสกับสินค้าที่เหลือน้อยและสินค้าที่หยุดขายชั่วคราว เพื่อให้เติมของและอัปเดตสถานะได้ไว',
           actionLabel: 'ปรับสต๊อก',
           icon: Icons.layers_rounded,
-          accent: Color(0xFFFFF1DA),
+          accent: const Color(0xFFFFF1DA),
+          onActionPressed: controller.clearSearch,
         ),
         const SizedBox(height: 20),
         LayoutBuilder(
@@ -197,10 +202,13 @@ class _StockSection extends StatelessWidget {
                     flex: 6,
                     child: AdminProductsPanel(
                       controller: controller,
-                      productsBuilder: () => controller.lowStockProducts,
+                      productsBuilder: () =>
+                          controller.filteredLowStockProducts,
                       title: 'สินค้าใกล้หมด',
                       subtitle: 'รายการที่ควรเติมของก่อนเพื่อไม่ให้เสียยอดขาย',
                       buttonLabel: 'เติมสต๊อก',
+                      onTrailingPressed: controller.clearSearch,
+                      onManagePressed: controller.clearSearch,
                     ),
                   ),
                   const SizedBox(width: 20),
@@ -216,10 +224,12 @@ class _StockSection extends StatelessWidget {
               children: [
                 AdminProductsPanel(
                   controller: controller,
-                  productsBuilder: () => controller.lowStockProducts,
+                  productsBuilder: () => controller.filteredLowStockProducts,
                   title: 'สินค้าใกล้หมด',
                   subtitle: 'รายการที่ควรเติมของก่อนเพื่อไม่ให้เสียยอดขาย',
                   buttonLabel: 'เติมสต๊อก',
+                  onTrailingPressed: controller.clearSearch,
+                  onManagePressed: controller.clearSearch,
                 ),
                 const SizedBox(height: 20),
                 _StockAlertPanel(controller: controller),
@@ -252,9 +262,10 @@ class _OrdersSection extends StatelessWidget {
         const SizedBox(height: 20),
         AdminOrdersPanel(
           controller: controller,
-          ordersBuilder: () => controller.orders,
+          ordersBuilder: () => controller.filteredOrders,
           title: 'รายการสั่งซื้อทั้งหมด',
           subtitle: 'ข้อมูลจริงจาก Firestore collection orders',
+          onViewAllPressed: controller.clearSearch,
         ),
       ],
     );
@@ -2606,6 +2617,30 @@ class _PickedProductImage {
   }
 }
 
+void _setAdminAuditLog({
+  required WriteBatch batch,
+  required FirebaseFirestore firestore,
+  required String action,
+  required String targetCollection,
+  required String targetId,
+  required Map<String, dynamic> data,
+}) {
+  final User? user = FirebaseAuth.instance.currentUser;
+  final DocumentReference<Map<String, dynamic>> auditRef = firestore
+      .collection('adminAuditLogs')
+      .doc();
+
+  batch.set(auditRef, <String, dynamic>{
+    'action': action,
+    'targetCollection': targetCollection,
+    'targetId': targetId,
+    'adminUid': user?.uid ?? '',
+    'adminEmail': user?.email ?? '',
+    'data': data,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+}
+
 class _DeleteProductDialog extends StatefulWidget {
   const _DeleteProductDialog({required this.product, required this.priceLabel});
 
@@ -2625,7 +2660,21 @@ class _DeleteProductDialogState extends State<_DeleteProductDialog> {
     setState(() => _isDeleting = true);
 
     try {
-      await _firestore.collection('product').doc(widget.product.id).delete();
+      final WriteBatch batch = _firestore.batch();
+      batch.delete(_firestore.collection('product').doc(widget.product.id));
+      _setAdminAuditLog(
+        batch: batch,
+        firestore: _firestore,
+        action: 'product_deleted',
+        targetCollection: 'product',
+        targetId: widget.product.id,
+        data: <String, dynamic>{
+          'name': widget.product.name,
+          'price': widget.product.price,
+          'stock': widget.product.stock,
+        },
+      );
+      await batch.commit();
 
       if (!mounted) {
         return;
@@ -2641,7 +2690,7 @@ class _DeleteProductDialogState extends State<_DeleteProductDialog> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ลบสินค้าไม่สำเร็จ กรุณาลองใหม่')),
+        AppSnackbar.errorSnackBar('ลบสินค้าไม่สำเร็จ กรุณาลองใหม่'),
       );
     } finally {
       if (mounted) {
@@ -2959,7 +3008,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้')),
+        AppSnackbar.errorSnackBar('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้'),
       );
     } finally {
       if (mounted) {
@@ -2972,7 +3021,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     final int remainingSlots = _maxProductImages - _galleryImages.length;
     if (remainingSlots <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('เพิ่มรูปสินค้าได้สูงสุด 4 รูป')),
+        AppSnackbar.errorSnackBar('เพิ่มรูปสินค้าได้สูงสุด 4 รูป'),
       );
       return;
     }
@@ -3022,7 +3071,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้')),
+        AppSnackbar.errorSnackBar('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้'),
       );
     } finally {
       if (mounted) {
@@ -3042,7 +3091,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
     setState(() => _isSaving = true);
 
     try {
-      await _firestore.collection('product').doc(widget.product.id).update({
+      final Map<String, dynamic> productData = <String, dynamic>{
         'name': _nameController.text.trim(),
         'description': _descriptionController.text.trim(),
         'shortDescription': _shortDescriptionController.text.trim(),
@@ -3066,9 +3115,30 @@ class _EditProductDialogState extends State<_EditProductDialog> {
         'relatedProductIds': widget.product.relatedProductIds,
         'soldCount': widget.product.soldCount,
         'viewCount': widget.product.viewCount,
+        'lastUpdatedBy': FirebaseAuth.instance.currentUser?.uid ?? '',
         'updatedAt': FieldValue.serverTimestamp(),
         'timestamp': Timestamp.now(),
-      });
+      };
+      final WriteBatch batch = _firestore.batch();
+      batch.update(
+        _firestore.collection('product').doc(widget.product.id),
+        productData,
+      );
+      _setAdminAuditLog(
+        batch: batch,
+        firestore: _firestore,
+        action: 'product_updated',
+        targetCollection: 'product',
+        targetId: widget.product.id,
+        data: <String, dynamic>{
+          'name': productData['name'],
+          'price': productData['price'],
+          'stock': productData['stock'],
+          'isActive': productData['isActive'],
+          'isRecommended': productData['isRecommended'],
+        },
+      );
+      await batch.commit();
 
       if (!mounted) {
         return;
@@ -3084,7 +3154,7 @@ class _EditProductDialogState extends State<_EditProductDialog> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('อัปเดตสินค้าไม่สำเร็จ กรุณาลองใหม่')),
+        AppSnackbar.errorSnackBar('อัปเดตสินค้าไม่สำเร็จ กรุณาลองใหม่'),
       );
     } finally {
       if (mounted) {
@@ -3969,7 +4039,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้')),
+        AppSnackbar.errorSnackBar('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้'),
       );
     } finally {
       if (mounted) {
@@ -3982,7 +4052,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
     final int remainingSlots = _maxProductImages - _galleryImages.length;
     if (remainingSlots <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('เพิ่มรูปสินค้าได้สูงสุด 4 รูป')),
+        AppSnackbar.errorSnackBar('เพิ่มรูปสินค้าได้สูงสุด 4 รูป'),
       );
       return;
     }
@@ -4029,7 +4099,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้')),
+        AppSnackbar.errorSnackBar('ยังไม่สามารถเลือกรูปภาพได้ในตอนนี้'),
       );
     } finally {
       if (mounted) {
@@ -4055,6 +4125,8 @@ class _AddProductDialogState extends State<_AddProductDialog> {
     setState(() => _isSaving = true);
 
     try {
+      final String adminUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+      final Timestamp now = Timestamp.now();
       final ProductModel product = ProductModel(
         name: _nameController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -4080,12 +4152,36 @@ class _AddProductDialogState extends State<_AddProductDialog> {
         stock: num.parse(_stockController.text.trim()),
         isActive: _isActive,
         isRecommended: _isRecommended,
-        createdAt: Timestamp.now(),
-        updatedAt: Timestamp.now(),
-        timestamp: Timestamp.now(),
+        createdAt: now,
+        updatedAt: now,
+        timestamp: now,
       );
 
-      await _firestore.collection('product').add(product.toMap());
+      final DocumentReference<Map<String, dynamic>> productRef = _firestore
+          .collection('product')
+          .doc();
+      final Map<String, dynamic> productData = <String, dynamic>{
+        ...product.toMap(),
+        'createdBy': adminUid,
+        'lastUpdatedBy': adminUid,
+      };
+      final WriteBatch batch = _firestore.batch();
+      batch.set(productRef, productData);
+      _setAdminAuditLog(
+        batch: batch,
+        firestore: _firestore,
+        action: 'product_created',
+        targetCollection: 'product',
+        targetId: productRef.id,
+        data: <String, dynamic>{
+          'name': product.name,
+          'price': product.price,
+          'stock': product.stock,
+          'isActive': product.isActive,
+          'isRecommended': product.isRecommended,
+        },
+      );
+      await batch.commit();
 
       if (!mounted) {
         return;
@@ -4101,7 +4197,7 @@ class _AddProductDialogState extends State<_AddProductDialog> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('บันทึกสินค้าไม่สำเร็จ กรุณาลองใหม่')),
+        AppSnackbar.errorSnackBar('บันทึกสินค้าไม่สำเร็จ กรุณาลองใหม่'),
       );
     } finally {
       if (mounted) {

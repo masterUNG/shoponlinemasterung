@@ -22,7 +22,8 @@ service cloud.firestore {
 
     function canDeleteProducts() {
       return isAdmin()
-        && request.auth.token.email == 'adminung@abc.com';
+        && ('permissions' in adminDoc().data)
+        && adminDoc().data.permissions.canDeleteProducts == true;
     }
 
     function validCustomerProfile(userId) {
@@ -186,9 +187,30 @@ service cloud.firestore {
               'cashCollectedBy',
               'paidAt',
               'stockRestoredAt',
+              'lastUpdatedBy',
               'updatedAt'
             ]));
       allow delete: if isAdmin();
+    }
+
+    match /adminAuditLogs/{auditId} {
+      allow get, list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'action',
+          'targetCollection',
+          'targetId',
+          'adminUid',
+          'adminEmail',
+          'data',
+          'createdAt'
+        ])
+        && request.resource.data.action is string
+        && request.resource.data.targetCollection is string
+        && request.resource.data.targetId is string
+        && request.resource.data.adminUid == request.auth.uid
+        && request.resource.data.adminEmail == request.auth.token.email;
+      allow update, delete: if false;
     }
 
     match /{document=**} {

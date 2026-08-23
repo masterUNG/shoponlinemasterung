@@ -7,7 +7,7 @@ class AdminRoleService {
       _firestore = firestore ?? FirebaseFirestore.instance;
 
   static const String adminRole = 'admin';
-  static const String productDeleteAdminEmail = 'adminung@abc.com';
+  static const String canDeleteProductsPermission = 'canDeleteProducts';
 
   final FirebaseAuth _firebaseAuth;
   final FirebaseFirestore _firestore;
@@ -27,7 +27,22 @@ class AdminRoleService {
     return userData?['role'] == adminRole;
   }
 
-  bool currentUserCanDeleteProducts() {
-    return _firebaseAuth.currentUser?.email == productDeleteAdminEmail;
+  Future<bool> currentUserCanDeleteProducts() async {
+    final User? user = _firebaseAuth.currentUser;
+    if (user == null) {
+      return false;
+    }
+
+    final DocumentSnapshot<Map<String, dynamic>> userDocument = await _firestore
+        .collection('users')
+        .doc(user.uid)
+        .get();
+    final Map<String, dynamic>? userData = userDocument.data();
+    final Object? permissions = userData?['permissions'];
+    if (permissions is Map<String, dynamic>) {
+      return permissions[canDeleteProductsPermission] == true;
+    }
+
+    return false;
   }
 }

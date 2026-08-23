@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
 import '../../../core/app_constant.dart';
+import '../../../core/app_snackbar.dart';
 import '../../../model/order_model.dart';
 import '../../../services/reviewer_mode_service.dart';
 import '../../main_home/controllers/main_home_controller.dart';
@@ -224,21 +225,16 @@ class CartController extends GetxController {
 
   void selectFulfillment(FulfillmentType type) {
     if (_reviewerMode.isGuest && type == FulfillmentType.delivery) {
-      Get.snackbar(
+      AppSnackbar.error(
         'Guest reviewer mode',
         'โหมดรีวิวใช้ตะกร้าตัวอย่างและไม่บันทึกพิกัดจัดส่งจริง',
-        snackPosition: SnackPosition.BOTTOM,
       );
       fulfillmentType.value = FulfillmentType.pickup;
       return;
     }
 
     if (type == FulfillmentType.delivery && !canUseDelivery) {
-      Get.snackbar(
-        'ยังใช้บริการส่งไม่ได้',
-        deliveryStatusText,
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('ยังใช้บริการส่งไม่ได้', deliveryStatusText);
       fulfillmentType.value = FulfillmentType.pickup;
       return;
     }
@@ -273,19 +269,14 @@ class CartController extends GetxController {
   Future<void> incrementQuantity(CartItem item) async {
     final int stock = item.stock.toInt();
     if (stock <= 0) {
-      Get.snackbar(
-        'สินค้าหมด',
-        '${item.name} ยังไม่มีสินค้าในสต๊อก',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('สินค้าหมด', '${item.name} ยังไม่มีสินค้าในสต๊อก');
       return;
     }
 
     if (item.quantity >= stock) {
-      Get.snackbar(
+      AppSnackbar.error(
         'จำนวนเกินสต๊อก',
         'เลือกจำนวนได้ไม่เกิน $stock ${item.unit}',
-        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -343,11 +334,7 @@ class CartController extends GetxController {
           .doc(item.id)
           .delete();
     } catch (_) {
-      Get.snackbar(
-        'ลบสินค้าไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('ลบสินค้าไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     }
   }
 
@@ -367,10 +354,9 @@ class CartController extends GetxController {
 
     final User? user = _firebaseAuth.currentUser;
     if (user == null) {
-      Get.snackbar(
+      AppSnackbar.error(
         'ยังไม่ได้เข้าสู่ระบบ',
         'กรุณาเข้าสู่ระบบก่อนสั่งสินค้า',
-        snackPosition: SnackPosition.BOTTOM,
       );
       return;
     }
@@ -380,10 +366,9 @@ class CartController extends GetxController {
     try {
       final String orderPhone = customerPhone.value.trim();
       if (!_isValidPhone(orderPhone)) {
-        Get.snackbar(
+        AppSnackbar.error(
           'กรุณาเพิ่มเบอร์โทร',
           'ร้านต้องใช้เบอร์โทรเพื่อติดต่อเรื่องออเดอร์และการจัดส่ง กรุณาเพิ่มในหน้า Profile ก่อนสั่งซื้อ',
-          snackPosition: SnackPosition.BOTTOM,
         );
         return;
       }
@@ -393,11 +378,7 @@ class CartController extends GetxController {
           : FulfillmentType.pickup;
       if (fulfillmentType.value == FulfillmentType.delivery &&
           selectedFulfillment == FulfillmentType.pickup) {
-        Get.snackbar(
-          'จัดส่งไม่ได้',
-          deliveryStatusText,
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        AppSnackbar.error('จัดส่งไม่ได้', deliveryStatusText);
       }
 
       final List<CartItem> orderingItems = List<CartItem>.from(cartItems);
@@ -497,21 +478,16 @@ class CartController extends GetxController {
       }
     } on StateError catch (error) {
       final String itemName = error.message.split(':').skip(1).join(':');
-      Get.snackbar(
+      AppSnackbar.error(
         'สต๊อกสินค้าไม่พอ',
         itemName.isEmpty
             ? 'มีบางสินค้าในตะกร้าที่สต๊อกไม่พอ'
             : '$itemName มีจำนวนในสต๊อกไม่พอ',
-        snackPosition: SnackPosition.BOTTOM,
       );
     } catch (error, stackTrace) {
       debugPrint('createOrderFromCart failed: $error');
       debugPrintStack(stackTrace: stackTrace);
-      Get.snackbar(
-        'สั่งซื้อไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('สั่งซื้อไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     } finally {
       isOrdering.value = false;
     }
@@ -531,11 +507,7 @@ class CartController extends GetxController {
           .doc(item.id)
           .update(<String, dynamic>{'quantity': quantity});
     } catch (_) {
-      Get.snackbar(
-        'อัปเดตจำนวนไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('อัปเดตจำนวนไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     }
   }
 

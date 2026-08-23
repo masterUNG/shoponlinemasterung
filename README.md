@@ -34,6 +34,13 @@
 ### ความคืบหน้าล่าสุด
 
 - ขยับเลขเวอร์ชันหลักใน `pubspec.yaml` เป็น `1.0.13+13`
+- เพิ่ม Forgot password ในหน้า Admin Login และเพิ่มสถานะ loading/error ตอนตรวจ role admin
+- ผูกช่องค้นหา Admin Web ให้กรองสินค้าและออเดอร์จริง
+- เปลี่ยนสิทธิ์ลบสินค้าจาก email hardcode เป็น `users/{uid}.permissions.canDeleteProducts`
+- เพิ่ม `adminAuditLogs` สำหรับการเพิ่ม แก้ไข ลบสินค้า เปลี่ยนสถานะออเดอร์
+  ตรวจสลิป ปฏิเสธสลิป และยืนยันรับเงินสด
+- เพิ่ม `AppSnackbar` กลางสำหรับข้อความ error ให้แสดงพื้นแดง ตัวอักษรขาว
+  และค้าง 10 วินาที ทั้งฝั่ง Customer App และ Admin Web
 - ผูก action ของ Admin Web Dashboard แล้ว: เมนูลัดเพิ่มสินค้าเปิด dialog จริง
   ส่วนแก้ไขราคา ปรับสต๊อก ดูสินค้าทั้งหมด และดูออเดอร์ทั้งหมดจะเปลี่ยนไปยัง
   section ที่เกี่ยวข้อง
@@ -68,10 +75,19 @@
 | ตรวจ/ปฏิเสธสลิป | มีแล้ว |
 | ยืนยันรับเงินสด | มีแล้ว |
 | ยกเลิกออเดอร์และคืนสต๊อก | มีแล้ว |
+| Error Snackbar พื้นแดง ตัวอักษรขาว 10 วินาที | มีแล้ว |
 | Firestore Security Rules | มีแล้ว |
 | Unit tests เบื้องต้น | มี 6 tests |
 
 ## ฟีเจอร์ฝั่งลูกค้า
+
+### การแจ้งเตือน Error
+
+- ข้อความผิดพลาดที่แสดงผ่าน Snackbar ใช้ helper กลาง `AppSnackbar`
+- รูปแบบมาตรฐานคือพื้นแดง ตัวอักษรขาว และแสดงนาน 10 วินาที
+- ใช้กับ error หลักของ login, cart, mall, order, profile และ Admin Web
+- Snackbar สำหรับข้อความสำเร็จยังใช้รูปแบบเดิมของแต่ละหน้า
+  เพื่อไม่ให้ผู้ใช้สับสนกับข้อความผิดพลาด
 
 ### บัญชีและโปรไฟล์
 
@@ -191,7 +207,9 @@ unpaid -> paid
 - ตรวจผู้ใช้จาก Firebase Authentication
 - ตรวจ role จาก `users/{uid}.role == "admin"`
 - หากไม่ใช่ admin จะ sign out และส่งกลับหน้า login admin
-- สิทธิ์ลบสินค้าอนุญาตเฉพาะ email `adminung@abc.com`
+- มี Forgot password ผ่าน Firebase Auth
+- มีสถานะ loading/error ตอนตรวจ role admin
+- สิทธิ์ลบสินค้าใช้ `users/{uid}.permissions.canDeleteProducts == true`
 
 ### Dashboard
 
@@ -245,9 +263,8 @@ Admin เพิ่มและแก้ไขสินค้าได้จา�
 - รูปยังเก็บเป็น Base64 ใน Firestore
 - ยังไม่มี archive product แบบจริงจังสำหรับสินค้าที่เคยอยู่ในออเดอร์
 - การลบสินค้าจริงอาจทำให้ออเดอร์เก่าบางกรณียกเลิกและคืนสต๊อกไม่ได้ เพราะหา product document ไม่เจอ
-- ช่อง search บน Admin Web มี UI แล้ว แต่จากโค้ดยังไม่เห็น state/filter ที่ใช้งานจริง
-- ปุ่มบน Dashboard ผูก action แล้ว แต่ปุ่ม Export/จัดการสินค้า/เติมสต๊อก/
-  ดูทั้งหมดบางตำแหน่งในหน้า Products, Stock และ Orders ยังไม่ได้ผูก action จริง
+- ช่อง search บน Admin Web กรองสินค้าและออเดอร์จริงแล้ว
+- ปุ่ม Export ในหน้า Products ยังไม่ได้ export ไฟล์จริง
 
 ### จัดการออเดอร์
 
@@ -259,6 +276,7 @@ Admin เพิ่มและแก้ไขสินค้าได้จา�
 - ดูข้อมูลรับเองหรือจัดส่ง
 - แสดงระยะส่งฟรีและพิกัดจัดส่งเมื่อมีข้อมูล
 - เปลี่ยนสถานะตามลำดับที่ระบบอนุญาต
+- บันทึก audit log เมื่อ Admin เปลี่ยนสถานะ
 - ห้ามข้ามสถานะผิดลำดับ
 - ห้ามปิดออเดอร์เป็น `completed` หากยังไม่ชำระเงิน
 - ยกเลิกออเดอร์ด้วย transaction และคืนสต๊อก
@@ -285,6 +303,7 @@ ready     -> completed | cancelled
   - แสดงสถานะรอรับเงินสด
   - Admin ยืนยันรับเงินสดได้เมื่อออเดอร์ยังไม่ปิด
   - บันทึก `cashCollectedAt`, `cashCollectedBy`, `paidAt`
+  - บันทึก audit log เมื่อยืนยันรับเงินสด
 
 ## เทคโนโลยีที่ใช้
 
@@ -346,6 +365,9 @@ lib/
   "phone": "0812345678",
   "base64avatar": "BASE64_IMAGE",
   "role": "customer",
+  "permissions": {
+    "canDeleteProducts": false
+  },
   "geopoint": "GeoPoint optional"
 }
 ```
@@ -439,6 +461,7 @@ lib/
   "paymentRejectedAt": "Timestamp optional",
   "cashCollectedAt": "Timestamp optional",
   "cashCollectedBy": "admin uid optional",
+  "lastUpdatedBy": "admin uid optional",
   "paidAt": "Timestamp optional",
   "stockRestoredAt": "Timestamp optional",
   "pickupInfo": {
@@ -448,6 +471,22 @@ lib/
   },
   "createdAt": "Timestamp",
   "updatedAt": "Timestamp"
+}
+```
+
+### `adminAuditLogs/{auditId}`
+
+```json
+{
+  "action": "product_updated",
+  "targetCollection": "product",
+  "targetId": "target-document-id",
+  "adminUid": "admin-auth-uid",
+  "adminEmail": "admin@example.com",
+  "data": {
+    "name": "Product name"
+  },
+  "createdAt": "Timestamp"
 }
 ```
 
@@ -462,7 +501,8 @@ lib/
 - ลูกค้าอัปโหลดสลิปได้เฉพาะออเดอร์ของตนเอง และเฉพาะ PromptPay ที่ยังไม่จบ
 - Admin อ่าน/เขียนข้อมูลที่จำเป็นของสินค้า ออเดอร์ และผู้ใช้ได้
 - Admin เท่านั้นที่ตรวจสลิป ยืนยันเงินสด เปลี่ยนสถานะ และลบออเดอร์ได้
-- ลบสินค้าได้เฉพาะ admin ที่มี email `adminung@abc.com`
+- ลบสินค้าได้เฉพาะ admin ที่มี `permissions.canDeleteProducts == true`
+- Admin สร้าง `adminAuditLogs` ได้ แต่แก้ไขหรือลบ audit log ไม่ได้
 
 จุดที่ควรปรับปรุงด้าน security:
 
@@ -482,16 +522,15 @@ lib/
   "displayname": "Admin",
   "phone": "0812345678",
   "base64avatar": "",
-  "role": "admin"
+  "role": "admin",
+  "permissions": {
+    "canDeleteProducts": true
+  }
 }
 ```
 
-หากต้องเปลี่ยนอีเมลผู้มีสิทธิ์ลบสินค้า ให้แก้ทั้ง:
-
-- `lib/services/admin_role_service.dart`
-- `firestore.rules`
-
-จากนั้น deploy rules ใหม่
+หากไม่ต้องการให้ admin คนใดลบสินค้า ให้ตั้ง `canDeleteProducts` เป็น `false`
+หรือไม่ใส่ field นี้ จากนั้น deploy rules ใหม่เมื่อมีการเปลี่ยน security rules
 
 ## การตั้งค่าและรันโปรเจกต์
 
@@ -589,10 +628,132 @@ flutter build appbundle
 | ข้อความบัญชี PromptPay ใน UI | หน้า Order ที่แสดง QR/รายละเอียดชำระเงิน |
 | ไอคอนแอป | `images/icon.png` และ config `flutter_launcher_icons` |
 | Firebase project | `lib/firebase_options.dart` และ config แต่ละ platform |
-| Admin delete email | `AdminRoleService` และ `firestore.rules` |
+| สิทธิ์ลบสินค้า | `users/{uid}.permissions.canDeleteProducts` และ `firestore.rules` |
 | URL privacy/support | `resource/` และลิงก์ในเอกสาร/หน้าที่เกี่ยวข้อง |
 
 ## สิ่งที่ควรเพิ่ม
+
+### สิ่งที่ Admin Web ยังขาดและควรทำต่อ
+
+1. **Archive product แทน Delete จริง**
+   - ตอนนี้การลบสินค้าเป็นการ delete document ใน collection `product`
+   - เสี่ยงกับออเดอร์เก่าที่อ้างอิงสินค้านั้น โดยเฉพาะ flow ยกเลิกออเดอร์และคืนสต๊อก
+   - ควรเปลี่ยนเป็น `isArchived: true`, `archivedAt` หรือใช้ `isActive = false`
+     แล้วซ่อนจากหน้าขายแทน
+
+2. **Filter ขั้นสูง**
+   - ตอนนี้ search สินค้าและออเดอร์ทำงานแล้ว
+   - ยังควรเพิ่ม filter ตามสถานะออเดอร์ วันที่ วิธีชำระเงิน หมวดหมู่สินค้า
+     สินค้าใกล้หมด สินค้าหมด และสินค้าที่ปิดขาย
+
+3. **Export จริง**
+   - ปุ่ม Export ในหน้า Products ยังไม่ได้ export ไฟล์จริง
+   - ควร export CSV/Excel สำหรับรายการสินค้า ออเดอร์ และยอดขาย
+
+4. **รายงานยอดขาย**
+   - Dashboard มียอดขายวันนี้และเทียบเมื่อวานแล้ว
+   - ยังควรเพิ่มรายงานตามช่วงวันที่ เช่น วันนี้ 7 วัน เดือนนี้
+   - ควรแยกยอด PromptPay/เงินสด เพิ่มกราฟ และสรุปสินค้าขายดี
+
+5. **Pagination / จำกัดจำนวนข้อมูล**
+   - Admin Web ตอนนี้โหลดสินค้าและออเดอร์แบบ real-time ทั้งหมด
+   - เมื่อข้อมูลเยอะควรเพิ่ม pagination, query limit, date filter หรือ lazy load
+
+6. **จัดการ Admin User**
+   - ตอนนี้ role admin และสิทธิ์ลบสินค้าแก้ผ่าน Firestore โดยตรง
+   - ควรมีหน้าในเว็บสำหรับ owner เปิด/ปิดสิทธิ์ เช่น `canDeleteProducts`
+
+7. **Audit Log Viewer**
+   - ตอนนี้มี collection `adminAuditLogs` สำหรับบันทึกเหตุการณ์แล้ว
+   - ยังไม่มีหน้าให้ดูว่าใครเพิ่ม แก้ไข ลบสินค้า เปลี่ยนสถานะออเดอร์
+     ตรวจสลิป ปฏิเสธสลิป หรือยืนยันรับเงินสด
+
+8. **Refund flow**
+   - ตอนนี้ยกเลิกออเดอร์และคืนสต๊อกได้
+   - ถ้าออเดอร์ชำระเงินแล้ว ยังไม่มีสถานะและขั้นตอนคืนเงิน เช่น
+     `refundStatus`, `refundedAt`, `refundNote`, `refundBy`
+
+9. **Quick edit สำหรับ Products/Stock**
+   - หน้า Products/Stock แก้ไขสินค้าได้แล้ว แต่บางงานยังควรทำให้เร็วขึ้น
+   - เช่น quick edit stock, quick toggle เปิด/ปิดขาย และปรับราคาโดยไม่ต้องเปิดฟอร์มใหญ่
+
+10. **Firestore Rules Tests**
+    - Rules รองรับ admin permission แล้ว แต่ยังไม่มี automated tests
+    - ควรเพิ่ม tests สำหรับ role admin, สิทธิ์ลบสินค้า, audit log, order status
+      และ payment review
+
+### สิ่งที่ Mobile Android/iOS ยังขาดและควรทำต่อ
+
+1. **ย้ายรูปออกจาก Firestore Base64 ไป Firebase Storage**
+   - ตอนนี้รูปสินค้า avatar และสลิปเก็บเป็น Base64 ใน Firestore
+   - เสี่ยง document ใหญ่ โหลดช้า และ read/write แพง โดยเฉพาะบนมือถือที่เน็ตไม่เสถียร
+   - ควรเก็บไฟล์ใน Firebase Storage แล้วบันทึก URL/path ใน Firestore
+
+2. **ย้าย logic สำคัญไป Cloud Functions**
+   - การสร้างออเดอร์ ตัดสต๊อก คืนสต๊อก และคำนวณยอดยังพึ่ง client มาก
+   - Mobile app ไม่ควรเป็นผู้ควบคุม business logic สำคัญทั้งหมด
+   - ควรให้ server ตรวจราคา สต๊อก ยอดรวม สิทธิ์ และสร้างออเดอร์
+
+3. **ระบบที่อยู่จัดส่งแบบเต็ม**
+   - ตอนนี้มีพิกัดและรัศมีส่งฟรี
+   - ยังขาดบ้านเลขที่ ซอย ถนน หมู่บ้าน อาคาร จุดสังเกต หมายเหตุคนส่ง
+     และเบอร์โทรสำรอง
+   - ถ้าร้านส่งจริง ฟีเจอร์นี้สำคัญมากต่อการใช้งานจริง
+
+4. **Push Notification**
+   - ลูกค้าควรรู้เมื่อร้านรับออเดอร์ ตรวจสลิป พร้อมรับ ยกเลิก หรือมีปัญหา
+   - ร้านควรรู้เมื่อมีออเดอร์ใหม่หรือสลิปใหม่
+   - ควรเริ่มจาก Firebase Cloud Messaging แล้วค่อยต่อ channel อื่นภายหลัง
+
+5. **Search / Filter / Sort ในหน้า Mall**
+   - ตอนนี้ลูกค้ายังต้องเลื่อนดูสินค้าเป็นหลัก
+   - ควรค้นหาชื่อสินค้า หมวดหมู่ tags ราคา สินค้าแนะนำ และสินค้าขายดี
+   - สำคัญขึ้นทันทีเมื่อจำนวนสินค้าเพิ่ม
+
+6. **หน้า Home / Mall ให้ขายของเก่งขึ้น**
+   - ควรมีหมวดหมู่สินค้า สินค้าแนะนำ สินค้าขายดี โปรโมชัน
+     สินค้ามาใหม่ และสินค้าใกล้หมด
+   - โครงสร้าง product มี field รองรับบางส่วนแล้ว แต่ mobile ยังใช้ไม่เต็ม
+
+7. **ระบบชำระเงินและสลิปให้แข็งแรงขึ้น**
+   - PromptPay ตอนนี้เป็น manual upload/review
+   - ควรตรวจชนิดไฟล์ ขนาดไฟล์ และแสดงเหตุผลเมื่อสลิปถูกปฏิเสธ
+   - ระยะถัดไปอาจต่อ payment gateway หรือ slip verification service
+
+8. **Refund / Cancel flow ฝั่งลูกค้า**
+   - ลูกค้าควรรู้ว่าถ้ายกเลิกหลังชำระเงินแล้วจะคืนเงินอย่างไร
+   - ควรเพิ่มสถานะ เช่น `waiting_refund`, `refunded`, `refund_rejected`
+     พร้อม note จากร้าน
+
+9. **Order Detail + Timeline**
+   - ตอนนี้มี order list และสถานะแล้ว แต่ detail ยังควรครบขึ้น
+   - ควรแสดง timeline สถานะ รายละเอียดสินค้า ข้อมูลรับเอง/จัดส่ง
+     สลิปที่อัปโหลด และปุ่มติดต่อร้าน
+
+10. **บัญชีและความปลอดภัยฝั่งลูกค้า**
+    - ควรเพิ่ม Forgot password, เปลี่ยนรหัสผ่าน, เปลี่ยน/ลบ avatar
+      และ re-auth flow ตอนลบบัญชีให้ชัดขึ้น
+    - ควรมีข้อความ privacy/consent สำหรับการใช้ location
+
+11. **Pagination / Lazy load**
+    - ถ้าสินค้าและออเดอร์เยอะขึ้น มือถือจะหน่วงได้ง่าย
+    - ควรเพิ่ม query limit และโหลดเพิ่มเมื่อ scroll
+
+12. **Favorite / Wishlist**
+    - ลูกค้าควรบันทึกสินค้าที่สนใจไว้กลับมาซื้อภายหลังได้
+    - ใช้ต่อยอด recommendation ได้ในอนาคต
+
+13. **Coupon / Promotion**
+    - order มี field `discount` แล้ว แต่ยังไม่มี flow ใช้งานจริง
+    - ควรมี coupon code เงื่อนไขขั้นต่ำ usage limit และวันหมดอายุ
+
+14. **Rating / Review**
+    - ลูกค้าให้คะแนนสินค้า/ร้านหลังรับสินค้าได้
+    - ยังไม่จำเป็นสำหรับ MVP แต่ช่วยเพิ่มความน่าเชื่อถือเมื่อร้านโตขึ้น
+
+15. **Offline / poor network UX**
+    - ควรปรับ loading, retry, empty state และ network error ให้ชัดขึ้น
+    - สำคัญกับมือถือ โดยเฉพาะ Android ที่เครื่องและสภาพเครือข่ายหลากหลาย
 
 ### Priority สูง
 
@@ -616,7 +777,8 @@ flutter build appbundle
 
 4. **เพิ่ม search/filter/sort**
    - ฝั่งลูกค้า: ค้นหาชื่อสินค้า หมวดหมู่ tags ราคา สินค้าแนะนำ
-   - ฝั่ง Admin: ค้นหาสินค้าและออเดอร์จริง ไม่ใช่เฉพาะช่อง UI
+   - ฝั่ง Admin: มีค้นหาสินค้าและออเดอร์แล้ว ควรเพิ่ม filter ตามสถานะ วันที่
+     หมวดหมู่ และ payment method ต่อ
 
 5. **เพิ่ม notification**
    - แจ้งร้านเมื่อมีออเดอร์ใหม่
@@ -679,12 +841,11 @@ flutter build appbundle
 - ยังไม่มี payment automation
 - ยังไม่มีระบบ refund
 - ยังไม่มี address form แบบละเอียด
-- ยังไม่มี search/filter ที่ใช้งานครบทั้งลูกค้าและ Admin
+- ยังไม่มี search/filter ฝั่งลูกค้า และ Admin ยังไม่มี filter ขั้นสูงตามสถานะ/วันที่
 - ยังไม่มี pagination สำหรับข้อมูลจำนวนมาก
 - ยังไม่มี analytics/report เชิงลึก
 - ยังไม่มี Firestore Rules tests
-- ปุ่มบน Admin Web Dashboard ผูก action แล้ว แต่หน้า Products, Stock และ Orders
-  ยังมีปุ่มบางจุดที่ไม่ได้ผูก action จริง
+- ปุ่ม Export ใน Admin Products ยังไม่ได้ export ไฟล์จริง
 - version หลักถูกปรับให้ใช้จาก `pubspec.yaml` แล้ว แต่ควรตรวจซ้ำก่อน release ทุกครั้ง
 
 ## ผลทดสอบในโปรเจกต์
@@ -709,7 +870,7 @@ flutter test
 
 ## Roadmap แนะนำ
 
-1. เพิ่ม search/filter ใน Mall และ Admin Web
+1. เพิ่ม search/filter ใน Mall และ filter ขั้นสูงใน Admin Web
 2. เพิ่ม address form และ note สำหรับจัดส่ง
 3. เปลี่ยน product delete เป็น archive
 4. เพิ่ม refund status สำหรับออเดอร์ที่ชำระแล้วแต่ถูกยกเลิก

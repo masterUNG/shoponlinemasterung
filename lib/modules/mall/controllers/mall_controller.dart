@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 
+import '../../../core/app_snackbar.dart';
 import '../../../model/product_model.dart';
 import '../../../services/reviewer_mode_service.dart';
 
@@ -96,10 +97,9 @@ class MallController extends GetxController {
 
     final int availableStock = item.product.stock.toInt();
     if (quantity <= 0 || quantity > availableStock) {
-      Get.snackbar(
+      AppSnackbar.error(
         'จำนวนสินค้าไม่ถูกต้อง',
         'เลือกจำนวนได้ไม่เกิน $availableStock ${item.product.unit}',
-        snackPosition: SnackPosition.BOTTOM,
       );
       return false;
     }
@@ -123,10 +123,9 @@ class MallController extends GetxController {
 
     final User? user = _firebaseAuth.currentUser;
     if (user == null) {
-      Get.snackbar(
+      AppSnackbar.error(
         'ยังไม่ได้เข้าสู่ระบบ',
         'กรุณาเข้าสู่ระบบก่อนเพิ่มสินค้าลงตะกร้า',
-        snackPosition: SnackPosition.BOTTOM,
       );
       return false;
     }
@@ -177,18 +176,13 @@ class MallController extends GetxController {
 
       return true;
     } on StateError {
-      Get.snackbar(
+      AppSnackbar.error(
         'จำนวนเกินสต๊อก',
         'สินค้าในตะกร้ารวมกับจำนวนที่เลือกต้องไม่เกิน $availableStock ${item.product.unit}',
-        snackPosition: SnackPosition.BOTTOM,
       );
       return false;
     } catch (_) {
-      Get.snackbar(
-        'เพิ่มลงตะกร้าไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('เพิ่มลงตะกร้าไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
       return false;
     } finally {
       isAddingToCart.value = false;

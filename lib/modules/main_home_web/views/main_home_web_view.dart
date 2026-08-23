@@ -12,39 +12,87 @@ class MainHomeWebView extends GetView<MainHomeWebController> {
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: AppConstant.appColorSurface,
-      body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final bool isDesktop = constraints.maxWidth >= 1180;
-            final bool isTablet = constraints.maxWidth >= 820;
+    return Obx(() {
+      if (controller.isAdminGuardChecking.value) {
+        return const Scaffold(
+          backgroundColor: AppConstant.appColorSurface,
+          body: Center(child: CircularProgressIndicator()),
+        );
+      }
 
-            if (isDesktop) {
-              return Row(
-                children: [
-                  const SizedBox(width: 292, child: _SideBar()),
-                  Expanded(
-                    child: _DashboardContent(
-                      theme: theme,
-                      horizontalPadding: 32,
-                      topPadding: 28,
+      if (controller.adminGuardErrorMessage.value.isNotEmpty) {
+        return Scaffold(
+          backgroundColor: AppConstant.appColorSurface,
+          body: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 460),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.admin_panel_settings_outlined,
+                      size: 54,
+                      color: AppConstant.appColorMuted,
                     ),
-                  ),
-                ],
-              );
-            }
+                    const SizedBox(height: 14),
+                    Text(
+                      controller.adminGuardErrorMessage.value,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppConstant.appColorDeep,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: controller.retryAdminGuard,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('ลองใหม่'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }
 
-            return _DashboardContent(
-              theme: theme,
-              horizontalPadding: isTablet ? 24 : 16,
-              topPadding: isTablet ? 24 : 16,
-              mobileHeader: const _CompactHeader(),
-            );
-          },
+      return Scaffold(
+        backgroundColor: AppConstant.appColorSurface,
+        body: SafeArea(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final bool isDesktop = constraints.maxWidth >= 1180;
+              final bool isTablet = constraints.maxWidth >= 820;
+
+              if (isDesktop) {
+                return Row(
+                  children: [
+                    const SizedBox(width: 292, child: _SideBar()),
+                    Expanded(
+                      child: _DashboardContent(
+                        theme: theme,
+                        horizontalPadding: 32,
+                        topPadding: 28,
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return _DashboardContent(
+                theme: theme,
+                horizontalPadding: isTablet ? 24 : 16,
+                topPadding: isTablet ? 24 : 16,
+                mobileHeader: const _CompactHeader(),
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
 
@@ -380,7 +428,7 @@ class _TopBar extends GetView<MainHomeWebController> {
         ),
         Container(
           width: searchWidth,
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20),
@@ -394,12 +442,27 @@ class _TopBar extends GetView<MainHomeWebController> {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  'ค้นหาสินค้า รหัสสินค้า หรือเลขออเดอร์',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppConstant.appColorMuted,
+                child: TextField(
+                  controller: controller.searchController,
+                  textInputAction: TextInputAction.search,
+                  decoration: const InputDecoration(
+                    hintText: 'ค้นหาสินค้า รหัสสินค้า หรือเลขออเดอร์',
+                    border: InputBorder.none,
+                    enabledBorder: InputBorder.none,
+                    focusedBorder: InputBorder.none,
+                    filled: false,
+                    isDense: true,
                   ),
                 ),
+              ),
+              Obx(
+                () => controller.hasSearchQuery
+                    ? IconButton(
+                        tooltip: 'ล้างคำค้น',
+                        onPressed: controller.clearSearch,
+                        icon: const Icon(Icons.close_rounded),
+                      )
+                    : const SizedBox.shrink(),
               ),
               Container(
                 padding: const EdgeInsets.symmetric(

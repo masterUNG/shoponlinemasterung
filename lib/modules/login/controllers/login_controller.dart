@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../app/routes/app_routes.dart';
+import '../../../core/app_snackbar.dart';
 import '../../../model/app_user_model.dart';
 import '../../../services/reviewer_mode_service.dart';
 
@@ -53,11 +54,9 @@ class LoginController extends GetxController {
     final String password = loginPasswordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      Get.snackbar(
+      AppSnackbar.error(
         'กรอกข้อมูลไม่ครบ',
         'กรุณากรอก email และ password ให้ครบถ้วน',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
       return;
     }
@@ -89,18 +88,11 @@ class LoginController extends GetxController {
         margin: const EdgeInsets.all(16),
       );
     } on FirebaseAuthException catch (error) {
-      Get.snackbar(
-        'เข้าสู่ระบบไม่สำเร็จ',
-        _firebaseAuthMessage(error),
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
-      );
+      AppSnackbar.error('เข้าสู่ระบบไม่สำเร็จ', _firebaseAuthMessage(error));
     } catch (_) {
-      Get.snackbar(
+      AppSnackbar.error(
         'เข้าสู่ระบบไม่สำเร็จ',
         'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
     } finally {
       isLoading.value = false;
@@ -145,21 +137,17 @@ class LoginController extends GetxController {
         registerBase64Avatar.value.isEmpty ||
         email.isEmpty ||
         password.isEmpty) {
-      Get.snackbar(
+      AppSnackbar.error(
         'กรอกข้อมูลไม่ครบ',
         'กรุณากรอก display name, เบอร์โทร, avatar, email และ password ให้ครบถ้วน',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
       return;
     }
 
     if (!_isValidPhone(phone)) {
-      Get.snackbar(
+      AppSnackbar.error(
         'เบอร์โทรไม่ถูกต้อง',
         'กรุณากรอกเบอร์โทรอย่างน้อย 8 หลัก เพื่อให้ร้านติดต่อเรื่องออเดอร์ได้',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
       return;
     }
@@ -196,18 +184,11 @@ class LoginController extends GetxController {
         margin: const EdgeInsets.all(16),
       );
     } on FirebaseAuthException catch (error) {
-      Get.snackbar(
-        'สมัครสมาชิกไม่สำเร็จ',
-        _firebaseAuthMessage(error),
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
-      );
+      AppSnackbar.error('สมัครสมาชิกไม่สำเร็จ', _firebaseAuthMessage(error));
     } catch (_) {
-      Get.snackbar(
+      AppSnackbar.error(
         'สมัครสมาชิกไม่สำเร็จ',
         'เกิดข้อผิดพลาดบางอย่าง กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(16),
       );
     } finally {
       isLoading.value = false;

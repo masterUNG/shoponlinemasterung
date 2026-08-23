@@ -23,7 +23,7 @@
 ```text
 lib/
 ├── app/routes/                 # GetX route names, pages และ bindings
-├── core/                       # สี พิกัดร้าน และค่าคงที่ของแอป
+├── core/                       # สี พิกัดร้าน ค่าคงที่ และ helper UI กลาง
 ├── model/                      # Firestore/domain models
 ├── services/                   # Admin authorization และ reviewer mode
 ├── modules/
@@ -57,6 +57,9 @@ lib/
   `onClose`
 - UI ใช้ Material 3 และสีจาก `AppConstant`; ใช้ theme ก่อน hardcode style ใหม่
 - ข้อความ UI ปัจจุบันเป็นภาษาไทยเป็นหลัก คงรูปแบบภาษาของหน้าที่แก้
+- Error Snackbar ให้ใช้ `AppSnackbar.error(...)` หรือ
+  `AppSnackbar.errorSnackBar(...)` เพื่อให้พื้นแดง ตัวอักษรขาว และแสดง 10 วินาที
+- Snackbar ข้อความสำเร็จไม่ต้องใช้ `AppSnackbar.error` เพื่อไม่ให้แสดงเป็นสีแดง
 - ใช้ `const` widget/constructor เมื่อทำได้ และทำตาม `flutter_lints`
 - อย่า refactor ไฟล์ขนาดใหญ่ เช่น
   `main_home_web/widgets/main_home_web_sections.dart` นอกขอบเขตงาน
@@ -69,7 +72,7 @@ lib/
   section Products หรือ Orders
 - หน้า Products, Stock และ Orders ยังมีปุ่ม Export/จัดการสินค้า/เติมสต๊อก/
   ดูทั้งหมดบางตำแหน่งที่ยังไม่ได้ผูก action ให้ตรวจทีละหน้าก่อนแก้
-- ช่องค้นหาบน Admin Web ยังเป็น UI แสดงผลและยังไม่มี search state/filter จริง
+- ช่องค้นหาบน Admin Web มี search state และกรองสินค้า/ออเดอร์จริงแล้ว
 
 ## Routing and platform behavior
 
@@ -116,8 +119,8 @@ review ใช้ Firestore transactions หรือ restricted updates อย�
   order transaction
 - Logic สำคัญยังอยู่ client-side ไม่ใช่ Cloud Functions
 - รูป, avatar และ payment slip ยังเก็บ Base64 ใน Firestore
-- สิทธิ์ลบสินค้า hardcode email `adminung@abc.com` ทั้งใน
-  `AdminRoleService` และ `firestore.rules`; หากเปลี่ยนต้องแก้ทั้งสองที่
+- สิทธิ์ลบสินค้าใช้ `users/{uid}.permissions.canDeleteProducts == true`
+  ทั้งใน `AdminRoleService` และ `firestore.rules`
 
 ## Product and image handling
 

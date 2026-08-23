@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/app_snackbar.dart';
 import '../../../model/order_model.dart';
 import '../../../services/reviewer_mode_service.dart';
 
@@ -188,11 +189,7 @@ class OrderController extends GetxController {
         snackPosition: SnackPosition.BOTTOM,
       );
     } catch (_) {
-      Get.snackbar(
-        'อัปโหลดสลิปไม่สำเร็จ',
-        'กรุณาลองใหม่อีกครั้ง',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      AppSnackbar.error('อัปโหลดสลิปไม่สำเร็จ', 'กรุณาลองใหม่อีกครั้ง');
     } finally {
       uploadingPaymentOrderId.value = '';
     }
